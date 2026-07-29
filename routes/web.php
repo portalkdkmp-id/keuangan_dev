@@ -17,6 +17,8 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::resource('users', UserController::class)->except(['show']);
+    Route::get('cooperatives/import', [CooperativeController::class, 'importForm'])->name('cooperatives.import');
+    Route::post('cooperatives/import', [CooperativeController::class, 'import'])->name('cooperatives.import.store');
     Route::resource('cooperatives', CooperativeController::class);
     Route::post('cooperatives/{cooperative}/pics', [CooperativeAssignmentController::class, 'store'])->name('cooperatives.pics.store');
     Route::delete('cooperatives/{cooperative}/pics/{user}', [CooperativeAssignmentController::class, 'destroy'])->name('cooperatives.pics.destroy');

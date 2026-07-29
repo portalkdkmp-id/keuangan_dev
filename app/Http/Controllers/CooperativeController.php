@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Cooperative\ImportCooperativesRequest;
 use App\Http\Requests\Cooperative\StoreCooperativeRequest;
 use App\Http\Requests\Cooperative\UpdateCooperativeRequest;
 use App\Models\Cooperative;
 use App\Models\Province;
 use App\Models\User;
+use App\Services\Cooperative\CooperativeImportService;
 use App\Services\Cooperative\CooperativeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,6 +36,30 @@ class CooperativeController extends Controller
         Gate::authorize('create', Cooperative::class);
 
         return Inertia::render('Cooperatives/Create', ['provinces' => Province::orderBy('name')->get(['id', 'name'])]);
+    }
+
+    public function importForm(): Response
+    {
+        Gate::authorize('create', Cooperative::class);
+
+        return Inertia::render('Cooperatives/Import', [
+            'provinces' => Province::orderBy('name')->get(['id', 'name']),
+        ]);
+    }
+
+    public function import(ImportCooperativesRequest $request, CooperativeImportService $importer): RedirectResponse
+    {
+        $result = $importer->import(
+            $request->file('file')->getRealPath(),
+            $request->validated('province_id'),
+            $request->boolean('dry_run'),
+        );
+        $stats = $result['stats'];
+
+        return back()->with(
+            $stats['failed'] > 0 ? 'warning' : 'success',
+            sprintf('Import selesai. Inserted=%d Updated=%d Failed=%d', $stats['inserted'], $stats['updated'], $stats['failed'])
+        );
     }
 
     public function store(StoreCooperativeRequest $request): RedirectResponse

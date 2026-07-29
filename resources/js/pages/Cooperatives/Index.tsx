@@ -30,9 +30,14 @@ export default function CooperativesIndex({
             <Head title="Cooperatives" />
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold">Cooperatives</h1>
-                <Button asChild>
-                    <Link href="/cooperatives/create">Create</Link>
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" asChild>
+                        <Link href="/cooperatives/import">Import</Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/cooperatives/create">Create</Link>
+                    </Button>
+                </div>
             </div>
             <form onSubmit={submit} className="grid gap-2 md:grid-cols-4">
                 <Input

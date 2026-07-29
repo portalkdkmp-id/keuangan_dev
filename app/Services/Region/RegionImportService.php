@@ -9,10 +9,13 @@ use App\Models\Village;
 use App\Services\Audit\AuditLogService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class RegionImportService
 {
+    private const CHUNK_SIZE = 1000;
+
     public function __construct(private readonly AuditLogService $auditLog) {}
 
     public function import(string $path, bool $truncate = false, bool $dryRun = false): array
@@ -28,29 +31,21 @@ class RegionImportService
             }
         }
 
-        $stats = ['provinces' => $this->emptyStats(), 'cities' => $this->emptyStats(), 'districts' => $this->emptyStats(), 'villages' => $this->emptyStats()];
-
-        try {
-            DB::transaction(function () use ($payload, $truncate, $dryRun, &$stats) {
-                if ($truncate && ! $dryRun) {
-                    DB::table('villages')->delete();
-                    DB::table('districts')->delete();
-                    DB::table('cities')->delete();
-                    DB::table('provinces')->delete();
-                }
-
-                $stats['provinces'] = $this->importProvinces($payload['provinsi'], $dryRun);
-                $stats['cities'] = $this->importCities($payload['kabupaten'], $dryRun);
-                $stats['districts'] = $this->importDistricts($payload['kecamatan'], $dryRun);
-                $stats['villages'] = $this->importVillages($payload['desa'], $dryRun);
-
-                if ($dryRun) {
-                    throw new DryRunRollback($stats);
-                }
+        if ($truncate && ! $dryRun) {
+            DB::transaction(function (): void {
+                DB::table('villages')->delete();
+                DB::table('districts')->delete();
+                DB::table('cities')->delete();
+                DB::table('provinces')->delete();
             });
-        } catch (DryRunRollback $rollback) {
-            $stats = $rollback->stats;
         }
+
+        $stats = [
+            'provinces' => $this->importProvinces($payload['provinsi'], $dryRun),
+            'cities' => $this->importCities($payload['kabupaten'], $payload['provinsi'], $dryRun),
+            'districts' => $this->importDistricts($payload['kecamatan'], $payload['kabupaten'], $dryRun),
+            'villages' => $this->importVillages($payload['desa'], $payload['kecamatan'], $dryRun),
+        ];
 
         $this->auditLog->record('regions.imported', 'Import wilayah dijalankan.', null, [], ['dry_run' => $dryRun, 'truncate' => $truncate, 'stats' => $stats]);
 
@@ -60,7 +55,13 @@ class RegionImportService
     private function importProvinces(array $rows, bool $dryRun): array
     {
         $stats = $this->emptyStats();
-        foreach (array_chunk($rows, 1000) as $chunk) {
+
+        foreach (array_chunk($rows, self::CHUNK_SIZE) as $chunk) {
+            $codes = collect($chunk)->map(fn (array $row) => $this->code($row['kode_provinsi'] ?? null))->filter()->values();
+            $existing = Province::whereIn('code', $codes)->pluck('code')->all();
+            $existing = array_flip($existing);
+            $upserts = [];
+
             foreach ($chunk as $row) {
                 $code = $this->code($row['kode_provinsi'] ?? null);
                 if (! $code) {
@@ -68,86 +69,179 @@ class RegionImportService
 
                     continue;
                 }
-                $exists = Province::where('code', $code)->exists();
-                if (! $dryRun) {
-                    Province::updateOrCreate(['code' => $code], ['name' => (string) ($row['nama_provinsi'] ?? ''), 'latitude' => $row['lat'] ?? null, 'longitude' => $row['long'] ?? null]);
-                }
-                $stats[$exists ? 'updated' : 'inserted']++;
+
+                $stats[isset($existing[$code]) ? 'updated' : 'inserted']++;
+                $upserts[] = [
+                    'id' => (string) Str::orderedUuid(),
+                    'code' => $code,
+                    'name' => (string) ($row['nama_provinsi'] ?? ''),
+                    'latitude' => $row['lat'] ?? null,
+                    'longitude' => $row['long'] ?? null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             }
+
+            $this->upsertChunk(Province::class, $upserts, ['code'], ['name', 'latitude', 'longitude', 'updated_at'], $dryRun);
         }
 
         return $stats;
     }
 
-    private function importCities(array $rows, bool $dryRun): array
+    private function importCities(array $rows, array $provinceRows, bool $dryRun): array
     {
         $stats = $this->emptyStats();
-        foreach (array_chunk($rows, 1000) as $chunk) {
+        $provinceCodesFromFile = collect($provinceRows)->map(fn (array $row) => $this->code($row['kode_provinsi'] ?? null))->filter()->flip();
+
+        foreach (array_chunk($rows, self::CHUNK_SIZE) as $chunk) {
+            $provinceCodes = collect($chunk)->map(fn (array $row) => explode('.', $this->code($row['kode_lengkap'] ?? null))[0] ?? null)->filter()->unique();
+            $provinceIds = Province::whereIn('code', $provinceCodes)->pluck('id', 'code');
+            $fullCodes = collect($chunk)->map(fn (array $row) => $this->code($row['kode_lengkap'] ?? null))->filter();
+            $existing = array_flip(City::whereIn('full_code', $fullCodes)->pluck('full_code')->all());
+            $upserts = [];
+
             foreach ($chunk as $row) {
                 $fullCode = $this->code($row['kode_lengkap'] ?? null);
-                $province = Province::where('code', explode('.', $fullCode)[0] ?? '')->first();
-                if (! $fullCode || ! $province) {
+                $provinceCode = explode('.', $fullCode)[0] ?? '';
+                $provinceId = $provinceIds[$provinceCode] ?? null;
+
+                if (! $fullCode || (! $provinceId && (! $dryRun || ! isset($provinceCodesFromFile[$provinceCode])))) {
                     $this->fail($stats, 'Parent province tidak ditemukan', $row);
 
                     continue;
                 }
-                $exists = City::where('full_code', $fullCode)->exists();
-                if (! $dryRun) {
-                    City::updateOrCreate(['full_code' => $fullCode], ['province_id' => $province->id, 'code' => $this->code($row['kode_kabupaten'] ?? null), 'name' => (string) ($row['nama_kabupaten'] ?? ''), 'latitude' => $row['lat'] ?? null, 'longitude' => $row['long'] ?? null]);
+
+                if (! $provinceId && $dryRun) {
+                    $stats['inserted']++;
+
+                    continue;
                 }
-                $stats[$exists ? 'updated' : 'inserted']++;
+
+                $stats[isset($existing[$fullCode]) ? 'updated' : 'inserted']++;
+                $upserts[] = [
+                    'id' => (string) Str::orderedUuid(),
+                    'province_id' => $provinceId,
+                    'code' => $this->code($row['kode_kabupaten'] ?? null),
+                    'full_code' => $fullCode,
+                    'name' => (string) ($row['nama_kabupaten'] ?? ''),
+                    'latitude' => $row['lat'] ?? null,
+                    'longitude' => $row['long'] ?? null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             }
+
+            $this->upsertChunk(City::class, $upserts, ['full_code'], ['province_id', 'code', 'name', 'latitude', 'longitude', 'updated_at'], $dryRun);
         }
 
         return $stats;
     }
 
-    private function importDistricts(array $rows, bool $dryRun): array
+    private function importDistricts(array $rows, array $cityRows, bool $dryRun): array
     {
         $stats = $this->emptyStats();
-        foreach (array_chunk($rows, 1000) as $chunk) {
+        $cityCodesFromFile = collect($cityRows)->map(fn (array $row) => $this->code($row['kode_lengkap'] ?? null))->filter()->flip();
+
+        foreach (array_chunk($rows, self::CHUNK_SIZE) as $chunk) {
+            $cityCodes = collect($chunk)->map(fn (array $row) => implode('.', array_slice(explode('.', $this->code($row['kode_lengkap'] ?? null)), 0, 2)))->filter()->unique();
+            $cityIds = City::whereIn('full_code', $cityCodes)->pluck('id', 'full_code');
+            $fullCodes = collect($chunk)->map(fn (array $row) => $this->code($row['kode_lengkap'] ?? null))->filter();
+            $existing = array_flip(District::whereIn('full_code', $fullCodes)->pluck('full_code')->all());
+            $upserts = [];
+
             foreach ($chunk as $row) {
                 $fullCode = $this->code($row['kode_lengkap'] ?? null);
                 $cityCode = implode('.', array_slice(explode('.', $fullCode), 0, 2));
-                $city = City::where('full_code', $cityCode)->first();
-                if (! $fullCode || ! $city) {
+                $cityId = $cityIds[$cityCode] ?? null;
+
+                if (! $fullCode || (! $cityId && (! $dryRun || ! isset($cityCodesFromFile[$cityCode])))) {
                     $this->fail($stats, 'Parent city tidak ditemukan', $row);
 
                     continue;
                 }
-                $exists = District::where('full_code', $fullCode)->exists();
-                if (! $dryRun) {
-                    District::updateOrCreate(['full_code' => $fullCode], ['city_id' => $city->id, 'code' => $this->code($row['kode_kecamatan'] ?? null), 'name' => (string) ($row['nama_kecamatan'] ?? ''), 'latitude' => $row['lat'] ?? null, 'longitude' => $row['long'] ?? null]);
+
+                if (! $cityId && $dryRun) {
+                    $stats['inserted']++;
+
+                    continue;
                 }
-                $stats[$exists ? 'updated' : 'inserted']++;
+
+                $stats[isset($existing[$fullCode]) ? 'updated' : 'inserted']++;
+                $upserts[] = [
+                    'id' => (string) Str::orderedUuid(),
+                    'city_id' => $cityId,
+                    'code' => $this->code($row['kode_kecamatan'] ?? null),
+                    'full_code' => $fullCode,
+                    'name' => (string) ($row['nama_kecamatan'] ?? ''),
+                    'latitude' => $row['lat'] ?? null,
+                    'longitude' => $row['long'] ?? null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             }
+
+            $this->upsertChunk(District::class, $upserts, ['full_code'], ['city_id', 'code', 'name', 'latitude', 'longitude', 'updated_at'], $dryRun);
         }
 
         return $stats;
     }
 
-    private function importVillages(array $rows, bool $dryRun): array
+    private function importVillages(array $rows, array $districtRows, bool $dryRun): array
     {
         $stats = $this->emptyStats();
-        foreach (array_chunk($rows, 1000) as $chunk) {
+        $districtCodesFromFile = collect($districtRows)->map(fn (array $row) => $this->code($row['kode_lengkap'] ?? null))->filter()->flip();
+
+        foreach (array_chunk($rows, self::CHUNK_SIZE) as $chunk) {
+            $districtCodes = collect($chunk)->map(fn (array $row) => implode('.', array_slice(explode('.', $this->code($row['kode_lengkap'] ?? null)), 0, 3)))->filter()->unique();
+            $districtIds = District::whereIn('full_code', $districtCodes)->pluck('id', 'full_code');
+            $fullCodes = collect($chunk)->map(fn (array $row) => $this->code($row['kode_lengkap'] ?? null))->filter();
+            $existing = array_flip(Village::whereIn('full_code', $fullCodes)->pluck('full_code')->all());
+            $upserts = [];
+
             foreach ($chunk as $row) {
                 $fullCode = $this->code($row['kode_lengkap'] ?? null);
                 $districtCode = implode('.', array_slice(explode('.', $fullCode), 0, 3));
-                $district = District::where('full_code', $districtCode)->first();
-                if (! $fullCode || ! $district) {
+                $districtId = $districtIds[$districtCode] ?? null;
+
+                if (! $fullCode || (! $districtId && (! $dryRun || ! isset($districtCodesFromFile[$districtCode])))) {
                     $this->fail($stats, 'Parent district tidak ditemukan', $row);
 
                     continue;
                 }
-                $exists = Village::where('full_code', $fullCode)->exists();
-                if (! $dryRun) {
-                    Village::updateOrCreate(['full_code' => $fullCode], ['district_id' => $district->id, 'code' => $this->code($row['kode_desa'] ?? null), 'name' => (string) ($row['nama_desa'] ?? ''), 'latitude' => $row['lat'] ?? null, 'longitude' => $row['long'] ?? null]);
+
+                if (! $districtId && $dryRun) {
+                    $stats['inserted']++;
+
+                    continue;
                 }
-                $stats[$exists ? 'updated' : 'inserted']++;
+
+                $stats[isset($existing[$fullCode]) ? 'updated' : 'inserted']++;
+                $upserts[] = [
+                    'id' => (string) Str::orderedUuid(),
+                    'district_id' => $districtId,
+                    'code' => $this->code($row['kode_desa'] ?? null),
+                    'full_code' => $fullCode,
+                    'name' => (string) ($row['nama_desa'] ?? ''),
+                    'latitude' => $row['lat'] ?? null,
+                    'longitude' => $row['long'] ?? null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             }
+
+            $this->upsertChunk(Village::class, $upserts, ['full_code'], ['district_id', 'code', 'name', 'latitude', 'longitude', 'updated_at'], $dryRun);
         }
 
         return $stats;
+    }
+
+    private function upsertChunk(string $modelClass, array $rows, array $uniqueBy, array $updateColumns, bool $dryRun): void
+    {
+        if ($dryRun || $rows === []) {
+            return;
+        }
+
+        DB::transaction(fn () => $modelClass::query()->upsert($rows, $uniqueBy, $updateColumns));
     }
 
     private function code(mixed $value): string
@@ -164,13 +258,5 @@ class RegionImportService
     {
         $stats['failed']++;
         Log::warning('Region import row failed', ['message' => $message, 'row' => $row]);
-    }
-}
-
-class DryRunRollback extends \RuntimeException
-{
-    public function __construct(public readonly array $stats)
-    {
-        parent::__construct('Dry run rollback.');
     }
 }
