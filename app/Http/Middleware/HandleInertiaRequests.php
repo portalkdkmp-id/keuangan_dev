@@ -40,6 +40,17 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'roles' => fn () => $request->user()?->getRoleNames() ?? [],
+                'permissions' => fn () => $request->user()?->getAllPermissions()->pluck('name')->values() ?? [],
+            ],
+            'notifications' => fn () => $request->user() ? [
+                'unread_count' => $request->user()->unreadNotifications()->count(),
+                'latest_unread' => $request->user()->unreadNotifications()->latest()->limit(5)->get(['id', 'data', 'created_at']),
+            ] : ['unread_count' => 0, 'latest_unread' => []],
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+                'warning' => fn () => $request->session()->get('warning'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
