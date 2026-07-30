@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\FinanceSubmission\RequestRevisionRequest;
 use App\Http\Requests\FinanceSubmission\UpdateFinanceDetailRequest;
 use App\Models\FinancialSubmission;
+use App\Models\SubmissionRequestCategory;
+use App\Models\SubmissionRequestType;
 use App\Services\FinanceSubmission\FinanceSubmissionService;
 use App\Services\Submission\SubmissionService;
 use Illuminate\Http\RedirectResponse;
@@ -36,6 +38,8 @@ class FinanceSubmissionController extends Controller
 
         return Inertia::render('Finance/Submissions/Show', [
             'submission' => $financialSubmission->load(['cooperative.city.province', 'submitterCity', 'submitter', 'requestCategory', 'requestType', 'recipientBankAccount', 'items', 'attachments', 'financeDetail', 'revisionRequests.requester', 'revisionRequests.response', 'statusHistories.actor']),
+            'requestCategories' => SubmissionRequestCategory::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'requestTypes' => SubmissionRequestType::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -77,5 +81,14 @@ class FinanceSubmissionController extends Controller
         $this->financeSubmissions->forwardToApproval($request->user(), $financialSubmission);
 
         return back()->with('success', 'Pengajuan berhasil diteruskan ke Approval Keuangan.');
+    }
+
+    public function reject(Request $request, FinancialSubmission $financialSubmission): RedirectResponse
+    {
+        Gate::authorize('requestRevision', $financialSubmission);
+        $data = $request->validate(['rejection_reason' => ['required', 'string', 'max:5000']]);
+        $this->financeSubmissions->rejectSubmission($request->user(), $financialSubmission, $data['rejection_reason']);
+
+        return to_route('finance.submissions.index')->with('success', 'Pengajuan berhasil ditolak.');
     }
 }

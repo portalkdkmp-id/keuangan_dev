@@ -13,7 +13,7 @@ class SubmissionStatusService
     private const ALLOWED = [
         'draft' => ['submitted', 'cancelled'],
         'submitted' => ['finance_review'],
-        'finance_review' => ['revision_requested', 'finance_validated'],
+        'finance_review' => ['revision_requested', 'finance_validated', 'cancelled'],
         'revision_requested' => ['submitted', 'cancelled'],
         'finance_validated' => ['approval_review'],
     ];

@@ -15,6 +15,7 @@ export function SubmissionAttachments({ submission, editable = false }: { submis
             <div className="space-y-2">
                 {submission.attachments?.map((attachment: any) => (
                     <div key={attachment.id} className="space-y-3 rounded-md border p-3 text-sm">
+                        <h2 className="font-semibold">Bukti Pengajuan</h2>
                         {attachment.mime_type?.startsWith('image/') && <img src={`/submission-attachments/${attachment.id}/preview`} alt={attachment.original_name} className="max-h-80 w-full rounded-md object-contain" />}
                         <div className="flex items-center justify-between gap-2">
                             <Link href={`/submission-attachments/${attachment.id}/download`}>{attachment.original_name}</Link>

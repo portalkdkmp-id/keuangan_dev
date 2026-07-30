@@ -16,7 +16,7 @@ class FinanceSubmissionDetail extends Model
         'cost_center_code', 'cost_center_name', 'expense_group', 'payment_method',
         'beneficiary_name', 'beneficiary_bank', 'beneficiary_account_number',
         'beneficiary_account_holder', 'tax_applicable', 'tax_notes', 'finance_notes',
-        'validated_total_amount', 'created_by', 'updated_by',
+        'validated_total_amount', 'staff_reviewed_at', 'rejection_reason', 'created_by', 'updated_by',
     ];
 
     protected function casts(): array
@@ -25,6 +25,7 @@ class FinanceSubmissionDetail extends Model
             'payment_method' => PaymentMethod::class,
             'tax_applicable' => 'boolean',
             'validated_total_amount' => 'decimal:2',
+            'staff_reviewed_at' => 'datetime',
         ];
     }
 

@@ -6,11 +6,14 @@ use App\Enums\RevisionRequestStatus;
 use App\Enums\SubmissionStatus;
 use App\Models\FinanceSubmissionDetail;
 use App\Models\FinancialSubmission;
+use App\Models\SubmissionCategory;
+use App\Models\SubmissionRequestType;
 use App\Models\SubmissionRevisionRequest;
 use App\Models\User;
 use App\Notifications\SubmissionForwardedToApprovalNotification;
 use App\Notifications\SubmissionRevisionRequestedNotification;
 use App\Services\Audit\AuditLogService;
+use App\Services\Submission\SubmissionItemService;
 use App\Services\Submission\SubmissionStatusService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -19,6 +22,7 @@ class FinanceSubmissionService
 {
     public function __construct(
         private readonly SubmissionStatusService $statuses,
+        private readonly SubmissionItemService $items,
         private readonly AuditLogService $auditLog,
     ) {}
 
@@ -27,17 +31,32 @@ class FinanceSubmissionService
         return DB::transaction(function () use ($user, $submission, $data) {
             $locked = FinancialSubmission::query()->whereKey($submission->id)->lockForUpdate()->firstOrFail();
             $this->ensureStatus($locked, SubmissionStatus::FINANCE_REVIEW, 'Detail keuangan hanya bisa diperbarui saat finance review.');
+            $locked->update([
+                'title' => $data['title'],
+                'submission_request_category_id' => $data['submission_request_category_id'],
+                'submission_request_type_id' => $data['submission_request_type_id'],
+                'needed_date' => $data['needed_date'] ?? null,
+                'notes' => $data['notes'] ?? null,
+            ]);
+            $total = $this->items->replaceItems($locked, $this->itemsFromReviewPayload($data));
+            $locked->update(['total_amount' => $total]);
 
             $detail = FinanceSubmissionDetail::updateOrCreate(
                 ['financial_submission_id' => $locked->id],
-                [...$data, 'created_by' => $locked->financeDetail?->created_by ?? $user->id, 'updated_by' => $user->id]
+                [
+                    'finance_notes' => $data['finance_notes'] ?? null,
+                    'validated_total_amount' => $data['amount'],
+                    'staff_reviewed_at' => now(),
+                    'rejection_reason' => $data['rejection_reason'] ?? null,
+                    'created_by' => $locked->financeDetail?->created_by ?? $user->id,
+                    'updated_by' => $user->id,
+                ]
             );
 
             $this->auditLog->record('finance_detail.updated', 'Detail keuangan diperbarui.', $locked, [], [
                 'submission_id' => $locked->id,
                 'submission_number' => $locked->submission_number,
                 'validated_total_amount' => $detail->validated_total_amount,
-                'beneficiary_account_number' => $this->mask($detail->beneficiary_account_number),
             ]);
 
             return $detail;
@@ -104,7 +123,18 @@ class FinanceSubmissionService
     {
         return DB::transaction(function () use ($user, $submission) {
             $locked = FinancialSubmission::query()->with(['financeDetail', 'cooperative', 'submitter'])->whereKey($submission->id)->lockForUpdate()->firstOrFail();
-            $this->ensureStatus($locked, SubmissionStatus::FINANCE_VALIDATED, 'Hanya pengajuan tervalidasi yang dapat diteruskan.');
+            if ($locked->status === SubmissionStatus::FINANCE_REVIEW) {
+                if (! $locked->financeDetail?->staff_reviewed_at) {
+                    throw ValidationException::withMessages(['finance_detail' => 'Review staff keuangan wajib disimpan terlebih dahulu.']);
+                }
+                $locked->forceFill(['finance_validated_by' => $user->id, 'finance_validated_at' => now()])->save();
+                $this->statuses->transition($locked, SubmissionStatus::FINANCE_VALIDATED, $user, 'finance_validated', $locked->financeDetail->finance_notes, [
+                    'validated_total_amount' => $locked->financeDetail->validated_total_amount,
+                ]);
+                $locked->refresh()->load(['financeDetail', 'cooperative', 'submitter']);
+            } else {
+                $this->ensureStatus($locked, SubmissionStatus::FINANCE_VALIDATED, 'Hanya pengajuan tervalidasi yang dapat diteruskan.');
+            }
             if (! $locked->financeDetail?->validated_total_amount || (float) $locked->financeDetail->validated_total_amount <= 0) {
                 throw ValidationException::withMessages(['finance_detail' => 'Nominal validasi wajib diisi.']);
             }
@@ -123,6 +153,25 @@ class FinanceSubmissionService
         });
     }
 
+    public function rejectSubmission(User $user, FinancialSubmission $submission, string $reason): FinancialSubmission
+    {
+        return DB::transaction(function () use ($user, $submission, $reason) {
+            $locked = FinancialSubmission::query()->whereKey($submission->id)->lockForUpdate()->firstOrFail();
+            $this->ensureStatus($locked, SubmissionStatus::FINANCE_REVIEW, 'Pengajuan hanya bisa ditolak saat finance review.');
+            FinanceSubmissionDetail::updateOrCreate(
+                ['financial_submission_id' => $locked->id],
+                [
+                    'rejection_reason' => $reason,
+                    'staff_reviewed_at' => now(),
+                    'created_by' => $locked->financeDetail?->created_by ?? $user->id,
+                    'updated_by' => $user->id,
+                ]
+            );
+
+            return $this->statuses->transition($locked, SubmissionStatus::CANCELLED, $user, 'finance_rejected', $reason);
+        });
+    }
+
     private function ensureStatus(FinancialSubmission $submission, SubmissionStatus $status, string $message): void
     {
         if ($submission->status !== $status) {
@@ -130,8 +179,18 @@ class FinanceSubmissionService
         }
     }
 
-    private function mask(?string $value): ?string
+    private function itemsFromReviewPayload(array $data): array
     {
-        return $value ? str_repeat('*', max(strlen($value) - 4, 0)).substr($value, -4) : null;
+        $category = SubmissionCategory::where('code', 'other')->first() ?? SubmissionCategory::firstOrFail();
+        $type = SubmissionRequestType::find($data['submission_request_type_id']);
+
+        return [[
+            'category_id' => $category->id,
+            'description' => $type?->name ?? 'Pengajuan dana',
+            'quantity' => 1,
+            'unit' => 'pengajuan',
+            'unit_price' => $data['amount'],
+            'notes' => $data['notes'] ?? null,
+        ]];
     }
 }

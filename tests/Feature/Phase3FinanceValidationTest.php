@@ -67,20 +67,13 @@ function p3ReviewedSubmission(): array
 function p3FinanceDetailPayload(array $overrides = []): array
 {
     return array_merge([
-        'budget_account_code' => 'BA-001',
-        'budget_account_name' => 'Operasional',
-        'cost_center_code' => 'CC-001',
-        'cost_center_name' => 'Kantor',
-        'expense_group' => 'Office',
-        'payment_method' => 'bank_transfer',
-        'beneficiary_name' => 'Koperasi Tujuan',
-        'beneficiary_bank' => 'Bank Mandiri',
-        'beneficiary_account_number' => '1234567890',
-        'beneficiary_account_holder' => 'Koperasi Tujuan',
-        'tax_applicable' => false,
-        'tax_notes' => null,
-        'finance_notes' => null,
-        'validated_total_amount' => 300000,
+        'title' => 'Dana validasi finance',
+        'submission_request_category_id' => SubmissionRequestCategory::first()->id,
+        'submission_request_type_id' => SubmissionRequestType::first()->id,
+        'amount' => 300000,
+        'needed_date' => now()->addDays(3)->toDateString(),
+        'notes' => null,
+        'finance_notes' => 'Review staff keuangan.',
     ], $overrides);
 }
 
@@ -112,28 +105,33 @@ test('finance can request revision and pic can resubmit to submitted queue', fun
     Notification::assertSentTo($staff, SubmissionResubmittedNotification::class);
 });
 
-test('finance can save detail validate and forward to approval queue', function () {
+test('finance can save review and forward to approval queue', function () {
     Notification::fake();
     [, $staff, $submission] = p3ReviewedSubmission();
     $approver = User::factory()->create();
     $approver->assignRole('finance_approver');
 
     $this->actingAs($staff)->put(route('finance.submissions.finance-detail.update', $submission), p3FinanceDetailPayload())->assertRedirect();
-    $this->actingAs($staff)->post(route('finance.submissions.validate', $submission))->assertRedirect();
-
-    $submission->refresh();
-    expect($submission->status)->toBe(SubmissionStatus::FINANCE_VALIDATED)
-        ->and($submission->finance_validated_by)->toBe($staff->id)
-        ->and($submission->financeDetail)->not->toBeNull();
-
     $this->actingAs($staff)->post(route('finance.submissions.forward-approval', $submission))->assertRedirect();
 
     $submission->refresh();
     expect($submission->status)->toBe(SubmissionStatus::APPROVAL_REVIEW)
-        ->and($submission->forwarded_to_approval_by)->toBe($staff->id);
+        ->and($submission->finance_validated_by)->toBe($staff->id)
+        ->and($submission->forwarded_to_approval_by)->toBe($staff->id)
+        ->and($submission->financeDetail->staff_reviewed_at)->not->toBeNull();
     Notification::assertSentTo($approver, SubmissionForwardedToApprovalNotification::class);
     $this->actingAs($approver)->get(route('approval.submissions.index'))->assertOk();
     $this->actingAs($approver)->get(route('approval.submissions.show', $submission))->assertOk();
+});
+
+test('finance can reject reviewed submission with reason', function () {
+    [, $staff, $submission] = p3ReviewedSubmission();
+
+    $this->actingAs($staff)->post(route('finance.submissions.reject', $submission), ['rejection_reason' => 'Dokumen tidak sesuai.'])->assertRedirect(route('finance.submissions.index', absolute: false));
+
+    $submission->refresh();
+    expect($submission->status)->toBe(SubmissionStatus::CANCELLED)
+        ->and($submission->financeDetail->rejection_reason)->toBe('Dokumen tidak sesuai.');
 });
 
 test('pic can cancel a revision requested submission', function () {

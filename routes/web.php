@@ -59,6 +59,7 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::post('/finance/submissions/{financialSubmission}/request-revision', [FinanceSubmissionController::class, 'requestRevision'])->name('finance.submissions.request-revision');
     Route::post('/finance/submissions/{financialSubmission}/validate', [FinanceSubmissionController::class, 'validateSubmission'])->name('finance.submissions.validate');
     Route::post('/finance/submissions/{financialSubmission}/forward-approval', [FinanceSubmissionController::class, 'forwardToApproval'])->name('finance.submissions.forward-approval');
+    Route::post('/finance/submissions/{financialSubmission}/reject', [FinanceSubmissionController::class, 'reject'])->name('finance.submissions.reject');
     Route::get('/approval/submissions', [ApprovalSubmissionController::class, 'index'])->name('approval.submissions.index');
     Route::get('/approval/submissions/{financialSubmission}', [ApprovalSubmissionController::class, 'show'])->name('approval.submissions.show');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

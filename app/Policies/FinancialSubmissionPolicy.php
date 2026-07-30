@@ -87,7 +87,7 @@ class FinancialSubmissionPolicy
 
     public function forwardApproval(User $user, FinancialSubmission $submission): bool
     {
-        return $user->can('finance-submissions.forward-approval') && $submission->status === SubmissionStatus::FINANCE_VALIDATED;
+        return $user->can('finance-submissions.forward-approval') && in_array($submission->status, [SubmissionStatus::FINANCE_REVIEW, SubmissionStatus::FINANCE_VALIDATED], true);
     }
 
     public function resubmit(User $user, FinancialSubmission $submission): bool
