@@ -19,7 +19,12 @@ class RolePermissionSeeder extends Seeder
         'profile.view', 'profile.update',
         'audit-logs.view',
         'submissions.view', 'submissions.create', 'submissions.update', 'submissions.delete', 'submissions.submit',
-        'finance-submissions.view', 'finance-submissions.review',
+        'submissions.revise', 'submissions.resubmit',
+        'submission-masters.view', 'submission-masters.create', 'submission-masters.update', 'submission-masters.delete',
+        'bank-accounts.view', 'bank-accounts.create', 'bank-accounts.update', 'bank-accounts.delete',
+        'finance-submissions.view', 'finance-submissions.review', 'finance-submissions.update',
+        'finance-submissions.request-revision', 'finance-submissions.validate', 'finance-submissions.forward-approval',
+        'approval-submissions.view',
         'notifications.view', 'notifications.mark-read',
     ];
 
@@ -40,14 +45,24 @@ class RolePermissionSeeder extends Seeder
                 'pic_kdkmp' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
                     'submissions.view', 'submissions.create', 'submissions.update', 'submissions.delete', 'submissions.submit',
+                    'submissions.revise', 'submissions.resubmit',
+                    'bank-accounts.view', 'bank-accounts.create', 'bank-accounts.update', 'bank-accounts.delete',
                     'notifications.view', 'notifications.mark-read',
                 ],
                 'finance_staff' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
-                    'finance-submissions.view', 'finance-submissions.review',
+                    'finance-submissions.view', 'finance-submissions.review', 'finance-submissions.update',
+                    'finance-submissions.request-revision', 'finance-submissions.validate', 'finance-submissions.forward-approval',
+                    'submissions.view', 'submissions.create', 'submissions.update', 'submissions.delete', 'submissions.submit',
+                    'bank-accounts.view', 'bank-accounts.create', 'bank-accounts.update', 'bank-accounts.delete',
                     'notifications.view', 'notifications.mark-read',
                 ],
-                'finance_approver', 'finance_director' => [
+                'finance_approver' => [
+                    'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
+                    'approval-submissions.view',
+                    'notifications.view', 'notifications.mark-read',
+                ],
+                'finance_director' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
                     'notifications.view',
                 ],

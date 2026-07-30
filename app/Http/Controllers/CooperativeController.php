@@ -76,7 +76,11 @@ class CooperativeController extends Controller
 
         return Inertia::render('Cooperatives/Show', [
             'cooperative' => $cooperative,
-            'availablePics' => User::role('pic_kdkmp')->where('is_active', true)->orderBy('name')->get(['id', 'name', 'email']),
+            'availablePics' => User::role('pic_kdkmp')
+                ->where('is_active', true)
+                ->where('city_id', $cooperative->city_id)
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']),
         ]);
     }
 

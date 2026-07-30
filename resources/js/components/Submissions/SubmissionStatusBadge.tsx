@@ -5,6 +5,8 @@ const labels: Record<string, string> = {
     submitted: 'Menunggu Staff',
     finance_review: 'Direview Staff',
     revision_requested: 'Revisi',
+    finance_validated: 'Tervalidasi Finance',
+    approval_review: 'Menunggu Approval',
     cancelled: 'Dibatalkan',
 };
 

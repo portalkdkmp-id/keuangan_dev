@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
     Select,
     SelectContent,
@@ -80,45 +81,7 @@ export default function CooperativesIndex({
                 </Select>
                 <Button type="submit">Filter</Button>
             </form>
-            <div className="overflow-hidden rounded-md border">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="border-b bg-muted">
-                            <th className="p-3 text-left">NIK</th>
-                            <th>Name</th>
-                            <th>Region</th>
-                            <th>PIC</th>
-                            <th>Status</th>
-                            <th />
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {cooperatives.data.map((item: any) => (
-                            <tr key={item.id} className="border-b">
-                                <td className="p-3">{item.nik}</td>
-                                <td>{item.name}</td>
-                                <td>
-                                    {item.city?.name}, {item.province?.name}
-                                </td>
-                                <td>
-                                    {item.pics?.[0]?.name ?? '-'} (
-                                    {item.pics_count})
-                                </td>
-                                <td>
-                                    {item.is_active ? 'Active' : 'Inactive'}
-                                </td>
-                                <td className="p-3 text-right">
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link href={`/cooperatives/${item.id}`}>
-                                            Open
-                                        </Link>
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <div className="overflow-hidden rounded-md border"><Table><TableHeader><TableRow><TableHead>NIK</TableHead><TableHead>Name</TableHead><TableHead>Region</TableHead><TableHead>PIC</TableHead><TableHead>Status</TableHead><TableHead /></TableRow></TableHeader><TableBody>{cooperatives.data.map((item: any) => <TableRow key={item.id}><TableCell>{item.nik}</TableCell><TableCell>{item.name}</TableCell><TableCell>{item.city?.name}, {item.province?.name}</TableCell><TableCell>{item.pics?.[0]?.name ?? '-'} ({item.pics_count})</TableCell><TableCell>{item.is_active ? 'Active' : 'Inactive'}</TableCell><TableCell className="text-right"><Button variant="outline" size="sm" asChild><Link href={`/cooperatives/${item.id}`}>Open</Link></Button></TableCell></TableRow>)}</TableBody></Table></div>
         </div>
     );
 }

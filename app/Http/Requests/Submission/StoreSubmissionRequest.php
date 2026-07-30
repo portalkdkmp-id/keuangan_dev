@@ -3,7 +3,7 @@
 namespace App\Http\Requests\Submission;
 
 use App\Models\FinancialSubmission;
-use App\Models\SubmissionCategory;
+use App\Models\SubmissionRequestCategory;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -19,17 +19,14 @@ class StoreSubmissionRequest extends FormRequest
     {
         return [
             'cooperative_id' => ['required', 'uuid', 'exists:cooperatives,id'],
+            'submission_request_category_id' => ['required', 'uuid', Rule::exists('submission_request_categories', 'id')->where('is_active', true)],
+            'submission_request_type_id' => ['required', 'uuid', Rule::exists('submission_request_types', 'id')->where('is_active', true)],
+            'recipient_bank_account_id' => ['required', 'uuid', 'exists:user_bank_accounts,id'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
             'title' => ['required', 'string', 'max:200'],
-            'purpose' => ['required', 'string', 'max:5000'],
+            'purpose' => ['nullable', 'string', 'max:5000'],
             'needed_date' => ['nullable', 'date', 'after_or_equal:today'],
             'notes' => ['nullable', 'string', 'max:5000'],
-            'items' => ['required', 'array', 'min:1', 'max:50'],
-            'items.*.category_id' => ['required', 'uuid', Rule::exists('submission_categories', 'id')->where('is_active', true)],
-            'items.*.description' => ['required', 'string', 'max:2000'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
-            'items.*.unit' => ['nullable', 'string', 'max:50'],
-            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'items.*.notes' => ['nullable', 'string', 'max:2000'],
         ];
     }
 
@@ -40,10 +37,17 @@ class StoreSubmissionRequest extends FormRequest
                 $validator->errors()->add('cooperative_id', 'Koperasi tidak termasuk assignment Anda.');
             }
 
-            $otherIds = SubmissionCategory::where('code', 'other')->pluck('id')->all();
-            foreach ($this->input('items', []) as $index => $item) {
-                if (in_array($item['category_id'] ?? null, $otherIds, true) && mb_strlen(trim($item['description'] ?? '')) < 10) {
-                    $validator->errors()->add("items.{$index}.description", 'Deskripsi kategori Lainnya minimal 10 karakter.');
+            if (! $this->user()?->bankAccounts()->whereKey($this->input('recipient_bank_account_id'))->where('is_active', true)->exists()) {
+                $validator->errors()->add('recipient_bank_account_id', 'Rekening penerima tidak tersedia untuk user ini.');
+            }
+
+            if ($this->user()?->hasRole('pic_kdkmp')) {
+                $isSales = SubmissionRequestCategory::whereKey($this->input('submission_request_category_id'))
+                    ->where('slug', 'operasional-tim-sales')
+                    ->exists();
+
+                if ($isSales) {
+                    $validator->errors()->add('submission_request_category_id', 'PIC KDKMP tidak dapat memilih Operasional tim Sales.');
                 }
             }
         }];

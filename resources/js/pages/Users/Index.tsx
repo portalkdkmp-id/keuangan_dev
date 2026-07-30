@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
     Select,
     SelectContent,
@@ -68,42 +69,7 @@ export default function UsersIndex({ users, roles, filters }: any) {
                 </Select>
                 <Button type="submit">Filter</Button>
             </form>
-            <div className="overflow-hidden rounded-md border">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="border-b bg-muted">
-                            <th className="p-3 text-left">Name</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th />
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.data.map((user: any) => (
-                            <tr key={user.id} className="border-b">
-                                <td className="p-3">{user.name}</td>
-                                <td>{user.email}</td>
-                                <td>
-                                    {user.roles
-                                        ?.map((r: any) => r.name)
-                                        .join(', ')}
-                                </td>
-                                <td>
-                                    {user.is_active ? 'Active' : 'Inactive'}
-                                </td>
-                                <td className="p-3 text-right">
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link href={`/users/${user.id}/edit`}>
-                                            Edit
-                                        </Link>
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <div className="overflow-hidden rounded-md border"><Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead><TableHead /></TableRow></TableHeader><TableBody>{users.data.map((user: any) => <TableRow key={user.id}><TableCell>{user.name}</TableCell><TableCell>{user.email}</TableCell><TableCell>{user.roles?.map((r: any) => r.name).join(', ')}</TableCell><TableCell>{user.is_active ? 'Active' : 'Inactive'}</TableCell><TableCell className="text-right"><Button variant="outline" size="sm" asChild><Link href={`/users/${user.id}/edit`}>Edit</Link></Button></TableCell></TableRow>)}</TableBody></Table></div>
         </div>
     );
 }
