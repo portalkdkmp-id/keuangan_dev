@@ -29,7 +29,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'phone', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'phone', 'city_id', 'is_active'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
@@ -56,6 +56,16 @@ class User extends Authenticatable implements PasskeyUser
         return $this->belongsToMany(Cooperative::class, 'cooperative_user_assignments')
             ->withPivot(['assigned_by', 'assigned_at', 'is_primary'])
             ->withTimestamps();
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class);
+    }
+
+    public function bankAccounts()
+    {
+        return $this->hasMany(UserBankAccount::class);
     }
 
     public function submittedSubmissions()

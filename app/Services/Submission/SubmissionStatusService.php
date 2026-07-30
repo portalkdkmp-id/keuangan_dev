@@ -13,6 +13,9 @@ class SubmissionStatusService
     private const ALLOWED = [
         'draft' => ['submitted', 'cancelled'],
         'submitted' => ['finance_review'],
+        'finance_review' => ['revision_requested', 'finance_validated', 'cancelled'],
+        'revision_requested' => ['submitted', 'cancelled'],
+        'finance_validated' => ['approval_review'],
     ];
 
     public function __construct(private readonly AuditLogService $auditLog) {}
@@ -26,10 +29,15 @@ class SubmissionStatusService
 
         $submission->forceFill([
             'status' => $targetStatus,
-            'submitted_at' => $targetStatus === SubmissionStatus::SUBMITTED ? now() : $submission->submitted_at,
+            'submitted_at' => $targetStatus === SubmissionStatus::SUBMITTED ? ($submission->submitted_at ?? now()) : $submission->submitted_at,
             'finance_review_started_at' => $targetStatus === SubmissionStatus::FINANCE_REVIEW ? now() : $submission->finance_review_started_at,
             'cancelled_at' => $targetStatus === SubmissionStatus::CANCELLED ? now() : $submission->cancelled_at,
-            'current_assignee_role' => $targetStatus === SubmissionStatus::SUBMITTED ? 'finance_staff' : $submission->current_assignee_role,
+            'current_assignee_role' => match ($targetStatus) {
+                SubmissionStatus::SUBMITTED, SubmissionStatus::FINANCE_REVIEW, SubmissionStatus::FINANCE_VALIDATED => 'finance_staff',
+                SubmissionStatus::REVISION_REQUESTED => 'pic_kdkmp',
+                SubmissionStatus::APPROVAL_REVIEW => 'finance_approver',
+                default => $submission->current_assignee_role,
+            },
         ])->save();
 
         $submission->statusHistories()->create([

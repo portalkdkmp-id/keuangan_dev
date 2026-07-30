@@ -18,6 +18,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255', 'unique:users,phone'],
+            'city_id' => ['nullable', 'uuid', 'exists:cities,id'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'is_active' => ['sometimes', 'boolean'],

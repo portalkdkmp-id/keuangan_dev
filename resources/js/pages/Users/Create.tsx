@@ -10,11 +10,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
-export default function UsersCreate({ roles }: { roles: string[] }) {
+export default function UsersCreate({ roles, cities }: { roles: string[]; cities: any[] }) {
     const form = useForm({
         name: '',
         email: '',
         phone: '',
+        city_id: '',
         password: '',
         role: roles[0] ?? '',
         is_active: true as boolean,
@@ -23,13 +24,14 @@ export default function UsersCreate({ roles }: { roles: string[] }) {
         <UserForm
             title="Create User"
             roles={roles}
+            cities={cities}
             form={form}
             onSubmit={() => form.post('/users')}
         />
     );
 }
 
-export function UserForm({ title, roles, form, onSubmit }: any) {
+export function UserForm({ title, roles, cities, form, onSubmit }: any) {
     return (
         <div className="max-w-2xl space-y-4 p-4">
             <Head title={title} />
@@ -61,6 +63,24 @@ export function UserForm({ title, roles, form, onSubmit }: any) {
                         value={form.data.phone}
                         onChange={(e) => form.setData('phone', e.target.value)}
                     />
+                </div>
+                <div>
+                    <Label>Area</Label>
+                    <Select
+                        value={form.data.city_id || undefined}
+                        onValueChange={(value) => form.setData('city_id', value)}
+                    >
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Pilih kota/kabupaten" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {cities.map((city: any) => (
+                                <SelectItem key={city.id} value={city.id}>
+                                    {city.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div>
                     <Label>Password</Label>

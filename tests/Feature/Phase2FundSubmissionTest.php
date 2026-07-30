@@ -4,15 +4,19 @@ use App\Enums\SubmissionStatus;
 use App\Models\Cooperative;
 use App\Models\FinancialSubmission;
 use App\Models\SubmissionCategory;
+use App\Models\SubmissionRequestCategory;
+use App\Models\SubmissionRequestType;
 use App\Models\User;
 use App\Notifications\NewFinancialSubmissionNotification;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SubmissionCategorySeeder;
+use Database\Seeders\SubmissionRequestMasterSeeder;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
     $this->seed(SubmissionCategorySeeder::class);
+    $this->seed(SubmissionRequestMasterSeeder::class);
 });
 
 function picWithCooperative(): array
@@ -21,6 +25,7 @@ function picWithCooperative(): array
     $pic->assignRole('pic_kdkmp');
     $cooperative = Cooperative::factory()->create();
     $cooperative->pics()->attach($pic->id, ['assigned_by' => null, 'assigned_at' => now(), 'is_primary' => true]);
+    $pic->bankAccounts()->create(['bank_name' => 'Bank Test', 'account_number' => '123', 'account_holder_name' => $pic->name, 'is_active' => true, 'is_primary' => true]);
 
     return [$pic, $cooperative];
 }
@@ -31,6 +36,10 @@ function submissionPayload(Cooperative $cooperative): array
 
     return [
         'cooperative_id' => $cooperative->id,
+        'submission_request_category_id' => SubmissionRequestCategory::first()->id,
+        'submission_request_type_id' => SubmissionRequestType::first()->id,
+        'recipient_bank_account_id' => auth()->user()?->bankAccounts()->first()?->id ?? User::role('pic_kdkmp')->first()?->bankAccounts()->first()?->id,
+        'amount' => 300000,
         'title' => 'Dana operasional bulan ini',
         'purpose' => 'Kebutuhan operasional KDKMP',
         'needed_date' => now()->addDay()->toDateString(),

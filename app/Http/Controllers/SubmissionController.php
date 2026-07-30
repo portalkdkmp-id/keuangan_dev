@@ -7,7 +7,10 @@ use App\Http\Requests\Submission\SubmitSubmissionRequest;
 use App\Http\Requests\Submission\UpdateSubmissionRequest;
 use App\Models\FinancialSubmission;
 use App\Models\SubmissionCategory;
+use App\Models\SubmissionRequestCategory;
+use App\Models\SubmissionRequestType;
 use App\Services\Submission\SubmissionService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -48,7 +51,7 @@ class SubmissionController extends Controller
         Gate::authorize('view', $financialSubmission);
 
         return Inertia::render('Submissions/Show', [
-            'submission' => $financialSubmission->load(['cooperative', 'submitter', 'items', 'attachments', 'statusHistories.actor']),
+            'submission' => $financialSubmission->load(['cooperative', 'submitterCity', 'submitter', 'requestCategory', 'requestType', 'recipientBankAccount', 'items', 'attachments', 'statusHistories.actor']),
         ]);
     }
 
@@ -97,6 +100,13 @@ class SubmissionController extends Controller
         return [
             'cooperatives' => $request->user()->assignedCooperatives()->orderBy('name')->get(['cooperatives.id', 'name']),
             'categories' => SubmissionCategory::where('is_active', true)->orderBy('sort_order')->get(['id', 'code', 'name']),
+            'requestCategories' => SubmissionRequestCategory::where('is_active', true)
+                ->when($request->user()->hasRole('pic_kdkmp'), fn (Builder $query) => $query->whereNot('slug', 'operasional-tim-sales'))
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            'requestTypes' => SubmissionRequestType::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'bankAccounts' => $request->user()->bankAccounts()->where('is_active', true)->orderByDesc('is_primary')->orderBy('bank_name')->get(['id', 'bank_name', 'account_number', 'account_holder_name']),
         ];
     }
 }

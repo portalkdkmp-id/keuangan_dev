@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApprovalSubmissionController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CooperativeAssignmentController;
 use App\Http\Controllers\CooperativeController;
@@ -9,6 +10,10 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\SubmissionAttachmentController;
 use App\Http\Controllers\SubmissionController;
+use App\Http\Controllers\SubmissionRequestCategoryController;
+use App\Http\Controllers\SubmissionRequestTypeController;
+use App\Http\Controllers\SubmissionRevisionController;
+use App\Http\Controllers\UserBankAccountController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +22,9 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::resource('users', UserController::class)->except(['show']);
+    Route::resource('bank-accounts', UserBankAccountController::class)->except(['show']);
+    Route::resource('submission-categories', SubmissionRequestCategoryController::class)->except(['show']);
+    Route::resource('submission-types', SubmissionRequestTypeController::class)->except(['show']);
     Route::get('cooperatives/import', [CooperativeController::class, 'importForm'])->name('cooperatives.import');
     Route::post('cooperatives/import', [CooperativeController::class, 'import'])->name('cooperatives.import.store');
     Route::resource('cooperatives', CooperativeController::class);
@@ -37,12 +45,23 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::delete('/submissions/{financialSubmission}', [SubmissionController::class, 'destroy'])->name('submissions.destroy');
     Route::post('/submissions/{financialSubmission}/submit', [SubmissionController::class, 'submit'])->name('submissions.submit');
     Route::post('/submissions/{financialSubmission}/cancel', [SubmissionController::class, 'cancel'])->name('submissions.cancel');
+    Route::get('/submissions/{financialSubmission}/revision', [SubmissionRevisionController::class, 'edit'])->name('submissions.revision.edit');
+    Route::put('/submissions/{financialSubmission}/revision', [SubmissionRevisionController::class, 'update'])->name('submissions.revision.update');
+    Route::post('/submissions/{financialSubmission}/resubmit', [SubmissionRevisionController::class, 'resubmit'])->name('submissions.resubmit');
     Route::post('/submissions/{financialSubmission}/attachments', [SubmissionAttachmentController::class, 'store'])->name('submissions.attachments.store');
     Route::delete('/submission-attachments/{submissionAttachment}', [SubmissionAttachmentController::class, 'destroy'])->name('submission-attachments.destroy');
+    Route::get('/submission-attachments/{submissionAttachment}/preview', [SubmissionAttachmentController::class, 'preview'])->name('submission-attachments.preview');
     Route::get('/submission-attachments/{submissionAttachment}/download', [SubmissionAttachmentController::class, 'download'])->name('submission-attachments.download');
     Route::get('/finance/submissions', [FinanceSubmissionController::class, 'index'])->name('finance.submissions.index');
     Route::get('/finance/submissions/{financialSubmission}', [FinanceSubmissionController::class, 'show'])->name('finance.submissions.show');
     Route::post('/finance/submissions/{financialSubmission}/start-review', [FinanceSubmissionController::class, 'startReview'])->name('finance.submissions.start-review');
+    Route::put('/finance/submissions/{financialSubmission}/finance-detail', [FinanceSubmissionController::class, 'updateFinanceDetail'])->name('finance.submissions.finance-detail.update');
+    Route::post('/finance/submissions/{financialSubmission}/request-revision', [FinanceSubmissionController::class, 'requestRevision'])->name('finance.submissions.request-revision');
+    Route::post('/finance/submissions/{financialSubmission}/validate', [FinanceSubmissionController::class, 'validateSubmission'])->name('finance.submissions.validate');
+    Route::post('/finance/submissions/{financialSubmission}/forward-approval', [FinanceSubmissionController::class, 'forwardToApproval'])->name('finance.submissions.forward-approval');
+    Route::post('/finance/submissions/{financialSubmission}/reject', [FinanceSubmissionController::class, 'reject'])->name('finance.submissions.reject');
+    Route::get('/approval/submissions', [ApprovalSubmissionController::class, 'index'])->name('approval.submissions.index');
+    Route::get('/approval/submissions/{financialSubmission}', [ApprovalSubmissionController::class, 'show'])->name('approval.submissions.show');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');

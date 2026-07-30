@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Bell, ClipboardList, FileText, Inbox, LayoutGrid, Users, Warehouse } from 'lucide-react';
+import { Bell, CheckCircle, ClipboardList, CreditCard, FileText, Inbox, LayoutGrid, ListChecks, Tags, Users, Warehouse } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -25,6 +25,10 @@ export function AppSidebar() {
         can('cooperatives.view') && { title: 'Cooperatives', href: '/cooperatives', icon: Warehouse },
         can('submissions.view') && { title: 'Pengajuan Dana', href: '/submissions', icon: FileText },
         can('finance-submissions.view') && { title: 'Pengajuan Masuk', href: '/finance/submissions', icon: Inbox },
+        can('approval-submissions.view') && { title: 'Approval Keuangan', href: '/approval/submissions', icon: CheckCircle },
+        can('bank-accounts.view') && { title: 'Rekening', href: '/bank-accounts', icon: CreditCard },
+        can('submission-masters.view') && { title: 'Kategori Pengajuan', href: '/submission-categories', icon: Tags },
+        can('submission-masters.view') && { title: 'Jenis Pengajuan', href: '/submission-types', icon: ListChecks },
         can('notifications.view') && { title: 'Notifications', href: '/notifications', icon: Bell },
         can('audit-logs.view') && { title: 'Audit Logs', href: '/audit-logs', icon: ClipboardList },
     ].filter(Boolean) as NavItem[];

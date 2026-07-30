@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
+use App\Models\City;
 use App\Models\User;
 use App\Services\User\UserService;
 use Illuminate\Http\RedirectResponse;
@@ -32,7 +33,7 @@ class UserController extends Controller
     {
         Gate::authorize('create', User::class);
 
-        return Inertia::render('Users/Create', ['roles' => Role::orderBy('name')->pluck('name')]);
+        return Inertia::render('Users/Create', ['roles' => Role::orderBy('name')->pluck('name'), 'cities' => City::orderBy('name')->get(['id', 'name'])]);
     }
 
     public function store(StoreUserRequest $request): RedirectResponse
@@ -47,7 +48,7 @@ class UserController extends Controller
         Gate::authorize('update', $user);
         $user->load('roles:id,name');
 
-        return Inertia::render('Users/Edit', ['managedUser' => $user, 'roles' => Role::orderBy('name')->pluck('name')]);
+        return Inertia::render('Users/Edit', ['managedUser' => $user, 'roles' => Role::orderBy('name')->pluck('name'), 'cities' => City::orderBy('name')->get(['id', 'name'])]);
     }
 
     public function update(UpdateUserRequest $request, User $user): RedirectResponse

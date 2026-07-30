@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import {
     Select,
     SelectContent,
@@ -69,35 +70,7 @@ export default function CooperativesShow({ cooperative, availablePics }: any) {
                 </label>
                 <Button type="submit">Assign PIC</Button>
             </form>
-            <div className="rounded-md border">
-                <table className="w-full text-sm">
-                    <tbody>
-                        {cooperative.pics.map((pic: any) => (
-                            <tr key={pic.id} className="border-b">
-                                <td className="p-3">{pic.name}</td>
-                                <td>
-                                    {pic.pivot?.is_primary
-                                        ? 'Primary'
-                                        : 'Backup'}
-                                </td>
-                                <td className="p-3 text-right">
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() =>
-                                            router.patch(
-                                                `/cooperatives/${cooperative.id}/pics/${pic.id}/primary`,
-                                            )
-                                        }
-                                    >
-                                        Make Primary
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <div className="rounded-md border"><Table><TableBody>{cooperative.pics.map((pic: any) => <TableRow key={pic.id}><TableCell>{pic.name}</TableCell><TableCell>{pic.pivot?.is_primary ? 'Primary' : 'Backup'}</TableCell><TableCell className="text-right"><Button size="sm" variant="outline" onClick={() => router.patch(`/cooperatives/${cooperative.id}/pics/${pic.id}/primary`)}>Make Primary</Button></TableCell></TableRow>)}</TableBody></Table></div>
         </div>
     );
 }
