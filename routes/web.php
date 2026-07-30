@@ -69,7 +69,7 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::post('/finance/approval-revisions/{financialSubmission}/resubmit', [FinanceApprovalRevisionController::class, 'resubmit'])->name('finance.approval-revisions.resubmit');
     Route::get('/approval/submissions', [ApprovalSubmissionController::class, 'index'])->name('approval.submissions.index');
     Route::get('/approval/submissions/{financialSubmission}', [ApprovalSubmissionController::class, 'show'])->name('approval.submissions.show');
-    Route::post('/approval/submissions/{financialSubmission}/start-review', [ApprovalSubmissionController::class, 'startReview'])->name('approval.submissions.start-review');
+    Route::match(['get', 'post'], '/approval/submissions/{financialSubmission}/start-review', [ApprovalSubmissionController::class, 'startReview'])->name('approval.submissions.start-review');
     Route::post('/approval/submissions/{financialSubmission}/approve', [ApprovalSubmissionController::class, 'approve'])->name('approval.submissions.approve');
     Route::post('/approval/submissions/{financialSubmission}/reject', [ApprovalSubmissionController::class, 'reject'])->name('approval.submissions.reject');
     Route::post('/approval/submissions/{financialSubmission}/request-revision', [ApprovalSubmissionController::class, 'requestRevision'])->name('approval.submissions.request-revision');

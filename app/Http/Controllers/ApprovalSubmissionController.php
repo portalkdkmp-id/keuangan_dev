@@ -33,7 +33,7 @@ class ApprovalSubmissionController extends Controller
                     SubmissionStatus::DIRECTOR_REVIEW,
                 ])
                 ->when($status, fn ($query) => $query->where('status', $status))
-                ->with(['cooperative.city.province', 'submitter', 'financeValidator:id,name', 'approvalReviewer:id,name', 'latestApprovalReview.approver'])
+                ->with(['cooperative.city.province', 'submitter', 'financeValidator:id,name', 'approvalReviewer:id,name', 'approvalReviews.approver'])
                 ->orderByRaw("case when status = 'approval_review' then 0 when status = 'approval_in_review' then 1 else 2 end")
                 ->orderBy('forwarded_to_approval_at')
                 ->paginate(10)
@@ -54,9 +54,11 @@ class ApprovalSubmissionController extends Controller
     public function startReview(Request $request, FinancialSubmission $financialSubmission): RedirectResponse
     {
         Gate::authorize('startApprovalReview', $financialSubmission);
-        $this->approvals->startReview($request->user(), $financialSubmission);
+        $submission = $this->approvals->startReview($request->user(), $financialSubmission);
 
-        return back()->with('success', 'Approval review dimulai.');
+        return redirect()
+            ->route('approval.submissions.show', $submission)
+            ->with('success', 'Approval review dimulai.');
     }
 
     public function approve(ApproveSubmissionRequest $request, FinancialSubmission $financialSubmission): RedirectResponse

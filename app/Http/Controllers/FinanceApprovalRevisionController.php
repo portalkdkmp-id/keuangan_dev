@@ -25,7 +25,7 @@ class FinanceApprovalRevisionController extends Controller
         return Inertia::render('Finance/ApprovalRevisions/Index', [
             'submissions' => FinancialSubmission::query()
                 ->where('status', SubmissionStatus::APPROVAL_REVISION_REQUESTED)
-                ->with(['cooperative', 'submitter', 'latestApprovalReview.approver'])
+                ->with(['cooperative', 'submitter', 'approvalReviews.approver'])
                 ->latest('last_approval_revision_requested_at')
                 ->paginate(10),
         ]);

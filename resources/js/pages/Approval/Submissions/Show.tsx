@@ -1,4 +1,4 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { formatDate } from '@/lib/format';
 
 export default function ApprovalSubmissionsShow({ submission }: any) {
     const review = submission.active_approval_review ?? submission.activeApprovalReview ?? submission.approval_reviews?.[0];
+    const startReviewForm = useForm({});
     const approveForm = useForm({ approved_amount: review?.submitted_amount ?? submission.total_amount, notes: '' });
     const rejectForm = useForm({ rejection_reason: '', notes: '' });
     const revisionForm = useForm({ revision_subject: '', revision_message: '', revision_fields: ['other'] as string[], notes: '' });
@@ -28,7 +29,12 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
             <div>Rekening snapshot: {submission.bank_name_snapshot ?? submission.recipient_bank_account?.bank_name ?? '-'} - {submission.bank_account_holder_snapshot ?? submission.recipient_bank_account?.account_holder_name ?? '-'}</div>
             <div>Nomor rekening: {submission.bank_account_number_snapshot ?? submission.recipient_bank_account?.account_number ?? '-'}</div>
         </div>
-        {submission.status === 'approval_review' && <Button onClick={() => router.post(`/approval/submissions/${submission.id}/start-review`)}>Mulai Review</Button>}
+        {submission.status === 'approval_review' && <form onSubmit={(event) => {
+            event.preventDefault();
+            startReviewForm.post(`/approval/submissions/${submission.id}/start-review`, { preserveScroll: true });
+        }}>
+            <Button type="submit" disabled={startReviewForm.processing}>{startReviewForm.processing ? 'Memulai...' : 'Mulai Review'}</Button>
+        </form>}
         {submission.status === 'approval_in_review' && <div className="grid gap-4 lg:grid-cols-3">
             <form onSubmit={(e) => { e.preventDefault(); approveForm.post(`/approval/submissions/${submission.id}/approve`); }} className="space-y-3 rounded-md border p-4">
                 <h2 className="font-semibold">Setujui</h2><Label>Nominal disetujui</Label><Input type="number" value={approveForm.data.approved_amount} onChange={(e) => approveForm.setData('approved_amount', e.target.value)} /><Label>Catatan approval</Label><textarea className="min-h-24 w-full rounded-md border bg-background p-3 text-sm" value={approveForm.data.notes} onChange={(e) => approveForm.setData('notes', e.target.value)} /><Button>Setujui dan Kirim ke Director</Button>
@@ -44,6 +50,6 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
         {submission.status === 'director_review' && <div className="rounded-md border p-4 text-sm">Sudah disetujui dan diteruskan ke Finance Director. Nominal disetujui: {rupiah(submission.approval_approved_amount)}</div>}
         {submission.status === 'approval_rejected' && <div className="rounded-md border p-4 text-sm">Pengajuan ditolak. Alasan: {review?.rejection_reason ?? '-'}</div>}
         <SubmissionAttachments submission={submission} />
-        <SubmissionTimeline histories={submission.status_histories ?? submission.statusHistories ?? []} />
+        {/* <SubmissionTimeline histories={submission.status_histories ?? submission.statusHistories ?? []} /> */}
     </div>;
 }
