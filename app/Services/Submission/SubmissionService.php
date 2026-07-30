@@ -65,6 +65,7 @@ class SubmissionService
         $this->ensureAssignedCooperative($user, $data['cooperative_id']);
 
         return DB::transaction(function () use ($user, $data) {
+            $account = $user->bankAccounts()->whereKey($data['recipient_bank_account_id'])->first();
             $submission = FinancialSubmission::create([
                 'submission_number' => $this->numbers->generateFundRequestNumber(),
                 'type' => SubmissionType::FUND_REQUEST,
@@ -73,6 +74,9 @@ class SubmissionService
                 'submission_request_type_id' => $data['submission_request_type_id'],
                 'cooperative_id' => $data['cooperative_id'],
                 'recipient_bank_account_id' => $data['recipient_bank_account_id'],
+                'bank_name_snapshot' => $account?->bank_name,
+                'bank_account_number_snapshot' => $account?->account_number,
+                'bank_account_holder_snapshot' => $account?->account_holder_name,
                 'submitted_by' => $user->id,
                 'submitter_city_id' => $user->city_id,
                 'title' => $data['title'] ?? $this->generatedTitle($data),
