@@ -29,6 +29,7 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
             <div>Rekening snapshot: {submission.bank_name_snapshot ?? submission.recipient_bank_account?.bank_name ?? '-'} - {submission.bank_account_holder_snapshot ?? submission.recipient_bank_account?.account_holder_name ?? '-'}</div>
             <div>Nomor rekening: {submission.bank_account_number_snapshot ?? submission.recipient_bank_account?.account_number ?? '-'}</div>
         </div>
+        <SubmissionAttachments submission={submission} />
         {submission.status === 'approval_review' && <form onSubmit={(event) => {
             event.preventDefault();
             startReviewForm.post(`/approval/submissions/${submission.id}/start-review`, { preserveScroll: true });
@@ -49,7 +50,6 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
         {submission.status === 'approval_revision_requested' && <div className="rounded-md border p-4 text-sm">Menunggu perbaikan Finance Staff.</div>}
         {submission.status === 'director_review' && <div className="rounded-md border p-4 text-sm">Sudah disetujui dan diteruskan ke Finance Director. Nominal disetujui: {rupiah(submission.approval_approved_amount)}</div>}
         {submission.status === 'approval_rejected' && <div className="rounded-md border p-4 text-sm">Pengajuan ditolak. Alasan: {review?.rejection_reason ?? '-'}</div>}
-        <SubmissionAttachments submission={submission} />
         {/* <SubmissionTimeline histories={submission.status_histories ?? submission.statusHistories ?? []} /> */}
     </div>;
 }
