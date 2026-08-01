@@ -28,6 +28,7 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::resource('users', UserController::class)->except(['show']);
+    Route::post('bank-accounts/quick-store', [UserBankAccountController::class, 'quickStore'])->name('bank-accounts.quick-store');
     Route::resource('bank-accounts', UserBankAccountController::class)->except(['show']);
     Route::resource('submission-categories', SubmissionRequestCategoryController::class)->except(['show']);
     Route::resource('submission-types', SubmissionRequestTypeController::class)->except(['show']);
@@ -47,6 +48,7 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::post('/submissions', [SubmissionController::class, 'store'])->name('submissions.store');
     Route::get('/submissions/{financialSubmission}', [SubmissionController::class, 'show'])->name('submissions.show');
     Route::get('/submissions/{financialSubmission}/edit', [SubmissionController::class, 'edit'])->name('submissions.edit');
+    Route::get('/submissions/{financialSubmission}/review', [SubmissionController::class, 'review'])->name('submissions.review');
     Route::put('/submissions/{financialSubmission}', [SubmissionController::class, 'update'])->name('submissions.update');
     Route::delete('/submissions/{financialSubmission}', [SubmissionController::class, 'destroy'])->name('submissions.destroy');
     Route::post('/submissions/{financialSubmission}/submit', [SubmissionController::class, 'submit'])->name('submissions.submit');

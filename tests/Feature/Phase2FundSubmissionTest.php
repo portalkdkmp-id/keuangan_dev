@@ -62,6 +62,8 @@ test('pic can create draft only for assigned cooperative and backend calculates 
     $this->actingAs($pic)->post(route('submissions.store'), submissionPayload($cooperative))->assertRedirect();
 
     $submission = FinancialSubmission::first();
+    $this->actingAs($pic)->get(route('submissions.review', $submission))->assertOk();
+
     expect($submission->submitted_by)->toBe($pic->id)
         ->and($submission->status)->toBe(SubmissionStatus::DRAFT)
         ->and((float) $submission->total_amount)->toBe(300000.0)
@@ -102,7 +104,7 @@ test('submitted submission cannot be edited by pic and finance can start review 
 
     $this->actingAs($pic)->put(route('submissions.update', $submission), submissionPayload($cooperative))->assertForbidden();
     $this->actingAs($staff)->get(route('finance.submissions.index'))->assertOk();
-    $this->actingAs($staff)->post(route('finance.submissions.start-review', $submission))->assertRedirect();
+    $this->actingAs($staff)->post(route('finance.submissions.start-review', $submission))->assertRedirect(route('finance.submissions.show', $submission));
 
     $submission->refresh();
     expect($submission->status)->toBe(SubmissionStatus::FINANCE_REVIEW)

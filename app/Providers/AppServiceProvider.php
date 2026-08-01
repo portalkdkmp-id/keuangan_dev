@@ -80,6 +80,10 @@ class AppServiceProvider extends ServiceProvider
                     'disbursements.view',
                     'disbursements.create',
                     'disbursements.download-proof',
+                    'bank-accounts.view',
+                    'bank-accounts.create',
+                    'bank-accounts.update',
+                    'bank-accounts.delete',
                 ],
             ];
 

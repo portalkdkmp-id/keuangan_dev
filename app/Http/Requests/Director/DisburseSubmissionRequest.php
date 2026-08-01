@@ -10,6 +10,15 @@ use Illuminate\Validation\Validator;
 
 class DisburseSubmissionRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (! $this->filled('transfer_date') && $this->filled('transferred_at')) {
+            $this->merge([
+                'transfer_date' => substr((string) $this->input('transferred_at'), 0, 10),
+            ]);
+        }
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->can('director-submissions.disburse') && $this->route('financialSubmission')?->status === SubmissionStatus::PENDING_DISBURSEMENT;

@@ -70,7 +70,7 @@ class FinancialSubmissionPolicy
 
     public function create(User $user): bool
     {
-        return $user->can('submissions.create') && $user->assignedCooperatives()->exists();
+        return $user->can('submissions.create') && ($user->hasRole('finance_staff') || $user->assignedCooperatives()->exists());
     }
 
     public function update(User $user, FinancialSubmission $submission): bool

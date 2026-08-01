@@ -8,6 +8,14 @@ use Illuminate\Validation\Rule;
 
 class RequestDirectorRevisionRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'revision_subject' => $this->input('revision_subject') ?: 'Revisi Finance Approval',
+            'revision_fields' => $this->input('revision_fields') ?: ['other'],
+        ]);
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->can('director-submissions.request-revision') && $this->route('financialSubmission')?->status === SubmissionStatus::DIRECTOR_IN_REVIEW;

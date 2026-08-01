@@ -44,6 +44,17 @@ class SubmissionService
 
     public function paginateFinanceQueue(array $filters): LengthAwarePaginator
     {
+        $sortMap = [
+            'submission_number' => 'submission_number',
+            'title' => 'title',
+            'amount' => 'total_amount',
+            'needed_date' => 'needed_date',
+            'status' => 'status',
+            'submitted_at' => 'submitted_at',
+        ];
+        $sort = $sortMap[$filters['sort'] ?? ''] ?? null;
+        $direction = ($filters['direction'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
+
         return FinancialSubmission::query()
             ->financeQueue()
             ->with(['cooperative.city.province', 'submitter:id,name,email'])
@@ -53,10 +64,11 @@ class SubmissionService
                 ->orWhere('title', 'like', "%{$search}%")
                 ->orWhereHas('cooperative', fn ($cooperative) => $cooperative->where('name', 'like', "%{$search}%"))))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
-            ->orderByRaw("case when status = 'submitted' then 0 else 1 end")
-            ->orderByRaw('needed_date asc nulls last')
-            ->orderBy('submitted_at')
-            ->paginate(10)
+            ->when($sort, fn ($query) => $query->orderBy($sort, $direction), fn ($query) => $query
+                ->orderByRaw("case when status = 'submitted' then 0 else 1 end")
+                ->orderByRaw('needed_date asc nulls last')
+                ->orderBy('submitted_at'))
+            ->paginate((int) ($filters['per_page'] ?? 10))
             ->withQueryString();
     }
 
@@ -193,6 +205,10 @@ class SubmissionService
 
     private function ensureAssignedCooperative(User $user, string $cooperativeId): void
     {
+        if ($user->hasRole('finance_staff')) {
+            return;
+        }
+
         if (! $user->assignedCooperatives()->whereKey($cooperativeId)->exists()) {
             throw ValidationException::withMessages(['cooperative_id' => 'Koperasi tidak termasuk assignment Anda.']);
         }

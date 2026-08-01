@@ -15,9 +15,9 @@ export function SubmissionAttachments({ submission, editable = false }: { submis
             )}
             <div className="space-y-2">
                 <Card className="p-3 text-sm">
-                    <CardTitle>Bukti Pengajuan</CardTitle>
+                    <CardTitle>Lampiran Pengajuan</CardTitle>
                     <CardContent>
-                        {submission.attachments?.length === 0 && <p className="text-sm text-muted-foreground">Belum ada bukti pengajuan.</p>}
+                        {submission.attachments?.length === 0 && <p className="text-sm text-muted-foreground">Belum ada lampiran pengajuan.</p>}
                         {submission.attachments?.map((attachment: any) => (
                             <div key={attachment.id} className="">
                                 {attachment.mime_type?.startsWith('image/') && <img src={`/submission-attachments/${attachment.id}/preview`} alt={attachment.original_name} className="max-h-80 w-full rounded-md object-contain" />}

@@ -45,12 +45,13 @@ class DirectorSubmissionController extends Controller
         ]);
     }
 
-    public function show(FinancialSubmission $financialSubmission): Response
+    public function show(Request $request, FinancialSubmission $financialSubmission): Response
     {
         Gate::authorize('view', $financialSubmission);
 
         return Inertia::render('Director/Submissions/Show', [
             'submission' => $financialSubmission->load(['cooperative.city.province', 'submitterCity', 'submitter', 'requestCategory', 'requestType', 'recipientBankAccount', 'attachments', 'financeDetail', 'approvalDecisionMaker', 'approvalReviews.approver', 'directorReviews.director', 'disbursement.attachments', 'disburser', 'statusHistories.actor']),
+            'sourceBankAccounts' => $request->user()->bankAccounts()->where('is_active', true)->orderByDesc('is_primary')->orderBy('bank_name')->get(['id', 'bank_name', 'account_number', 'account_holder_name']),
         ]);
     }
 

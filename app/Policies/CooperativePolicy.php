@@ -34,6 +34,6 @@ class CooperativePolicy
 
     public function assignPic(User $user, Cooperative $cooperative): bool
     {
-        return $user->can('cooperatives.assign-pic');
+        return $user->can('cooperatives.assign-pic') || $user->can('koperasi.assign-pic');
     }
 }
