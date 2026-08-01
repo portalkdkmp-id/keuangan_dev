@@ -4,10 +4,12 @@ namespace App\Services\Approval;
 
 use App\Enums\ApprovalDecision;
 use App\Enums\ApprovalReviewStatus;
+use App\Enums\DirectorReviewStatus;
 use App\Enums\SubmissionAction;
 use App\Enums\SubmissionStatus;
 use App\Models\FinancialSubmission;
 use App\Models\SubmissionApprovalReview;
+use App\Models\SubmissionDirectorReview;
 use App\Models\User;
 use App\Notifications\ApprovalResubmittedNotification;
 use App\Notifications\ApprovalRevisionRequestedNotification;
@@ -73,6 +75,12 @@ class FinanceApprovalService
                 'forwarded_to_director_by' => $actor->id,
                 'forwarded_to_director_at' => now(),
             ])->save();
+            $locked->directorReviews()->create([
+                'review_number' => 1,
+                'status' => DirectorReviewStatus::PENDING,
+                'approved_amount' => $data['approved_amount'],
+                'notes' => 'Menunggu review Finance Director.',
+            ]);
             $this->statuses->transition($locked, SubmissionStatus::DIRECTOR_REVIEW, $actor, SubmissionAction::APPROVE_BY_FINANCE_APPROVER->value, $data['notes'] ?? null, $this->meta($locked, $review, ['approved_amount' => $data['approved_amount']]));
             $this->auditLog->record('approval.approved', 'Pengajuan disetujui finance approver.', $locked, [], $this->meta($locked, $review));
 
@@ -189,6 +197,57 @@ class FinanceApprovalService
         });
     }
 
+    public function resubmitToDirector(User $actor, FinancialSubmission $submission, array $data): FinancialSubmission
+    {
+        return DB::transaction(function () use ($actor, $submission, $data) {
+            $locked = FinancialSubmission::query()->whereKey($submission->id)->lockForUpdate()->firstOrFail();
+            $this->ensureStatus($locked, SubmissionStatus::DIRECTOR_REVISION_REQUESTED, 'Pengajuan tidak sedang revisi Director.');
+
+            $directorReview = $this->activeDirectorReview($locked);
+            if ($directorReview->status !== DirectorReviewStatus::REVISION_REQUESTED) {
+                throw ValidationException::withMessages(['director_review' => 'Tidak ada revisi Director aktif.']);
+            }
+
+            $approvalReview = $locked->approvalReviews()->where('status', ApprovalReviewStatus::APPROVED)->orderByDesc('review_number')->lockForUpdate()->first();
+            if (! $approvalReview?->approved_amount) {
+                throw ValidationException::withMessages(['approval' => 'Nominal approval belum tersedia.']);
+            }
+
+            $directorReview->update([
+                'status' => DirectorReviewStatus::SUPERSEDED,
+                'resolved_at' => now(),
+                'change_summary' => $data['change_summary'],
+            ]);
+
+            $next = $locked->directorReviews()->create([
+                'review_number' => $directorReview->review_number + 1,
+                'status' => DirectorReviewStatus::PENDING,
+                'approved_amount' => $approvalReview->approved_amount,
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            $locked->forceFill([
+                'last_director_resubmitted_at' => now(),
+                'director_reviewed_by' => null,
+                'director_review_started_at' => null,
+            ])->save();
+
+            $this->statuses->transition($locked, SubmissionStatus::DIRECTOR_REVIEW, $actor, SubmissionAction::RESUBMIT_TO_DIRECTOR->value, $data['notes'] ?? null, [
+                'change_summary' => $data['change_summary'],
+                'review_number' => $next->review_number,
+            ]);
+            $this->auditLog->record('director.resubmitted', 'Pengajuan dikirim ulang ke Finance Director.', $locked, [], [
+                'submission_id' => $locked->id,
+                'director_review_id' => $next->id,
+                'review_number' => $next->review_number,
+            ]);
+
+            DB::afterCommit(fn () => User::role('finance_director')->where('is_active', true)->get()->each(fn (User $director) => $director->notify(new ApprovalResubmittedNotification($locked->fresh(), $approvalReview->fresh(), $actor, $data['change_summary']))));
+
+            return $locked->refresh();
+        });
+    }
+
     private function activeReview(FinancialSubmission $submission): SubmissionApprovalReview
     {
         $review = $submission->approvalReviews()->whereIn('status', [
@@ -199,6 +258,21 @@ class FinanceApprovalService
 
         if (! $review) {
             throw ValidationException::withMessages(['approval' => 'Approval review aktif tidak ditemukan.']);
+        }
+
+        return $review;
+    }
+
+    private function activeDirectorReview(FinancialSubmission $submission): SubmissionDirectorReview
+    {
+        $review = $submission->directorReviews()->whereIn('status', [
+            DirectorReviewStatus::PENDING,
+            DirectorReviewStatus::IN_REVIEW,
+            DirectorReviewStatus::REVISION_REQUESTED,
+        ])->lockForUpdate()->first();
+
+        if (! $review) {
+            throw ValidationException::withMessages(['director_review' => 'Director review aktif tidak ditemukan.']);
         }
 
         return $review;

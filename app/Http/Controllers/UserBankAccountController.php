@@ -36,6 +36,14 @@ class UserBankAccountController extends Controller
         return to_route('bank-accounts.index')->with('success', 'Rekening berhasil dibuat.');
     }
 
+    public function quickStore(Request $request): RedirectResponse
+    {
+        Gate::authorize('bank-accounts.create');
+        $this->persist($request);
+
+        return back()->with('success', 'Rekening berhasil dibuat.');
+    }
+
     public function edit(UserBankAccount $bankAccount): Response
     {
         Gate::authorize('bank-accounts.update');

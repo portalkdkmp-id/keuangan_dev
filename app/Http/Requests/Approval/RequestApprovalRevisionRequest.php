@@ -4,7 +4,6 @@ namespace App\Http\Requests\Approval;
 
 use App\Enums\SubmissionStatus;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class RequestApprovalRevisionRequest extends FormRequest
 {
@@ -16,11 +15,18 @@ class RequestApprovalRevisionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'revision_subject' => ['required', 'string', 'max:200'],
+            'revision_subject' => ['nullable', 'string', 'max:200'],
             'revision_message' => ['required', 'string', 'min:10', 'max:5000'],
-            'revision_fields' => ['required', 'array', 'min:1'],
-            'revision_fields.*' => ['required', 'string', Rule::in(['title', 'category', 'submission_type', 'amount', 'needed_date', 'pic_notes', 'finance_notes', 'bank_account', 'attachment', 'cooperative', 'other'])],
+            'revision_fields' => ['nullable', 'array'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'revision_subject' => $this->input('revision_subject') ?: 'Revisi Finance Approval',
+            'revision_fields' => $this->input('revision_fields') ?: ['other'],
+        ]);
     }
 }

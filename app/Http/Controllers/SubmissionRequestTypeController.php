@@ -15,7 +15,7 @@ class SubmissionRequestTypeController extends Controller
 {
     public function index(): Response
     {
-        Gate::authorize('submission-masters.view');
+        Gate::authorize('submission-types.view');
 
         return Inertia::render('SubmissionMasters/Types/Index', [
             'types' => SubmissionRequestType::orderBy('sort_order')->orderBy('name')->paginate(10),
@@ -24,14 +24,14 @@ class SubmissionRequestTypeController extends Controller
 
     public function create(): Response
     {
-        Gate::authorize('submission-masters.create');
+        Gate::authorize('submission-types.create');
 
         return Inertia::render('SubmissionMasters/Types/Form', ['type' => null]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        Gate::authorize('submission-masters.create');
+        Gate::authorize('submission-types.create');
         SubmissionRequestType::create($this->validated($request));
 
         return to_route('submission-types.index')->with('success', 'Jenis pengajuan berhasil dibuat.');
@@ -39,14 +39,14 @@ class SubmissionRequestTypeController extends Controller
 
     public function edit(SubmissionRequestType $submissionType): Response
     {
-        Gate::authorize('submission-masters.update');
+        Gate::authorize('submission-types.update');
 
         return Inertia::render('SubmissionMasters/Types/Form', ['type' => $submissionType]);
     }
 
     public function update(Request $request, SubmissionRequestType $submissionType): RedirectResponse
     {
-        Gate::authorize('submission-masters.update');
+        Gate::authorize('submission-types.update');
         $submissionType->update($this->validated($request, $submissionType));
 
         return to_route('submission-types.index')->with('success', 'Jenis pengajuan berhasil diperbarui.');
@@ -54,7 +54,7 @@ class SubmissionRequestTypeController extends Controller
 
     public function destroy(SubmissionRequestType $submissionType): RedirectResponse
     {
-        Gate::authorize('submission-masters.delete');
+        Gate::authorize('submission-types.delete');
         $submissionType->delete();
 
         return back()->with('success', 'Jenis pengajuan berhasil dihapus.');

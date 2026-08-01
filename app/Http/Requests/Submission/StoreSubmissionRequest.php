@@ -27,13 +27,16 @@ class StoreSubmissionRequest extends FormRequest
             'purpose' => ['nullable', 'string', 'max:5000'],
             'needed_date' => ['nullable', 'date', 'after_or_equal:today'],
             'notes' => ['nullable', 'string', 'max:5000'],
+            'action' => ['nullable', Rule::in(['draft', 'submit'])],
+            'attachments' => ['nullable', 'array', 'max:10'],
+            'attachments.*' => ['file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,webp,xlsx,xls,doc,docx'],
         ];
     }
 
     public function after(): array
     {
         return [function (Validator $validator) {
-            if (! $this->user()?->assignedCooperatives()->whereKey($this->input('cooperative_id'))->exists()) {
+            if (! $this->user()?->hasRole('finance_staff') && ! $this->user()?->assignedCooperatives()->whereKey($this->input('cooperative_id'))->exists()) {
                 $validator->errors()->add('cooperative_id', 'Koperasi tidak termasuk assignment Anda.');
             }
 

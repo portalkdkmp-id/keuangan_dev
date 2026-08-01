@@ -29,6 +29,11 @@ class FinancialSubmissionPolicy
                 SubmissionStatus::APPROVAL_REVISION_REQUESTED,
                 SubmissionStatus::APPROVAL_REJECTED,
                 SubmissionStatus::DIRECTOR_REVIEW,
+                SubmissionStatus::DIRECTOR_IN_REVIEW,
+                SubmissionStatus::DIRECTOR_REVISION_REQUESTED,
+                SubmissionStatus::PENDING_DISBURSEMENT,
+                SubmissionStatus::FUND_DISBURSED,
+                SubmissionStatus::DIRECTOR_REJECTED,
             ], true);
         }
 
@@ -39,11 +44,23 @@ class FinancialSubmissionPolicy
                 SubmissionStatus::APPROVAL_REVISION_REQUESTED,
                 SubmissionStatus::APPROVAL_REJECTED,
                 SubmissionStatus::DIRECTOR_REVIEW,
+                SubmissionStatus::DIRECTOR_IN_REVIEW,
+                SubmissionStatus::DIRECTOR_REVISION_REQUESTED,
+                SubmissionStatus::PENDING_DISBURSEMENT,
+                SubmissionStatus::FUND_DISBURSED,
+                SubmissionStatus::DIRECTOR_REJECTED,
             ], true);
         }
 
         if ($user->can('director-submissions.view')) {
-            return $submission->status === SubmissionStatus::DIRECTOR_REVIEW;
+            return in_array($submission->status, [
+                SubmissionStatus::DIRECTOR_REVIEW,
+                SubmissionStatus::DIRECTOR_IN_REVIEW,
+                SubmissionStatus::DIRECTOR_REVISION_REQUESTED,
+                SubmissionStatus::PENDING_DISBURSEMENT,
+                SubmissionStatus::FUND_DISBURSED,
+                SubmissionStatus::DIRECTOR_REJECTED,
+            ], true);
         }
 
         return $user->can('submissions.view')
@@ -53,7 +70,7 @@ class FinancialSubmissionPolicy
 
     public function create(User $user): bool
     {
-        return $user->can('submissions.create') && $user->assignedCooperatives()->exists();
+        return $user->can('submissions.create') && ($user->hasRole('finance_staff') || $user->assignedCooperatives()->exists());
     }
 
     public function update(User $user, FinancialSubmission $submission): bool
@@ -146,5 +163,50 @@ class FinancialSubmissionPolicy
     public function viewDirectorQueue(User $user, FinancialSubmission $submission): bool
     {
         return $user->can('director-submissions.view') && $submission->status === SubmissionStatus::DIRECTOR_REVIEW;
+    }
+
+    public function startDirectorReview(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('director-submissions.review') && $submission->status === SubmissionStatus::DIRECTOR_REVIEW;
+    }
+
+    public function approvePendingDisbursement(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('director-submissions.approve') && $submission->status === SubmissionStatus::DIRECTOR_IN_REVIEW;
+    }
+
+    public function approveAndDisburse(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('director-submissions.approve') && $user->can('director-submissions.disburse') && $submission->status === SubmissionStatus::DIRECTOR_IN_REVIEW;
+    }
+
+    public function disburse(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('director-submissions.disburse') && $submission->status === SubmissionStatus::PENDING_DISBURSEMENT;
+    }
+
+    public function rejectByDirector(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('director-submissions.reject') && $submission->status === SubmissionStatus::DIRECTOR_IN_REVIEW;
+    }
+
+    public function requestDirectorRevision(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('director-submissions.request-revision') && $submission->status === SubmissionStatus::DIRECTOR_IN_REVIEW;
+    }
+
+    public function viewDirectorRevision(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('approval-submissions.view-director-revision') && $submission->status === SubmissionStatus::DIRECTOR_REVISION_REQUESTED;
+    }
+
+    public function updateDirectorRevision(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('approval-submissions.update-director-revision') && $submission->status === SubmissionStatus::DIRECTOR_REVISION_REQUESTED;
+    }
+
+    public function resubmitToDirector(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('approval-submissions.resubmit-director') && $submission->status === SubmissionStatus::DIRECTOR_REVISION_REQUESTED;
     }
 }

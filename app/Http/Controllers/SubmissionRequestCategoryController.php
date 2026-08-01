@@ -15,7 +15,7 @@ class SubmissionRequestCategoryController extends Controller
 {
     public function index(): Response
     {
-        Gate::authorize('submission-masters.view');
+        Gate::authorize('submission-categories.view');
 
         return Inertia::render('SubmissionMasters/Categories/Index', [
             'categories' => SubmissionRequestCategory::orderBy('sort_order')->orderBy('name')->paginate(10),
@@ -24,14 +24,14 @@ class SubmissionRequestCategoryController extends Controller
 
     public function create(): Response
     {
-        Gate::authorize('submission-masters.create');
+        Gate::authorize('submission-categories.create');
 
         return Inertia::render('SubmissionMasters/Categories/Form', ['category' => null]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        Gate::authorize('submission-masters.create');
+        Gate::authorize('submission-categories.create');
         SubmissionRequestCategory::create($this->validated($request));
 
         return to_route('submission-categories.index')->with('success', 'Kategori pengajuan berhasil dibuat.');
@@ -39,14 +39,14 @@ class SubmissionRequestCategoryController extends Controller
 
     public function edit(SubmissionRequestCategory $submissionCategory): Response
     {
-        Gate::authorize('submission-masters.update');
+        Gate::authorize('submission-categories.update');
 
         return Inertia::render('SubmissionMasters/Categories/Form', ['category' => $submissionCategory]);
     }
 
     public function update(Request $request, SubmissionRequestCategory $submissionCategory): RedirectResponse
     {
-        Gate::authorize('submission-masters.update');
+        Gate::authorize('submission-categories.update');
         $submissionCategory->update($this->validated($request, $submissionCategory));
 
         return to_route('submission-categories.index')->with('success', 'Kategori pengajuan berhasil diperbarui.');
@@ -54,7 +54,7 @@ class SubmissionRequestCategoryController extends Controller
 
     public function destroy(SubmissionRequestCategory $submissionCategory): RedirectResponse
     {
-        Gate::authorize('submission-masters.delete');
+        Gate::authorize('submission-categories.delete');
         $submissionCategory->delete();
 
         return back()->with('success', 'Kategori pengajuan berhasil dihapus.');

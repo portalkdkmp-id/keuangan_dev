@@ -28,7 +28,7 @@ class FinanceSubmissionController extends Controller
 
         return Inertia::render('Finance/Submissions/Index', [
             'submissions' => $this->submissions->paginateFinanceQueue($request->all()),
-            'filters' => $request->only(['search', 'status']),
+            'filters' => $request->only(['search', 'status', 'sort', 'direction', 'per_page']),
         ]);
     }
 
@@ -46,9 +46,9 @@ class FinanceSubmissionController extends Controller
     public function startReview(Request $request, FinancialSubmission $financialSubmission): RedirectResponse
     {
         Gate::authorize('review', $financialSubmission);
-        $this->submissions->startFinanceReview($request->user(), $financialSubmission);
+        $submission = $this->submissions->startFinanceReview($request->user(), $financialSubmission);
 
-        return back()->with('success', 'Review pengajuan dimulai.');
+        return to_route('finance.submissions.show', $submission)->with('success', 'Review pengajuan dimulai.');
     }
 
     public function updateFinanceDetail(UpdateFinanceDetailRequest $request, FinancialSubmission $financialSubmission): RedirectResponse

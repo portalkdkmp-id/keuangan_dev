@@ -24,8 +24,8 @@ Aplikasi ini digunakan untuk mengelola data wilayah, koperasi, PIC KDKMP, rekeni
 - `super_admin`: mengelola user, role, master data, koperasi, wilayah, dan akses penuh.
 - `pic_kdkmp`: membuat dan merevisi pengajuan dana untuk koperasi yang diassign.
 - `finance_staff`: melakukan review pengajuan, request revisi, menolak, atau mengajukan ke approval.
-- `finance_approver`: melihat antrean pengajuan yang sudah dinaikkan ke approval.
-- `finance_director`: role disiapkan untuk fase approval lanjutan.
+- `finance_approver`: review approval, approve/reject, meminta revisi, dan menangani revisi dari Finance Director.
+- `finance_director`: review akhir, approve, pencairan dana, reject, revisi ke Finance Approver, dan monitoring Director.
 
 ## Fitur Aplikasi
 
@@ -46,6 +46,14 @@ Aplikasi ini digunakan untuk mengelola data wilayah, koperasi, PIC KDKMP, rekeni
 - Resubmit pengajuan setelah revisi.
 - Penolakan pengajuan oleh finance staff.
 - Forward pengajuan ke finance approval.
+- Review dan keputusan Finance Approval.
+- Review akhir Finance Director.
+- Approve Director dengan opsi bayar nanti.
+- Approve Director sekaligus kirim dana.
+- Pencairan lanjutan untuk pengajuan yang sudah approved.
+- Upload dan download bukti transfer pencairan.
+- Revisi dari Director ke Finance Approver.
+- Dashboard monitoring Finance Director.
 - Notifikasi database untuk pengajuan baru, revisi, resubmit, dan forward approval.
 - Audit log.
 - Sonner toast untuk success, warning, dan error.
@@ -130,6 +138,18 @@ flowchart LR
     finance_review --> cancelled
     finance_review --> finance_validated[Finance Validated]
     finance_validated --> approval_review[Approval Review]
+    approval_review --> approval_in_review[Approval In Review]
+    approval_in_review --> approval_revision_requested[Approval Revision Requested]
+    approval_revision_requested --> approval_review
+    approval_in_review --> approval_rejected[Approval Rejected]
+    approval_in_review --> director_review[Director Review]
+    director_review --> director_in_review[Director In Review]
+    director_in_review --> director_revision_requested[Director Revision Requested]
+    director_revision_requested --> director_review
+    director_in_review --> director_rejected[Director Rejected]
+    director_in_review --> pending_disbursement[Pending Disbursement]
+    director_in_review --> fund_disbursed[Fund Disbursed]
+    pending_disbursement --> fund_disbursed
 ```
 
 ## Alur PIC KDKMP
@@ -164,7 +184,20 @@ flowchart LR
 
 Finance approver melihat pengajuan yang sudah masuk status `approval_review`.
 
-Pada fase saat ini, halaman approval bersifat read-only untuk melihat detail pengajuan, attachment, review finance staff, dan timeline status.
+Finance approver dapat mulai review, menyetujui ke Finance Director, menolak, atau meminta revisi ke Finance Staff. Jika Finance Director meminta revisi, Finance Approver menerima menu Revisi Director dan dapat resubmit ke Director.
+
+## Alur Finance Director
+
+1. Finance Director membuka Queue Director.
+2. Untuk pengajuan `director_review`, Director klik Mulai Review.
+3. Status menjadi `director_in_review`.
+4. Director dapat:
+   - Setujui - Bayar Nanti: status menjadi `pending_disbursement`.
+   - Setujui dan Kirim Dana: upload bukti transfer dan status menjadi `fund_disbursed`.
+   - Kirim Dana untuk pengajuan `pending_disbursement`.
+   - Minta Revisi ke Finance Approver.
+   - Tolak pengajuan dengan status final `director_rejected`.
+5. Pencairan mencatat nomor `DISB/YYYY/MM/000001`, snapshot rekening tujuan, metode pembayaran, referensi transaksi, dan attachment bukti transfer private.
 
 ## Struktur Penting
 

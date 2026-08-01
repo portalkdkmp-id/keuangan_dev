@@ -26,6 +26,10 @@ class FinancialSubmission extends Model
         'last_approval_revision_requested_at', 'last_approval_resubmitted_at',
         'forwarded_to_director_by', 'forwarded_to_director_at',
         'bank_name_snapshot', 'bank_account_number_snapshot', 'bank_account_holder_snapshot',
+        'director_reviewed_by', 'director_review_started_at', 'director_decided_by',
+        'director_decided_at', 'director_approved_amount', 'director_revision_count',
+        'last_director_revision_requested_at', 'last_director_resubmitted_at',
+        'disbursement_status', 'disbursed_at', 'disbursed_amount', 'disbursed_by',
     ];
 
     protected function casts(): array
@@ -48,6 +52,13 @@ class FinancialSubmission extends Model
             'last_approval_revision_requested_at' => 'datetime',
             'last_approval_resubmitted_at' => 'datetime',
             'forwarded_to_director_at' => 'datetime',
+            'director_review_started_at' => 'datetime',
+            'director_decided_at' => 'datetime',
+            'director_approved_amount' => 'decimal:2',
+            'last_director_revision_requested_at' => 'datetime',
+            'last_director_resubmitted_at' => 'datetime',
+            'disbursed_at' => 'datetime',
+            'disbursed_amount' => 'decimal:2',
         ];
     }
 
@@ -141,6 +152,21 @@ class FinancialSubmission extends Model
         return $this->belongsTo(User::class, 'forwarded_to_director_by');
     }
 
+    public function directorReviewer()
+    {
+        return $this->belongsTo(User::class, 'director_reviewed_by');
+    }
+
+    public function directorDecisionMaker()
+    {
+        return $this->belongsTo(User::class, 'director_decided_by');
+    }
+
+    public function disburser()
+    {
+        return $this->belongsTo(User::class, 'disbursed_by');
+    }
+
     public function approvalReviews()
     {
         return $this->hasMany(SubmissionApprovalReview::class)->orderByDesc('review_number');
@@ -154,6 +180,21 @@ class FinancialSubmission extends Model
     public function activeApprovalReview()
     {
         return $this->hasOne(SubmissionApprovalReview::class)->whereIn('status', ['pending', 'in_review', 'revision_requested'])->orderByDesc('review_number');
+    }
+
+    public function directorReviews()
+    {
+        return $this->hasMany(SubmissionDirectorReview::class)->orderByDesc('review_number');
+    }
+
+    public function activeDirectorReview()
+    {
+        return $this->hasOne(SubmissionDirectorReview::class)->whereIn('status', ['pending', 'in_review', 'revision_requested'])->orderByDesc('review_number');
+    }
+
+    public function disbursement()
+    {
+        return $this->hasOne(SubmissionDisbursement::class);
     }
 
     public function isDraft(): bool

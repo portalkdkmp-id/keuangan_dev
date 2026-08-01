@@ -35,6 +35,10 @@ class AppServiceProvider extends ServiceProvider
     protected function configureRolePermissionFallbacks(): void
     {
         Gate::before(function ($user, string $ability): ?bool {
+            if (! str_contains($ability, '.')) {
+                return null;
+            }
+
             if ($user->hasRole('super_admin')) {
                 return true;
             }
@@ -46,6 +50,9 @@ class AppServiceProvider extends ServiceProvider
                     'approval-submissions.approve',
                     'approval-submissions.reject',
                     'approval-submissions.request-revision',
+                    'approval-submissions.view-director-revision',
+                    'approval-submissions.update-director-revision',
+                    'approval-submissions.resubmit-director',
                     'approval-monitoring.view',
                 ],
                 'finance_staff' => [
@@ -62,6 +69,21 @@ class AppServiceProvider extends ServiceProvider
                 ],
                 'finance_director' => [
                     'director-submissions.view',
+                    'director-submissions.review',
+                    'director-submissions.approve',
+                    'director-submissions.disburse',
+                    'director-submissions.reject',
+                    'director-submissions.request-revision',
+                    'director-submissions.view-all',
+                    'director-monitoring.view',
+                    'director-disbursements.view',
+                    'disbursements.view',
+                    'disbursements.create',
+                    'disbursements.download-proof',
+                    'bank-accounts.view',
+                    'bank-accounts.create',
+                    'bank-accounts.update',
+                    'bank-accounts.delete',
                 ],
             ];
 

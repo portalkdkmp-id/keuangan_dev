@@ -14,5 +14,10 @@ enum SubmissionStatus: string
     case APPROVAL_REVISION_REQUESTED = 'approval_revision_requested';
     case APPROVAL_REJECTED = 'approval_rejected';
     case DIRECTOR_REVIEW = 'director_review';
+    case DIRECTOR_IN_REVIEW = 'director_in_review';
+    case DIRECTOR_REVISION_REQUESTED = 'director_revision_requested';
+    case PENDING_DISBURSEMENT = 'pending_disbursement';
+    case FUND_DISBURSED = 'fund_disbursed';
+    case DIRECTOR_REJECTED = 'director_rejected';
     case CANCELLED = 'cancelled';
 }

@@ -8,18 +8,28 @@ class DocumentNumberService
 {
     public function generateFundRequestNumber(?\DateTimeInterface $date = null): string
     {
+        return $this->generate('FR', 'FR', $date);
+    }
+
+    public function generateDisbursementNumber(?\DateTimeInterface $date = null): string
+    {
+        return $this->generate('DISBURSEMENT', 'DISB', $date);
+    }
+
+    private function generate(string $documentType, string $prefix, ?\DateTimeInterface $date = null): string
+    {
         $date ??= now();
         $period = $date->format('Y/m');
 
         $sequence = DocumentSequence::query()
-            ->where('document_type', 'FR')
+            ->where('document_type', $documentType)
             ->where('period', $period)
             ->lockForUpdate()
             ->first();
 
         if (! $sequence) {
             $sequence = DocumentSequence::create([
-                'document_type' => 'FR',
+                'document_type' => $documentType,
                 'period' => $period,
                 'last_number' => 0,
             ]);
@@ -29,6 +39,6 @@ class DocumentNumberService
         $sequence->increment('last_number');
         $sequence->refresh();
 
-        return sprintf('FR/%s/%06d', $period, $sequence->last_number);
+        return sprintf('%s/%s/%06d', $prefix, $period, $sequence->last_number);
     }
 }
