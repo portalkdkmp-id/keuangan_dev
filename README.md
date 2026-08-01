@@ -1,6 +1,6 @@
 # Aplikasi Pencatatan Keuangan Kantor KDKMP
 
-Aplikasi ini digunakan untuk mengelola data wilayah, koperasi, PIC KDKMP, rekening user, pengajuan dana, review finance staff, revisi pengajuan, dan antrean approval keuangan.
+Aplikasi ini digunakan untuk mengelola data wilayah, koperasi, PIC KDKMP, rekening, pengajuan dan approval dana, pencairan, distribusi, konfirmasi penerimaan, serta pertanggungjawaban penggunaan dana.
 
 ## Tech Stack
 
@@ -57,6 +57,14 @@ Aplikasi ini digunakan untuk mengelola data wilayah, koperasi, PIC KDKMP, rekeni
 - Notifikasi database untuk pengajuan baru, revisi, resubmit, dan forward approval.
 - Audit log.
 - Sonner toast untuk success, warning, dan error.
+- Master rekening perusahaan dan koperasi.
+- Pencairan dengan snapshot rekening sumber dan tujuan.
+- Distribusi dana oleh Finance Staff.
+- Konfirmasi penerimaan dana oleh PIC.
+- Laporan realisasi dan pertanggungjawaban dana.
+- Review accountability oleh Finance Staff dan approval penutupan oleh Finance Approver.
+- Monitoring KPI dan timeline perjalanan dana.
+- Sidebar berkelompok berdasarkan permission.
 
 ## Alur Data Master
 
@@ -198,6 +206,18 @@ Finance approver dapat mulai review, menyetujui ke Finance Director, menolak, at
    - Minta Revisi ke Finance Approver.
    - Tolak pengajuan dengan status final `director_rejected`.
 5. Pencairan mencatat nomor `DISB/YYYY/MM/000001`, snapshot rekening tujuan, metode pembayaran, referensi transaksi, dan attachment bukti transfer private.
+
+## Alur Perjalanan Dana
+
+1. Finance Director memilih rekening perusahaan, jenis penerima pertama, rekening tujuan, dan mengunggah bukti transfer.
+2. Jika penerima pertama Finance Staff, staff mencatat satu atau beberapa distribusi sampai nominal pencairan tersalurkan.
+3. PIC mengonfirmasi dana yang diterima langsung dari Director atau melalui Finance Staff.
+4. PIC membuat laporan penggunaan dana berisi item realisasi dan bukti.
+5. Finance Staff memverifikasi laporan atau meminta revisi.
+6. Finance Approver menyetujui dan menutup pertanggungjawaban.
+7. Finance Director dan role monitoring melihat status lengkap melalui Monitoring Dana.
+
+Dokumentasi rinci tersedia di [docs/phase-6-fund-accountability.md](docs/phase-6-fund-accountability.md).
 
 ## Struktur Penting
 

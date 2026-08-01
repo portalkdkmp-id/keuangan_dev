@@ -31,6 +31,9 @@ class ApprovalSubmissionController extends Controller
                     SubmissionStatus::APPROVAL_REVISION_REQUESTED,
                     SubmissionStatus::APPROVAL_REJECTED,
                     SubmissionStatus::DIRECTOR_REVIEW,
+                    SubmissionStatus::DIRECTOR_IN_REVIEW,
+                    SubmissionStatus::PENDING_DISBURSEMENT,
+                    SubmissionStatus::FUND_DISBURSED,
                 ])
                 ->when($status, fn ($query) => $query->where('status', $status))
                 ->with(['cooperative.city.province', 'submitter', 'financeValidator:id,name', 'approvalReviewer:id,name', 'approvalReviews.approver'])
@@ -47,7 +50,7 @@ class ApprovalSubmissionController extends Controller
         Gate::authorize('view', $financialSubmission);
 
         return Inertia::render('Approval/Submissions/Show', [
-            'submission' => $financialSubmission->load(['cooperative.city.province', 'submitterCity', 'submitter', 'requestCategory', 'requestType', 'recipientBankAccount', 'items', 'attachments', 'financeDetail', 'financeValidator', 'approvalForwarder', 'approvalReviewer', 'approvalDecisionMaker', 'approvalReviews.approver', 'revisionRequests.response', 'statusHistories.actor']),
+            'submission' => $financialSubmission->load(['cooperative.city.province', 'submitterCity', 'submitter', 'requestCategory', 'requestType', 'recipientBankAccount', 'items', 'attachments', 'financeDetail', 'financeValidator', 'approvalForwarder', 'approvalReviewer', 'approvalDecisionMaker', 'approvalReviews.approver', 'revisionRequests.response', 'statusHistories.actor', 'disbursement.attachments', 'disbursement.distributions']),
         ]);
     }
 

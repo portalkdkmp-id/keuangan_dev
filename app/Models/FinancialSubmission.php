@@ -197,6 +197,21 @@ class FinancialSubmission extends Model
         return $this->hasOne(SubmissionDisbursement::class);
     }
 
+    public function fundDistributions()
+    {
+        return $this->hasMany(FundDistribution::class);
+    }
+
+    public function receiptConfirmations()
+    {
+        return $this->hasMany(FundReceiptConfirmation::class);
+    }
+
+    public function accountabilityReport()
+    {
+        return $this->hasOne(FundAccountabilityReport::class);
+    }
+
     public function isDraft(): bool
     {
         return $this->status === SubmissionStatus::DRAFT;

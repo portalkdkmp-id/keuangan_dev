@@ -63,6 +63,16 @@ Dokumen ini menjadi aturan kerja untuk pengembangan aplikasi pencatatan keuangan
 - Data master yang wajib tersedia dibuat lewat seeder.
 - Jangan mengubah migration lama yang sudah dianggap berjalan di environment bersama; buat migration baru untuk perubahan lanjutan.
 
+## Perjalanan Dana dan Pertanggungjawaban
+
+- Submission, disbursement, distribution, receipt confirmation, dan accountability adalah domain terpisah.
+- Snapshot rekening pencairan/distribusi harus diambil backend dari master rekening.
+- Nomor rekening tidak boleh tampil utuh dalam audit log atau notification.
+- Distribusi wajib memakai transaction, `lockForUpdate`, dan perhitungan decimal-safe.
+- Total distribusi tidak boleh melebihi pencairan dan konfirmasi penerimaan tidak boleh ganda.
+- `received_amount` accountability berasal dari konfirmasi penerimaan; total realisasi dihitung backend dari item.
+- Attachment dana selalu private dan download wajib melalui policy.
+
 ## Testing dan Verifikasi
 
 Jalankan verifikasi setelah perubahan signifikan:

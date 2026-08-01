@@ -9,7 +9,9 @@ use App\Http\Requests\Director\DisburseSubmissionRequest;
 use App\Http\Requests\Director\RejectSubmissionRequest;
 use App\Http\Requests\Director\RequestDirectorRevisionRequest;
 use App\Http\Requests\Director\StartDirectorReviewRequest;
+use App\Models\CompanyBankAccount;
 use App\Models\FinancialSubmission;
+use App\Models\User;
 use App\Services\Director\DirectorSubmissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -50,8 +52,9 @@ class DirectorSubmissionController extends Controller
         Gate::authorize('view', $financialSubmission);
 
         return Inertia::render('Director/Submissions/Show', [
-            'submission' => $financialSubmission->load(['cooperative.city.province', 'submitterCity', 'submitter', 'requestCategory', 'requestType', 'recipientBankAccount', 'attachments', 'financeDetail', 'approvalDecisionMaker', 'approvalReviews.approver', 'directorReviews.director', 'disbursement.attachments', 'disburser', 'statusHistories.actor']),
-            'sourceBankAccounts' => $request->user()->bankAccounts()->where('is_active', true)->orderByDesc('is_primary')->orderBy('bank_name')->get(['id', 'bank_name', 'account_number', 'account_holder_name']),
+            'submission' => $financialSubmission->load(['cooperative.city.province', 'cooperative.bankAccounts' => fn ($query) => $query->where('is_active', true), 'submitterCity', 'submitter.bankAccounts' => fn ($query) => $query->where('is_active', true), 'requestCategory', 'requestType', 'recipientBankAccount', 'attachments', 'financeDetail', 'approvalDecisionMaker', 'approvalReviews.approver', 'directorReviews.director', 'disbursement.attachments', 'disburser', 'statusHistories.actor']),
+            'companyBankAccounts' => CompanyBankAccount::where('is_active', true)->orderByDesc('is_primary')->orderBy('bank_name')->get(['id', 'bank_name', 'account_number', 'account_holder_name']),
+            'financeStaff' => User::role('finance_staff')->where('is_active', true)->with(['bankAccounts' => fn ($query) => $query->where('is_active', true)->orderByDesc('is_primary')])->orderBy('name')->get(['id', 'name']),
         ]);
     }
 

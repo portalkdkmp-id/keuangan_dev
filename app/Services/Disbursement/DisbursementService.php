@@ -4,10 +4,13 @@ namespace App\Services\Disbursement;
 
 use App\Enums\DisbursementAttachmentType;
 use App\Enums\DisbursementStatus;
+use App\Enums\DistributionStatus;
+use App\Models\CompanyBankAccount;
 use App\Models\FinancialSubmission;
 use App\Models\SubmissionDirectorReview;
 use App\Models\SubmissionDisbursement;
 use App\Models\User;
+use App\Notifications\SubmissionDisbursedNotification;
 use App\Services\Audit\AuditLogService;
 use App\Services\DocumentNumber\DocumentNumberService;
 use Illuminate\Http\UploadedFile;
@@ -22,6 +25,7 @@ class DisbursementService
     public function __construct(
         private readonly DocumentNumberService $numbers,
         private readonly AuditLogService $auditLog,
+        private readonly DisbursementRecipientService $recipients,
     ) {}
 
     /**
@@ -42,6 +46,11 @@ class DisbursementService
 
         try {
             $disbursement = DB::transaction(function () use ($actor, $submission, $review, $data, $files, $disk, &$storedFiles) {
+                $source = CompanyBankAccount::query()->whereKey($data['source_company_bank_account_id'])->where('is_active', true)->lockForUpdate()->first();
+                if (! $source) {
+                    throw ValidationException::withMessages(['source_company_bank_account_id' => 'Rekening perusahaan tidak aktif atau tidak ditemukan.']);
+                }
+                $recipient = $this->recipients->resolve($submission, $data);
                 $disbursement = SubmissionDisbursement::create([
                     'financial_submission_id' => $submission->id,
                     'director_review_id' => $review->id,
@@ -49,12 +58,16 @@ class DisbursementService
                     'disbursed_by' => $actor->id,
                     'amount' => $data['amount'],
                     'payment_method' => $data['payment_method'],
-                    'bank_name' => $data['bank_name'] ?? null,
-                    'source_account_name' => $data['source_account_name'] ?? null,
-                    'source_account_number_masked' => $this->maskAccountNumber($data['source_account_number'] ?? null),
-                    'destination_bank_snapshot' => $submission->bank_name_snapshot ?? $submission->recipientBankAccount?->bank_name ?? '-',
-                    'destination_account_number_snapshot' => $submission->bank_account_number_snapshot ?? $submission->recipientBankAccount?->account_number ?? '-',
-                    'destination_account_holder_snapshot' => $submission->bank_account_holder_snapshot ?? $submission->recipientBankAccount?->account_holder_name ?? '-',
+                    'bank_name' => $source->bank_name,
+                    'source_account_name' => $source->account_holder_name,
+                    'source_account_number_masked' => $this->maskAccountNumber($source->account_number),
+                    'source_company_bank_account_id' => $source->id,
+                    'source_bank_name' => $source->bank_name,
+                    'source_account_number_snapshot' => $source->account_number,
+                    'source_account_holder_snapshot' => $source->account_holder_name,
+                    'recipient_type' => $data['recipient_type'],
+                    ...$recipient,
+                    'distribution_status' => $recipient['requires_distribution'] ? DistributionStatus::PENDING : DistributionStatus::NOT_REQUIRED,
                     'transaction_reference' => $data['transaction_reference'] ?? null,
                     'transfer_date' => $data['transfer_date'],
                     'transferred_at' => $data['transferred_at'],
@@ -87,8 +100,12 @@ class DisbursementService
                     'disbursement_number' => $disbursement->disbursement_number,
                     'amount' => $disbursement->amount,
                     'payment_method' => $data['payment_method'],
-                    'source_account_number_masked' => $disbursement->source_account_number_masked,
+                    'source_account_number_snapshot' => $disbursement->source_account_number_snapshot,
+                    'destination_account_number_snapshot' => $disbursement->destination_account_number_snapshot,
+                    'recipient_type' => $disbursement->recipient_type->value,
                 ]);
+
+                DB::afterCommit(fn () => $this->notifyStakeholders($disbursement->fresh(['submission.submitter', 'recipientUser'])));
 
                 return $disbursement;
             });
@@ -117,5 +134,15 @@ class DisbursementService
         }
 
         return str_repeat('*', max(0, $length - 4)).substr($clean, -4);
+    }
+
+    private function notifyStakeholders(SubmissionDisbursement $disbursement): void
+    {
+        $users = User::role('finance_approver')->where('is_active', true)->get();
+        $users->push($disbursement->submission->submitter);
+        if ($disbursement->recipientUser) {
+            $users->push($disbursement->recipientUser);
+        }
+        $users->filter()->unique('id')->each(fn (User $user) => $user->notify(new SubmissionDisbursedNotification($disbursement)));
     }
 }

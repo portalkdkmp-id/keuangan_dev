@@ -35,7 +35,7 @@ class DirectorDisbursementController extends Controller
 
     public function downloadProof(DisbursementAttachment $disbursementAttachment): StreamedResponse
     {
-        Gate::authorize('disbursements.download-proof');
+        Gate::authorize('downloadProof', $disbursementAttachment->disbursement);
 
         return Storage::disk($disbursementAttachment->disk)->download($disbursementAttachment->path, $disbursementAttachment->original_name);
     }

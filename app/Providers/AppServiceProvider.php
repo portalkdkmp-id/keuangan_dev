@@ -54,6 +54,11 @@ class AppServiceProvider extends ServiceProvider
                     'approval-submissions.update-director-revision',
                     'approval-submissions.resubmit-director',
                     'approval-monitoring.view',
+                    'company-bank-accounts.view', 'cooperative-bank-accounts.view',
+                    'fund-distributions.view', 'fund-distributions.monitor', 'fund-distributions.download-proof',
+                    'disbursements.view', 'disbursements.download-proof',
+                    'fund-receipts.view', 'accountability-reports.view', 'accountability-reports.approve',
+                    'accountability-reports.download-attachment', 'fund-monitoring.view',
                 ],
                 'finance_staff' => [
                     'finance-submissions.view',
@@ -66,6 +71,12 @@ class AppServiceProvider extends ServiceProvider
                     'finance-submissions.update-approval-revision',
                     'finance-submissions.resubmit-approval',
                     'finance-monitoring.view',
+                    'company-bank-accounts.view', 'cooperative-bank-accounts.view',
+                    'fund-distributions.view', 'fund-distributions.create', 'fund-distributions.download-proof',
+                    'disbursements.view', 'disbursements.download-proof',
+                    'fund-receipts.view', 'accountability-reports.view', 'accountability-reports.review',
+                    'accountability-reports.request-revision', 'accountability-reports.verify',
+                    'accountability-reports.download-attachment', 'fund-monitoring.view',
                 ],
                 'finance_director' => [
                     'director-submissions.view',
@@ -84,6 +95,17 @@ class AppServiceProvider extends ServiceProvider
                     'bank-accounts.create',
                     'bank-accounts.update',
                     'bank-accounts.delete',
+                    'company-bank-accounts.view', 'company-bank-accounts.create', 'company-bank-accounts.update',
+                    'company-bank-accounts.delete', 'company-bank-accounts.set-primary', 'cooperative-bank-accounts.view',
+                    'fund-distributions.view', 'fund-distributions.monitor', 'fund-distributions.download-proof',
+                    'fund-receipts.view', 'accountability-reports.view', 'accountability-reports.download-attachment',
+                    'fund-monitoring.view',
+                ],
+                'pic_kdkmp' => [
+                    'fund-distributions.view', 'fund-distributions.download-proof',
+                    'fund-receipts.view', 'fund-receipts.confirm',
+                    'accountability-reports.view', 'accountability-reports.create', 'accountability-reports.update',
+                    'accountability-reports.submit', 'accountability-reports.download-attachment',
                 ],
             ];
 

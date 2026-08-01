@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Enums\SubmissionStatus;
 use App\Models\FinancialSubmission;
+use App\Models\FundAccountabilityReport;
+use App\Models\FundDistribution;
+use App\Models\FundReceiptConfirmation;
+use App\Models\SubmissionDisbursement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -25,6 +29,13 @@ class MonitoringDashboardController extends Controller
                 'approved' => FinancialSubmission::where('status', SubmissionStatus::DIRECTOR_REVIEW)->count(),
                 'rejected' => FinancialSubmission::where('status', SubmissionStatus::APPROVAL_REJECTED)->count(),
                 'active_amount' => FinancialSubmission::whereNotIn('status', [SubmissionStatus::CANCELLED, SubmissionStatus::APPROVAL_REJECTED])->sum('total_amount'),
+                'dana_masuk_director' => SubmissionDisbursement::where('recipient_type', 'finance_staff')->count(),
+                'menunggu_distribusi' => SubmissionDisbursement::where('distribution_status', 'pending')->count(),
+                'distribusi_sebagian' => SubmissionDisbursement::where('distribution_status', 'partially_distributed')->count(),
+                'pic_belum_konfirmasi' => SubmissionDisbursement::whereIn('distribution_status', ['not_required', 'fully_distributed'])->count(),
+                'laporan_menunggu_review' => FundAccountabilityReport::where('status', 'submitted')->count(),
+                'revisi_laporan' => FundAccountabilityReport::where('status', 'revision_requested')->count(),
+                'laporan_terverifikasi' => FundAccountabilityReport::where('status', 'finance_verified')->count(),
             ],
             'needsAction' => FinancialSubmission::whereIn('status', [SubmissionStatus::SUBMITTED, SubmissionStatus::FINANCE_REVIEW, SubmissionStatus::APPROVAL_REVISION_REQUESTED])->with(['cooperative', 'submitter'])->latest()->limit(8)->get(),
         ]);
@@ -44,6 +55,14 @@ class MonitoringDashboardController extends Controller
                 'pending_amount' => FinancialSubmission::whereIn('status', [SubmissionStatus::APPROVAL_REVIEW, SubmissionStatus::APPROVAL_IN_REVIEW])->sum('total_amount'),
                 'approved_amount_month' => FinancialSubmission::where('status', SubmissionStatus::DIRECTOR_REVIEW)->whereMonth('approval_decided_at', now()->month)->sum('approval_approved_amount'),
                 'overdue' => FinancialSubmission::whereDate('needed_date', '<', today())->whereNotIn('status', [SubmissionStatus::CANCELLED, SubmissionStatus::APPROVAL_REJECTED])->count(),
+                'disbursed_today' => SubmissionDisbursement::whereDate('transferred_at', today())->count(),
+                'disbursed_month' => SubmissionDisbursement::whereMonth('transferred_at', now()->month)->whereYear('transferred_at', now()->year)->sum('amount'),
+                'waiting_distribution' => SubmissionDisbursement::where('distribution_status', 'pending')->count(),
+                'partial_distribution' => SubmissionDisbursement::where('distribution_status', 'partially_distributed')->count(),
+                'waiting_pic_confirmation' => SubmissionDisbursement::whereIn('distribution_status', ['not_required', 'fully_distributed'])->count(),
+                'waiting_accountability' => SubmissionDisbursement::where('distribution_status', 'accountability_pending')->count(),
+                'accountability_submitted' => FundAccountabilityReport::whereIn('status', ['submitted', 'finance_review', 'finance_verified'])->count(),
+                'accountability_approved' => FundAccountabilityReport::where('status', 'closed')->count(),
             ],
             'oldest' => FinancialSubmission::whereIn('status', [SubmissionStatus::APPROVAL_REVIEW, SubmissionStatus::APPROVAL_IN_REVIEW])->with(['cooperative', 'submitter'])->orderBy('forwarded_to_approval_at')->limit(8)->get(),
         ]);
@@ -64,6 +83,12 @@ class MonitoringDashboardController extends Controller
                 'rejected' => FinancialSubmission::where('status', SubmissionStatus::APPROVAL_REJECTED)->count(),
                 'cancelled' => FinancialSubmission::where('status', SubmissionStatus::CANCELLED)->count(),
                 'overdue' => FinancialSubmission::whereDate('needed_date', '<', today())->whereNotIn('status', [SubmissionStatus::CANCELLED, SubmissionStatus::APPROVAL_REJECTED])->count(),
+                'total_disbursed' => SubmissionDisbursement::sum('amount'),
+                'total_distributed' => FundDistribution::where('status', '!=', 'cancelled')->sum('amount'),
+                'total_confirmed' => FundReceiptConfirmation::sum('amount'),
+                'total_realized' => FundAccountabilityReport::sum('realized_amount'),
+                'total_remaining' => FundAccountabilityReport::sum('remaining_amount'),
+                'total_additional' => FundAccountabilityReport::sum('additional_amount'),
             ],
             'byStatus' => FinancialSubmission::selectRaw('status, count(*) as aggregate, sum(total_amount) as amount')->groupBy('status')->orderBy('status')->get(),
         ]);

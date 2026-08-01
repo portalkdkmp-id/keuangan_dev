@@ -115,8 +115,6 @@ class DirectorSubmissionService
             ])->save();
             $this->statuses->transition($locked, SubmissionStatus::FUND_DISBURSED, $actor, SubmissionAction::APPROVE_AND_DISBURSE->value, $data['notes'] ?? null, $this->meta($locked, $review, ['disbursement_id' => $disbursement->id]));
 
-            DB::afterCommit(fn () => $this->notifyRelated($locked->fresh(), new DirectorDecisionNotification($locked->fresh(), $actor, 'Dana pengajuan telah disetujui dan dikirim.')));
-
             return $locked->refresh();
         });
     }
@@ -141,8 +139,6 @@ class DirectorSubmissionService
                 'disbursed_by' => $actor->id,
             ])->save();
             $this->statuses->transition($locked, SubmissionStatus::FUND_DISBURSED, $actor, SubmissionAction::DISBURSE_APPROVED_SUBMISSION->value, $data['notes'] ?? null, ['disbursement_id' => $disbursement->id]);
-
-            DB::afterCommit(fn () => $this->notifyRelated($locked->fresh(), new DirectorDecisionNotification($locked->fresh(), $actor, 'Dana pengajuan telah dikirim.')));
 
             return $locked->refresh();
         });

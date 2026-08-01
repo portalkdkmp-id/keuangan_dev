@@ -4,6 +4,9 @@ namespace App\Services\Monitoring;
 
 use App\Enums\SubmissionStatus;
 use App\Models\FinancialSubmission;
+use App\Models\FundAccountabilityReport;
+use App\Models\FundReceiptConfirmation;
+use App\Models\SubmissionDisbursement;
 
 class DirectorMonitoringService
 {
@@ -34,6 +37,13 @@ class DirectorMonitoringService
             'pending_disbursement_amount' => FinancialSubmission::query()->where('status', SubmissionStatus::PENDING_DISBURSEMENT)->sum('director_approved_amount'),
             'month_disbursed_amount' => FinancialSubmission::query()->where('status', SubmissionStatus::FUND_DISBURSED)->whereMonth('disbursed_at', now()->month)->whereYear('disbursed_at', now()->year)->sum('disbursed_amount'),
             'today_disbursed' => FinancialSubmission::query()->where('status', SubmissionStatus::FUND_DISBURSED)->whereDate('disbursed_at', today())->count(),
+            'direct_to_pic' => SubmissionDisbursement::whereIn('recipient_type', ['pic_kdkmp', 'cooperative'])->count(),
+            'through_finance_staff' => SubmissionDisbursement::where('recipient_type', 'finance_staff')->count(),
+            'distribution_incomplete' => SubmissionDisbursement::whereIn('distribution_status', ['pending', 'partially_distributed'])->count(),
+            'received_by_pic' => FundReceiptConfirmation::count(),
+            'accountability_pending' => SubmissionDisbursement::where('distribution_status', 'accountability_pending')->count(),
+            'accountability_approved' => FundAccountabilityReport::where('status', 'closed')->count(),
+            'unaccounted_amount' => max((float) FundReceiptConfirmation::sum('amount') - (float) FundAccountabilityReport::sum('realized_amount'), 0),
         ];
     }
 

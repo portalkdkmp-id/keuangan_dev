@@ -16,6 +16,16 @@ class DocumentNumberService
         return $this->generate('DISBURSEMENT', 'DISB', $date);
     }
 
+    public function generateDistributionNumber(?\DateTimeInterface $date = null): string
+    {
+        return $this->generate('FUND_DISTRIBUTION', 'DIST', $date);
+    }
+
+    public function generateAccountabilityNumber(?\DateTimeInterface $date = null): string
+    {
+        return $this->generate('FUND_ACCOUNTABILITY', 'ACC', $date);
+    }
+
     private function generate(string $documentType, string $prefix, ?\DateTimeInterface $date = null): string
     {
         $date ??= now();

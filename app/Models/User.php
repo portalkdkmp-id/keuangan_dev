@@ -72,4 +72,9 @@ class User extends Authenticatable implements PasskeyUser
     {
         return $this->hasMany(FinancialSubmission::class, 'submitted_by');
     }
+
+    public function receivedFundDistributions()
+    {
+        return $this->hasMany(FundDistribution::class, 'recipient_user_id');
+    }
 }
