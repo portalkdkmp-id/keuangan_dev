@@ -2,6 +2,7 @@
 
 namespace App\Services\FinanceSubmission;
 
+use App\Enums\ApprovalReviewStatus;
 use App\Enums\RevisionRequestStatus;
 use App\Enums\SubmissionStatus;
 use App\Models\FinanceSubmissionDetail;
@@ -141,6 +142,11 @@ class FinanceSubmissionService
 
             $locked->forceFill(['forwarded_to_approval_by' => $user->id, 'forwarded_to_approval_at' => now()])->save();
             $this->statuses->transition($locked, SubmissionStatus::APPROVAL_REVIEW, $user, 'forwarded_to_approval');
+            $locked->approvalReviews()->create([
+                'review_number' => ($locked->approvalReviews()->max('review_number') ?? 0) + 1,
+                'status' => ApprovalReviewStatus::PENDING,
+                'submitted_amount' => $locked->financeDetail->validated_total_amount,
+            ]);
 
             DB::afterCommit(function () use ($locked, $user) {
                 User::role('finance_approver')
@@ -169,6 +175,34 @@ class FinanceSubmissionService
             );
 
             return $this->statuses->transition($locked, SubmissionStatus::CANCELLED, $user, 'finance_rejected', $reason);
+        });
+    }
+
+    public function updateApprovalRevision(User $user, FinancialSubmission $submission, array $data): FinanceSubmissionDetail
+    {
+        return DB::transaction(function () use ($user, $submission, $data) {
+            $locked = FinancialSubmission::query()->whereKey($submission->id)->lockForUpdate()->firstOrFail();
+            $this->ensureStatus($locked, SubmissionStatus::APPROVAL_REVISION_REQUESTED, 'Pengajuan tidak sedang revisi approval.');
+            $locked->update([
+                'title' => $data['title'],
+                'submission_request_category_id' => $data['submission_request_category_id'],
+                'submission_request_type_id' => $data['submission_request_type_id'],
+                'needed_date' => $data['needed_date'] ?? null,
+                'notes' => $data['notes'] ?? null,
+            ]);
+            $total = $this->items->replaceItems($locked, $this->itemsFromReviewPayload($data));
+            $locked->update(['total_amount' => $total]);
+
+            return FinanceSubmissionDetail::updateOrCreate(
+                ['financial_submission_id' => $locked->id],
+                [
+                    'finance_notes' => $data['finance_notes'] ?? null,
+                    'validated_total_amount' => $data['amount'],
+                    'staff_reviewed_at' => now(),
+                    'created_by' => $locked->financeDetail?->created_by ?? $user->id,
+                    'updated_by' => $user->id,
+                ]
+            );
         });
     }
 

@@ -24,7 +24,11 @@ class RolePermissionSeeder extends Seeder
         'bank-accounts.view', 'bank-accounts.create', 'bank-accounts.update', 'bank-accounts.delete',
         'finance-submissions.view', 'finance-submissions.review', 'finance-submissions.update',
         'finance-submissions.request-revision', 'finance-submissions.validate', 'finance-submissions.forward-approval',
-        'approval-submissions.view',
+        'finance-submissions.view-approval-revision', 'finance-submissions.update-approval-revision', 'finance-submissions.resubmit-approval',
+        'approval-submissions.view', 'approval-submissions.review', 'approval-submissions.approve',
+        'approval-submissions.reject', 'approval-submissions.request-revision',
+        'director-submissions.view',
+        'finance-monitoring.view', 'approval-monitoring.view', 'global-monitoring.view',
         'notifications.view', 'notifications.mark-read',
     ];
 
@@ -54,17 +58,22 @@ class RolePermissionSeeder extends Seeder
                     'finance-submissions.view', 'finance-submissions.review', 'finance-submissions.update',
                     'finance-submissions.request-revision', 'finance-submissions.validate', 'finance-submissions.forward-approval',
                     'submissions.view', 'submissions.create', 'submissions.update', 'submissions.delete', 'submissions.submit',
+                    'finance-submissions.view-approval-revision', 'finance-submissions.update-approval-revision', 'finance-submissions.resubmit-approval',
+                    'finance-monitoring.view',
                     'bank-accounts.view', 'bank-accounts.create', 'bank-accounts.update', 'bank-accounts.delete',
                     'notifications.view', 'notifications.mark-read',
                 ],
                 'finance_approver' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
-                    'approval-submissions.view',
+                    'approval-submissions.view', 'approval-submissions.review', 'approval-submissions.approve',
+                    'approval-submissions.reject', 'approval-submissions.request-revision',
+                    'approval-monitoring.view',
                     'notifications.view', 'notifications.mark-read',
                 ],
                 'finance_director' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
-                    'notifications.view',
+                    'director-submissions.view',
+                    'notifications.view', 'notifications.mark-read',
                 ],
             });
         }

@@ -10,7 +10,10 @@ class UpdateFinanceDetailRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('finance-submissions.update') && $this->route('financialSubmission')?->status === SubmissionStatus::FINANCE_REVIEW;
+        $submission = $this->route('financialSubmission');
+
+        return ($this->user()?->can('finance-submissions.update') && $submission?->status === SubmissionStatus::FINANCE_REVIEW)
+            || ($this->user()?->can('finance-submissions.update-approval-revision') && $submission?->status === SubmissionStatus::APPROVAL_REVISION_REQUESTED);
     }
 
     public function rules(): array

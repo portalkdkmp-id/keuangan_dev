@@ -7,6 +7,10 @@ const labels: Record<string, string> = {
     revision_requested: 'Revisi',
     finance_validated: 'Tervalidasi Finance',
     approval_review: 'Menunggu Approval',
+    approval_in_review: 'Direview Approval',
+    approval_revision_requested: 'Revisi Finance',
+    approval_rejected: 'Ditolak Approval',
+    director_review: 'Menunggu Director',
     cancelled: 'Dibatalkan',
 };
 

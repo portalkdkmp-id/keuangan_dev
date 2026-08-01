@@ -16,6 +16,9 @@ class SubmissionStatusService
         'finance_review' => ['revision_requested', 'finance_validated', 'cancelled'],
         'revision_requested' => ['submitted', 'cancelled'],
         'finance_validated' => ['approval_review'],
+        'approval_review' => ['approval_in_review'],
+        'approval_in_review' => ['approval_revision_requested', 'approval_rejected', 'director_review'],
+        'approval_revision_requested' => ['approval_review'],
     ];
 
     public function __construct(private readonly AuditLogService $auditLog) {}
@@ -33,9 +36,11 @@ class SubmissionStatusService
             'finance_review_started_at' => $targetStatus === SubmissionStatus::FINANCE_REVIEW ? now() : $submission->finance_review_started_at,
             'cancelled_at' => $targetStatus === SubmissionStatus::CANCELLED ? now() : $submission->cancelled_at,
             'current_assignee_role' => match ($targetStatus) {
-                SubmissionStatus::SUBMITTED, SubmissionStatus::FINANCE_REVIEW, SubmissionStatus::FINANCE_VALIDATED => 'finance_staff',
+                SubmissionStatus::SUBMITTED, SubmissionStatus::FINANCE_REVIEW, SubmissionStatus::FINANCE_VALIDATED, SubmissionStatus::APPROVAL_REVISION_REQUESTED => 'finance_staff',
                 SubmissionStatus::REVISION_REQUESTED => 'pic_kdkmp',
-                SubmissionStatus::APPROVAL_REVIEW => 'finance_approver',
+                SubmissionStatus::APPROVAL_REVIEW, SubmissionStatus::APPROVAL_IN_REVIEW => 'finance_approver',
+                SubmissionStatus::DIRECTOR_REVIEW => 'finance_director',
+                SubmissionStatus::APPROVAL_REJECTED, SubmissionStatus::CANCELLED => null,
                 default => $submission->current_assignee_role,
             },
         ])->save();

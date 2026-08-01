@@ -21,6 +21,11 @@ class FinancialSubmission extends Model
         'finance_review_started_at', 'finance_reviewed_by', 'finance_validated_by', 'finance_validated_at',
         'forwarded_to_approval_by', 'forwarded_to_approval_at', 'revision_count',
         'last_revision_requested_at', 'last_resubmitted_at', 'cancelled_at',
+        'approval_reviewed_by', 'approval_review_started_at', 'approval_decided_by',
+        'approval_decided_at', 'approval_approved_amount', 'approval_revision_count',
+        'last_approval_revision_requested_at', 'last_approval_resubmitted_at',
+        'forwarded_to_director_by', 'forwarded_to_director_at',
+        'bank_name_snapshot', 'bank_account_number_snapshot', 'bank_account_holder_snapshot',
     ];
 
     protected function casts(): array
@@ -37,6 +42,12 @@ class FinancialSubmission extends Model
             'last_resubmitted_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'total_amount' => 'decimal:2',
+            'approval_review_started_at' => 'datetime',
+            'approval_decided_at' => 'datetime',
+            'approval_approved_amount' => 'decimal:2',
+            'last_approval_revision_requested_at' => 'datetime',
+            'last_approval_resubmitted_at' => 'datetime',
+            'forwarded_to_director_at' => 'datetime',
         ];
     }
 
@@ -115,6 +126,36 @@ class FinancialSubmission extends Model
         return $this->belongsTo(User::class, 'forwarded_to_approval_by');
     }
 
+    public function approvalReviewer()
+    {
+        return $this->belongsTo(User::class, 'approval_reviewed_by');
+    }
+
+    public function approvalDecisionMaker()
+    {
+        return $this->belongsTo(User::class, 'approval_decided_by');
+    }
+
+    public function directorForwarder()
+    {
+        return $this->belongsTo(User::class, 'forwarded_to_director_by');
+    }
+
+    public function approvalReviews()
+    {
+        return $this->hasMany(SubmissionApprovalReview::class)->orderByDesc('review_number');
+    }
+
+    public function latestApprovalReview()
+    {
+        return $this->hasOne(SubmissionApprovalReview::class)->orderByDesc('review_number');
+    }
+
+    public function activeApprovalReview()
+    {
+        return $this->hasOne(SubmissionApprovalReview::class)->whereIn('status', ['pending', 'in_review', 'revision_requested'])->orderByDesc('review_number');
+    }
+
     public function isDraft(): bool
     {
         return $this->status === SubmissionStatus::DRAFT;
@@ -158,6 +199,9 @@ class FinancialSubmission extends Model
             SubmissionStatus::REVISION_REQUESTED->value,
             SubmissionStatus::FINANCE_VALIDATED->value,
             SubmissionStatus::APPROVAL_REVIEW->value,
+            SubmissionStatus::APPROVAL_REVISION_REQUESTED->value,
+            SubmissionStatus::APPROVAL_REJECTED->value,
+            SubmissionStatus::DIRECTOR_REVIEW->value,
         ]);
     }
 }

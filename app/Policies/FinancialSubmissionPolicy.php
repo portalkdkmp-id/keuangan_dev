@@ -26,11 +26,24 @@ class FinancialSubmissionPolicy
                 SubmissionStatus::REVISION_REQUESTED,
                 SubmissionStatus::FINANCE_VALIDATED,
                 SubmissionStatus::APPROVAL_REVIEW,
+                SubmissionStatus::APPROVAL_REVISION_REQUESTED,
+                SubmissionStatus::APPROVAL_REJECTED,
+                SubmissionStatus::DIRECTOR_REVIEW,
             ], true);
         }
 
         if ($user->can('approval-submissions.view')) {
-            return $submission->status === SubmissionStatus::APPROVAL_REVIEW;
+            return in_array($submission->status, [
+                SubmissionStatus::APPROVAL_REVIEW,
+                SubmissionStatus::APPROVAL_IN_REVIEW,
+                SubmissionStatus::APPROVAL_REVISION_REQUESTED,
+                SubmissionStatus::APPROVAL_REJECTED,
+                SubmissionStatus::DIRECTOR_REVIEW,
+            ], true);
+        }
+
+        if ($user->can('director-submissions.view')) {
+            return $submission->status === SubmissionStatus::DIRECTOR_REVIEW;
         }
 
         return $user->can('submissions.view')
@@ -93,5 +106,45 @@ class FinancialSubmissionPolicy
     public function resubmit(User $user, FinancialSubmission $submission): bool
     {
         return $user->can('submissions.resubmit') && $submission->status === SubmissionStatus::REVISION_REQUESTED && $submission->isOwnedBy($user);
+    }
+
+    public function startApprovalReview(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('approval-submissions.review') && $submission->status === SubmissionStatus::APPROVAL_REVIEW;
+    }
+
+    public function approve(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('approval-submissions.approve') && $submission->status === SubmissionStatus::APPROVAL_IN_REVIEW;
+    }
+
+    public function rejectApproval(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('approval-submissions.reject') && $submission->status === SubmissionStatus::APPROVAL_IN_REVIEW;
+    }
+
+    public function requestApprovalRevision(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('approval-submissions.request-revision') && $submission->status === SubmissionStatus::APPROVAL_IN_REVIEW;
+    }
+
+    public function viewApprovalRevision(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('finance-submissions.view-approval-revision') && $submission->status === SubmissionStatus::APPROVAL_REVISION_REQUESTED;
+    }
+
+    public function updateApprovalRevision(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('finance-submissions.update-approval-revision') && $submission->status === SubmissionStatus::APPROVAL_REVISION_REQUESTED;
+    }
+
+    public function resubmitToApproval(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('finance-submissions.resubmit-approval') && $submission->status === SubmissionStatus::APPROVAL_REVISION_REQUESTED;
+    }
+
+    public function viewDirectorQueue(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('director-submissions.view') && $submission->status === SubmissionStatus::DIRECTOR_REVIEW;
     }
 }
