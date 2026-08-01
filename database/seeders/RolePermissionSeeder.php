@@ -27,8 +27,12 @@ class RolePermissionSeeder extends Seeder
         'finance-submissions.view-approval-revision', 'finance-submissions.update-approval-revision', 'finance-submissions.resubmit-approval',
         'approval-submissions.view', 'approval-submissions.review', 'approval-submissions.approve',
         'approval-submissions.reject', 'approval-submissions.request-revision',
-        'director-submissions.view',
-        'finance-monitoring.view', 'approval-monitoring.view', 'global-monitoring.view',
+        'approval-submissions.view-director-revision', 'approval-submissions.update-director-revision', 'approval-submissions.resubmit-director',
+        'director-submissions.view', 'director-submissions.review', 'director-submissions.approve',
+        'director-submissions.disburse', 'director-submissions.reject', 'director-submissions.request-revision',
+        'director-submissions.view-all',
+        'disbursements.view', 'disbursements.create', 'disbursements.download-proof',
+        'finance-monitoring.view', 'approval-monitoring.view', 'director-monitoring.view', 'director-disbursements.view', 'global-monitoring.view',
         'notifications.view', 'notifications.mark-read',
     ];
 
@@ -67,12 +71,17 @@ class RolePermissionSeeder extends Seeder
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
                     'approval-submissions.view', 'approval-submissions.review', 'approval-submissions.approve',
                     'approval-submissions.reject', 'approval-submissions.request-revision',
+                    'approval-submissions.view-director-revision', 'approval-submissions.update-director-revision', 'approval-submissions.resubmit-director',
                     'approval-monitoring.view',
                     'notifications.view', 'notifications.mark-read',
                 ],
                 'finance_director' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
-                    'director-submissions.view',
+                    'director-submissions.view', 'director-submissions.review', 'director-submissions.approve',
+                    'director-submissions.disburse', 'director-submissions.reject', 'director-submissions.request-revision',
+                    'director-submissions.view-all',
+                    'director-monitoring.view', 'director-disbursements.view',
+                    'disbursements.view', 'disbursements.create', 'disbursements.download-proof',
                     'notifications.view', 'notifications.mark-read',
                 ],
             });

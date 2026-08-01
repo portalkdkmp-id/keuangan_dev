@@ -1,10 +1,13 @@
 <?php
 
+use App\Http\Controllers\ApprovalDirectorRevisionController;
 use App\Http\Controllers\ApprovalSubmissionController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CooperativeAssignmentController;
 use App\Http\Controllers\CooperativeController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DirectorDisbursementController;
+use App\Http\Controllers\DirectorMonitoringController;
 use App\Http\Controllers\DirectorSubmissionController;
 use App\Http\Controllers\FinanceApprovalRevisionController;
 use App\Http\Controllers\FinanceSubmissionController;
@@ -73,8 +76,21 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::post('/approval/submissions/{financialSubmission}/approve', [ApprovalSubmissionController::class, 'approve'])->name('approval.submissions.approve');
     Route::post('/approval/submissions/{financialSubmission}/reject', [ApprovalSubmissionController::class, 'reject'])->name('approval.submissions.reject');
     Route::post('/approval/submissions/{financialSubmission}/request-revision', [ApprovalSubmissionController::class, 'requestRevision'])->name('approval.submissions.request-revision');
+    Route::get('/approval/director-revisions', [ApprovalDirectorRevisionController::class, 'index'])->name('approval.director-revisions.index');
+    Route::get('/approval/director-revisions/{financialSubmission}', [ApprovalDirectorRevisionController::class, 'show'])->name('approval.director-revisions.show');
+    Route::post('/approval/director-revisions/{financialSubmission}/resubmit', [ApprovalDirectorRevisionController::class, 'resubmit'])->name('approval.director-revisions.resubmit');
     Route::get('/director/submissions', [DirectorSubmissionController::class, 'index'])->name('director.submissions.index');
     Route::get('/director/submissions/{financialSubmission}', [DirectorSubmissionController::class, 'show'])->name('director.submissions.show');
+    Route::post('/director/submissions/{financialSubmission}/start-review', [DirectorSubmissionController::class, 'startReview'])->name('director.submissions.start-review');
+    Route::post('/director/submissions/{financialSubmission}/approve-pending-disbursement', [DirectorSubmissionController::class, 'approvePendingDisbursement'])->name('director.submissions.approve-pending-disbursement');
+    Route::post('/director/submissions/{financialSubmission}/approve-and-disburse', [DirectorSubmissionController::class, 'approveAndDisburse'])->name('director.submissions.approve-and-disburse');
+    Route::post('/director/submissions/{financialSubmission}/disburse', [DirectorSubmissionController::class, 'disburse'])->name('director.submissions.disburse');
+    Route::post('/director/submissions/{financialSubmission}/reject', [DirectorSubmissionController::class, 'reject'])->name('director.submissions.reject');
+    Route::post('/director/submissions/{financialSubmission}/request-revision', [DirectorSubmissionController::class, 'requestRevision'])->name('director.submissions.request-revision');
+    Route::get('/director/disbursements', [DirectorDisbursementController::class, 'index'])->name('director.disbursements.index');
+    Route::get('/director/disbursements/{submissionDisbursement}', [DirectorDisbursementController::class, 'show'])->name('director.disbursements.show');
+    Route::get('/director/disbursement-attachments/{disbursementAttachment}/download', [DirectorDisbursementController::class, 'downloadProof'])->name('director.disbursements.proof.download');
+    Route::get('/director/monitoring', DirectorMonitoringController::class)->name('director.monitoring');
     Route::get('/monitoring/finance', [MonitoringDashboardController::class, 'finance'])->name('monitoring.finance');
     Route::get('/monitoring/approval', [MonitoringDashboardController::class, 'approval'])->name('monitoring.approval');
     Route::get('/monitoring/global', [MonitoringDashboardController::class, 'global'])->name('monitoring.global');

@@ -11,6 +11,11 @@ const labels: Record<string, string> = {
     approval_revision_requested: 'Revisi Finance',
     approval_rejected: 'Ditolak Approval',
     director_review: 'Menunggu Director',
+    director_in_review: 'Direview Director',
+    director_revision_requested: 'Revisi Approval',
+    pending_disbursement: 'Menunggu Pencairan',
+    fund_disbursed: 'Dana Terkirim',
+    director_rejected: 'Ditolak Director',
     cancelled: 'Dibatalkan',
 };
 
