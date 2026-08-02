@@ -7,6 +7,8 @@ use App\Models\FinancialSubmission;
 use App\Models\FundAccountabilityReport;
 use App\Models\FundDistribution;
 use App\Models\FundReceiptConfirmation;
+use App\Models\FundReturn;
+use App\Models\ReimbursementDetail;
 use App\Models\SubmissionDisbursement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -36,6 +38,9 @@ class MonitoringDashboardController extends Controller
                 'laporan_menunggu_review' => FundAccountabilityReport::where('status', 'submitted')->count(),
                 'revisi_laporan' => FundAccountabilityReport::where('status', 'revision_requested')->count(),
                 'laporan_terverifikasi' => FundAccountabilityReport::where('status', 'finance_verified')->count(),
+                'reimbursement_baru' => FinancialSubmission::where('type', 'reimbursement')->where('status', SubmissionStatus::SUBMITTED)->count(),
+                'fund_return_baru' => FundReturn::where('status', 'submitted')->count(),
+                'fund_return_review' => FundReturn::where('status', 'finance_review')->count(),
             ],
             'needsAction' => FinancialSubmission::whereIn('status', [SubmissionStatus::SUBMITTED, SubmissionStatus::FINANCE_REVIEW, SubmissionStatus::APPROVAL_REVISION_REQUESTED])->with(['cooperative', 'submitter'])->latest()->limit(8)->get(),
         ]);
@@ -63,6 +68,8 @@ class MonitoringDashboardController extends Controller
                 'waiting_accountability' => SubmissionDisbursement::where('distribution_status', 'accountability_pending')->count(),
                 'accountability_submitted' => FundAccountabilityReport::whereIn('status', ['submitted', 'finance_review', 'finance_verified'])->count(),
                 'accountability_approved' => FundAccountabilityReport::where('status', 'closed')->count(),
+                'reimbursement_pending' => FinancialSubmission::where('type', 'reimbursement')->whereIn('status', [SubmissionStatus::APPROVAL_REVIEW, SubmissionStatus::APPROVAL_IN_REVIEW])->count(),
+                'fund_return_pending' => FundReturn::where('status', 'finance_verified')->count(),
             ],
             'oldest' => FinancialSubmission::whereIn('status', [SubmissionStatus::APPROVAL_REVIEW, SubmissionStatus::APPROVAL_IN_REVIEW])->with(['cooperative', 'submitter'])->orderBy('forwarded_to_approval_at')->limit(8)->get(),
         ]);
@@ -89,6 +96,13 @@ class MonitoringDashboardController extends Controller
                 'total_realized' => FundAccountabilityReport::sum('realized_amount'),
                 'total_remaining' => FundAccountabilityReport::sum('remaining_amount'),
                 'total_additional' => FundAccountabilityReport::sum('additional_amount'),
+                'reimbursement_claimed' => ReimbursementDetail::sum('claimed_amount'),
+                'reimbursement_paid' => ReimbursementDetail::sum('paid_amount'),
+                'reimbursement_outstanding' => ReimbursementDetail::whereNull('paid_at')->sum('director_approved_amount'),
+                'fund_return_total' => FundReturn::where('status', 'closed')->sum('returned_amount'),
+                'fund_return_outstanding' => FundReturn::whereNot('status', 'closed')->sum('expected_amount'),
+                'accountability_settlement_rate' => FundAccountabilityReport::whereIn('status', ['approved', 'return_pending', 'reimbursement_pending', 'closed'])->count() > 0
+                    ? round(FundAccountabilityReport::where('status', 'closed')->count() / FundAccountabilityReport::whereIn('status', ['approved', 'return_pending', 'reimbursement_pending', 'closed'])->count() * 100, 2) : 0,
             ],
             'byStatus' => FinancialSubmission::selectRaw('status, count(*) as aggregate, sum(total_amount) as amount')->groupBy('status')->orderBy('status')->get(),
         ]);

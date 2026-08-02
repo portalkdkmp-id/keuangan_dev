@@ -2,6 +2,7 @@
 
 namespace App\Services\Director;
 
+use App\Enums\AccountabilityStatus;
 use App\Enums\DirectorDecision;
 use App\Enums\DirectorReviewStatus;
 use App\Enums\SubmissionAction;
@@ -11,6 +12,7 @@ use App\Models\SubmissionDirectorReview;
 use App\Models\User;
 use App\Notifications\DirectorDecisionNotification;
 use App\Notifications\DirectorRevisionRequestedNotification;
+use App\Services\Accountability\AccountabilityClosingService;
 use App\Services\Audit\AuditLogService;
 use App\Services\Disbursement\DisbursementService;
 use App\Services\Submission\SubmissionStatusService;
@@ -23,6 +25,7 @@ class DirectorSubmissionService
         private readonly SubmissionStatusService $statuses,
         private readonly DisbursementService $disbursements,
         private readonly AuditLogService $auditLog,
+        private readonly AccountabilityClosingService $accountabilityClosing,
     ) {}
 
     public function startReview(User $actor, FinancialSubmission $submission): FinancialSubmission
@@ -114,6 +117,7 @@ class DirectorSubmissionService
                 'disbursed_by' => $actor->id,
             ])->save();
             $this->statuses->transition($locked, SubmissionStatus::FUND_DISBURSED, $actor, SubmissionAction::APPROVE_AND_DISBURSE->value, $data['notes'] ?? null, $this->meta($locked, $review, ['disbursement_id' => $disbursement->id]));
+            $this->settleReimbursement($locked, $disbursement->amount, $disbursement->transferred_at);
 
             return $locked->refresh();
         });
@@ -139,6 +143,7 @@ class DirectorSubmissionService
                 'disbursed_by' => $actor->id,
             ])->save();
             $this->statuses->transition($locked, SubmissionStatus::FUND_DISBURSED, $actor, SubmissionAction::DISBURSE_APPROVED_SUBMISSION->value, $data['notes'] ?? null, ['disbursement_id' => $disbursement->id]);
+            $this->settleReimbursement($locked, $disbursement->amount, $disbursement->transferred_at);
 
             return $locked->refresh();
         });
@@ -212,6 +217,20 @@ class DirectorSubmissionService
         }
 
         return $review;
+    }
+
+    private function settleReimbursement(FinancialSubmission $submission, mixed $amount, mixed $paidAt): void
+    {
+        if (! $submission->isReimbursement() || ! $submission->reimbursementDetail) {
+            return;
+        }
+
+        $detail = $submission->reimbursementDetail;
+        $detail->update(['director_approved_amount' => $submission->director_approved_amount, 'paid_amount' => $amount, 'paid_at' => $paidAt]);
+        if ($detail->sourceAccountability && $detail->sourceAccountability->status === AccountabilityStatus::REIMBURSEMENT_PENDING) {
+            $this->accountabilityClosing->close($detail->sourceAccountability);
+        }
+        $this->auditLog->record('reimbursement.paid', 'Reimbursement telah dibayar.', $submission, [], ['paid_amount' => $amount]);
     }
 
     private function ensureStatus(FinancialSubmission $submission, SubmissionStatus $status, string $message): void

@@ -12,7 +12,7 @@ class SubmissionRequestCategory extends Model
     /** @use HasFactory<SubmissionRequestCategoryFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['name', 'slug', 'is_active', 'sort_order'];
+    protected $fillable = ['name', 'slug', 'code', 'is_active', 'sort_order'];
 
     protected function casts(): array
     {

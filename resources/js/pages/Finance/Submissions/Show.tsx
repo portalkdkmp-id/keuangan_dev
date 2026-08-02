@@ -11,6 +11,7 @@ import { rupiah } from '@/components/Submissions/SubmissionSummary';
 import { SubmissionTimeline } from '@/components/Submissions/SubmissionTimeline';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate } from '@/lib/format';
+import { ReimbursementDetail } from '@/components/Reimbursements/ReimbursementDetail';
 
 function dateInputValue(value?: string | null): string {
     return value ? value.slice(0, 10) : '';
@@ -55,6 +56,7 @@ export default function FinanceSubmissionsShow({ submission, requestCategories, 
         </div>
 
         <SubmissionAttachments submission={submission} />
+        <ReimbursementDetail detail={submission.reimbursement_detail} />
 
         {submission.status === 'submitted' && <Button onClick={() => router.post(`/finance/submissions/${submission.id}/start-review`)}>Mulai Review</Button>}
 

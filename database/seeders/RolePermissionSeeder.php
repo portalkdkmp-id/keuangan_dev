@@ -43,6 +43,9 @@ class RolePermissionSeeder extends Seeder
         'disbursements.view', 'disbursements.create', 'disbursements.download-proof',
         'finance-monitoring.view', 'approval-monitoring.view', 'director-monitoring.view', 'director-disbursements.view', 'global-monitoring.view',
         'notifications.view', 'notifications.mark-read',
+        'reimbursements.view', 'reimbursements.create', 'reimbursements.update', 'reimbursements.submit', 'reimbursements.review', 'reimbursements.request-revision', 'reimbursements.validate', 'reimbursements.approve', 'reimbursements.reject', 'reimbursements.download-attachment',
+        'fund-returns.view', 'fund-returns.create', 'fund-returns.update', 'fund-returns.submit', 'fund-returns.review', 'fund-returns.request-revision', 'fund-returns.verify', 'fund-returns.approve', 'fund-returns.reject', 'fund-returns.download-attachment',
+        'reimbursement-monitoring.view', 'fund-return-monitoring.view',
     ];
 
     public function run(): void
@@ -68,6 +71,8 @@ class RolePermissionSeeder extends Seeder
                     'fund-receipts.view', 'fund-receipts.confirm',
                     'accountability-reports.view', 'accountability-reports.create', 'accountability-reports.update', 'accountability-reports.submit', 'accountability-reports.download-attachment',
                     'notifications.view', 'notifications.mark-read',
+                    'reimbursements.view', 'reimbursements.create', 'reimbursements.update', 'reimbursements.submit', 'reimbursements.download-attachment',
+                    'fund-returns.view', 'fund-returns.create', 'fund-returns.update', 'fund-returns.submit', 'fund-returns.download-attachment',
                 ],
                 'finance_staff' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
@@ -87,6 +92,8 @@ class RolePermissionSeeder extends Seeder
                     'accountability-reports.view', 'accountability-reports.review', 'accountability-reports.request-revision', 'accountability-reports.verify', 'accountability-reports.download-attachment',
                     'fund-monitoring.view',
                     'notifications.view', 'notifications.mark-read',
+                    'reimbursements.view', 'reimbursements.create', 'reimbursements.update', 'reimbursements.submit', 'reimbursements.review', 'reimbursements.request-revision', 'reimbursements.validate', 'reimbursements.reject', 'reimbursements.download-attachment',
+                    'fund-returns.view', 'fund-returns.review', 'fund-returns.request-revision', 'fund-returns.verify', 'fund-returns.reject', 'fund-returns.download-attachment',
                 ],
                 'finance_approver' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
@@ -102,6 +109,8 @@ class RolePermissionSeeder extends Seeder
                     'fund-monitoring.view',
                     'koperasi.assign-pic',
                     'notifications.view', 'notifications.mark-read',
+                    'reimbursements.view', 'reimbursements.approve', 'reimbursements.reject', 'reimbursements.request-revision', 'reimbursements.download-attachment',
+                    'fund-returns.view', 'fund-returns.approve', 'fund-returns.reject', 'fund-returns.download-attachment', 'reimbursement-monitoring.view', 'fund-return-monitoring.view',
                 ],
                 'finance_director' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
@@ -118,6 +127,7 @@ class RolePermissionSeeder extends Seeder
                     'accountability-reports.view', 'accountability-reports.download-attachment',
                     'fund-monitoring.view',
                     'notifications.view', 'notifications.mark-read',
+                    'reimbursements.view', 'reimbursements.download-attachment', 'reimbursement-monitoring.view', 'fund-return-monitoring.view',
                 ],
             });
         }

@@ -75,6 +75,9 @@ class FinanceApprovalService
                 'forwarded_to_director_by' => $actor->id,
                 'forwarded_to_director_at' => now(),
             ])->save();
+            if ($locked->isReimbursement()) {
+                $locked->reimbursementDetail()->update(['approval_approved_amount' => $data['approved_amount'], 'approval_notes' => $data['notes'] ?? null]);
+            }
             $locked->directorReviews()->create([
                 'review_number' => 1,
                 'status' => DirectorReviewStatus::PENDING,

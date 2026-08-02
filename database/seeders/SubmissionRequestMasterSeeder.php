@@ -17,11 +17,11 @@ class SubmissionRequestMasterSeeder extends Seeder
         foreach (['Pengajuan Dana KDKMP', 'Operasional tim Sales', 'Pengajuan Reimbursement'] as $index => $name) {
             SubmissionRequestCategory::updateOrCreate(
                 ['slug' => Str::slug($name)],
-                ['name' => $name, 'is_active' => true, 'sort_order' => $index]
+                ['name' => $name, 'code' => $name === 'Pengajuan Reimbursement' ? 'reimbursement' : Str::slug($name, '_'), 'is_active' => true, 'sort_order' => $index]
             );
         }
 
-        foreach (['Sewa Kendaraan', 'Biaya Ongkir', 'ATK dan Fotocopy', 'Sarana Prasarana'] as $index => $name) {
+        foreach (['Bensin', 'Token KDKMP', 'Sewa Kendaraan', 'Sarana Prasarana', 'Penginapan', 'Transportasi', 'Petty Cash KDKMP', 'ATK dan Fotokopi', 'Biaya Ongkir', 'Lainnya'] as $index => $name) {
             SubmissionRequestType::updateOrCreate(
                 ['slug' => Str::slug($name)],
                 ['name' => $name, 'is_active' => true, 'sort_order' => $index]

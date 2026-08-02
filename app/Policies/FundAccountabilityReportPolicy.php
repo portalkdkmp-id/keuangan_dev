@@ -48,4 +48,14 @@ class FundAccountabilityReportPolicy
     {
         return $user->can('accountability-reports.download-attachment') && $this->view($user, $report);
     }
+
+    public function createFundReturn(User $user, FundAccountabilityReport $report): bool
+    {
+        return $user->can('fund-returns.create') && $report->submitted_by === $user->id && $report->status === AccountabilityStatus::RETURN_PENDING && ! $report->fundReturn()->exists();
+    }
+
+    public function createShortfallReimbursement(User $user, FundAccountabilityReport $report): bool
+    {
+        return $user->can('reimbursements.create') && $report->submitted_by === $user->id && $report->status === AccountabilityStatus::REIMBURSEMENT_PENDING && ! $report->generatedReimbursement()->exists();
+    }
 }

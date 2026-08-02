@@ -126,6 +126,7 @@ class SubmissionController extends Controller
             'cooperatives' => $request->user()->assignedCooperatives()->orderBy('name')->get(['cooperatives.id', 'name']),
             'categories' => SubmissionCategory::where('is_active', true)->orderBy('sort_order')->get(['id', 'code', 'name']),
             'requestCategories' => SubmissionRequestCategory::where('is_active', true)
+                ->where(fn (Builder $query) => $query->whereNull('code')->orWhere('code', '!=', 'reimbursement'))
                 ->when($request->user()->hasRole('pic_kdkmp'), fn (Builder $query) => $query->whereNot('slug', 'operasional-tim-sales'))
                 ->orderBy('sort_order')
                 ->orderBy('name')

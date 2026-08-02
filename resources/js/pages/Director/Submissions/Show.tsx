@@ -7,6 +7,7 @@ import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttach
 import { SubmissionStatusBadge } from '@/components/Submissions/SubmissionStatusBadge';
 import { SubmissionTimeline } from '@/components/Submissions/SubmissionTimeline';
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
+import { ReimbursementDetail } from '@/components/Reimbursements/ReimbursementDetail';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -52,6 +53,7 @@ export default function DirectorSubmissionsShow({ submission, companyBankAccount
         {submission.status === 'fund_disbursed' && <div className="rounded-md border p-4 text-sm">Dana sudah dikirim: {rupiah(submission.disbursed_amount)} pada {formatDate(submission.disbursed_at)}</div>}
         {submission.disbursement && <DisbursementDetail disbursement={submission.disbursement} />}
         <SubmissionTimeline histories={submission.status_histories ?? []} />
+        <ReimbursementDetail detail={submission.reimbursement_detail} />
         <Dialog open={accountDialogOpen} onOpenChange={setAccountDialogOpen}><DialogContent><DialogHeader><DialogTitle>Tambah Rekening Perusahaan</DialogTitle><DialogDescription>Rekening ini menjadi pilihan sumber pencairan perusahaan.</DialogDescription></DialogHeader><form className="space-y-3" onSubmit={(e) => { e.preventDefault(); submitAccount(); }}><Label>Nama bank</Label><Input value={accountForm.data.bank_name} onChange={(e) => accountForm.setData('bank_name', e.target.value)} /><Label>Nomor rekening</Label><Input value={accountForm.data.account_number} onChange={(e) => accountForm.setData('account_number', e.target.value)} /><Label>Nama pada rekening</Label><Input value={accountForm.data.account_holder_name} onChange={(e) => accountForm.setData('account_holder_name', e.target.value)} /><DialogFooter><Button type="button" variant="outline" onClick={() => setAccountDialogOpen(false)}>Batal</Button><Button disabled={accountForm.processing}>Simpan</Button></DialogFooter></form></DialogContent></Dialog>
     </div>;
 }

@@ -8,6 +8,7 @@ import { MoneyInput } from '@/components/Submissions/MoneyInput';
 import { SubmissionStatusBadge } from '@/components/Submissions/SubmissionStatusBadge';
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
 import { SubmissionTimeline } from '@/components/Submissions/SubmissionTimeline';
+import { ReimbursementDetail } from '@/components/Reimbursements/ReimbursementDetail';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate } from '@/lib/format';
 
@@ -51,5 +52,6 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
         {submission.status === 'approval_rejected' && <div className="rounded-md border p-4 text-sm">Pengajuan ditolak. Alasan: {review?.rejection_reason ?? '-'}</div>}
         {submission.disbursement && <div className="grid gap-2 rounded-md border p-4 text-sm md:grid-cols-2"><h2 className="font-semibold md:col-span-2">Informasi Pencairan</h2><div>Nomor: {submission.disbursement.disbursement_number}</div><div>Nominal: {rupiah(submission.disbursement.amount)}</div><div>Penerima pertama: {submission.disbursement.recipient_name_snapshot}</div><div>Jenis penerima: {submission.disbursement.recipient_type}</div><div>Tujuan: {submission.disbursement.destination_bank_snapshot} - {submission.disbursement.destination_account_number_masked ?? '-'}</div><div>Status distribusi: {submission.disbursement.distribution_status}</div><div className="md:col-span-2">Bukti: {(submission.disbursement.attachments ?? []).map((attachment: any) => <a key={attachment.id} className="mr-3 underline" href={`/director/disbursement-attachments/${attachment.id}/download`}>{attachment.original_name}</a>)}</div></div>}
         <SubmissionTimeline histories={submission.status_histories ?? submission.statusHistories ?? []} />
+        <ReimbursementDetail detail={submission.reimbursement_detail} />
     </div>;
 }

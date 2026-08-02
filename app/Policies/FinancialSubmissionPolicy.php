@@ -13,6 +13,26 @@ class FinancialSubmissionPolicy
         return $user->can('submissions.view') || $user->can('finance-submissions.view');
     }
 
+    public function createReimbursement(User $user): bool
+    {
+        return $user->can('reimbursements.create') && ($user->hasRole('finance_staff') || $user->assignedCooperatives()->exists());
+    }
+
+    public function updateReimbursement(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('reimbursements.update') && $submission->isReimbursement() && $submission->canBeEditedBy($user);
+    }
+
+    public function submitReimbursement(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('reimbursements.submit') && $submission->isReimbursement() && $submission->canBeSubmittedBy($user);
+    }
+
+    public function downloadReimbursementAttachment(User $user, FinancialSubmission $submission): bool
+    {
+        return $user->can('reimbursements.download-attachment') && $this->view($user, $submission);
+    }
+
     public function view(User $user, FinancialSubmission $submission): bool
     {
         if ($user->hasRole('super_admin')) {

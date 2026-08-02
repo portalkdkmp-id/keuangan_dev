@@ -212,6 +212,20 @@ class FinancialSubmission extends Model
         return $this->hasOne(FundAccountabilityReport::class);
     }
 
+    public function reimbursementDetail()
+    {
+        return $this->hasOne(ReimbursementDetail::class);
+    }
+
+    public function isReimbursement(): bool
+    {
+        if ($this->type === SubmissionType::REIMBURSEMENT) {
+            return true;
+        }
+
+        return $this->relationLoaded('requestCategory') ? $this->requestCategory?->code === 'reimbursement' : $this->requestCategory()->where('code', 'reimbursement')->exists();
+    }
+
     public function isDraft(): bool
     {
         return $this->status === SubmissionStatus::DRAFT;
