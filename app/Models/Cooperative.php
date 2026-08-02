@@ -56,6 +56,11 @@ class Cooperative extends Model
         return $this->hasMany(FinancialSubmission::class);
     }
 
+    public function bankAccounts()
+    {
+        return $this->hasMany(CooperativeBankAccount::class);
+    }
+
     public function scopeAccessibleBy(Builder $query, User $user): Builder
     {
         if ($user->hasRole('super_admin') || $user->hasAnyRole(['finance_staff', 'finance_approver', 'finance_director'])) {

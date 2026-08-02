@@ -31,6 +31,23 @@ class AuditLogService
 
     private function clean(array $values): array
     {
-        return Arr::except($values, ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes']);
+        $values = Arr::except($values, ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes']);
+
+        foreach ($values as $key => $value) {
+            if (is_array($value)) {
+                $values[$key] = $this->clean($value);
+            } elseif (is_string($value) && str_contains(strtolower((string) $key), 'account_number')) {
+                $values[$key] = $this->maskAccountNumber($value);
+            }
+        }
+
+        return $values;
+    }
+
+    private function maskAccountNumber(string $value): string
+    {
+        $clean = preg_replace('/\s+/', '', $value) ?: $value;
+
+        return str_repeat('*', max(strlen($clean) - 4, 0)).substr($clean, -4);
     }
 }

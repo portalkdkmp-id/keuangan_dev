@@ -2,6 +2,7 @@
 
 use App\Enums\DirectorReviewStatus;
 use App\Enums\SubmissionStatus;
+use App\Models\CompanyBankAccount;
 use App\Models\Cooperative;
 use App\Models\FinancialSubmission;
 use App\Models\SubmissionRequestCategory;
@@ -76,7 +77,8 @@ test('finance approver approval creates pending director review', function () {
 });
 
 test('director can approve pending disbursement then disburse with proof', function () {
-    [, , , $director, $submission] = p5SetupDirectorSubmission();
+    [$pic, , , $director, $submission] = p5SetupDirectorSubmission();
+    $source = CompanyBankAccount::create(['bank_name' => 'Bank Sumber', 'account_number' => '1234567890', 'account_holder_name' => 'KDKMP', 'is_active' => true, 'is_primary' => true]);
 
     $this->actingAs($director)->post(route('director.submissions.start-review', $submission))->assertRedirect();
     $this->actingAs($director)->post(route('director.submissions.approve-pending-disbursement', $submission), [
@@ -93,9 +95,10 @@ test('director can approve pending disbursement then disburse with proof', funct
         'transfer_date' => now()->toDateString(),
         'transferred_at' => now()->format('Y-m-d H:i:s'),
         'payment_method' => 'bank_transfer',
-        'bank_name' => 'Bank Sumber',
-        'source_account_name' => 'KDKMP',
-        'source_account_number' => '1234567890',
+        'source_company_bank_account_id' => $source->id,
+        'recipient_type' => 'pic_kdkmp',
+        'recipient_user_id' => $pic->id,
+        'destination_bank_account_id' => $pic->bankAccounts()->first()->id,
         'transaction_reference' => 'TRX-001',
         'notes' => 'Dana dikirim.',
         'attachments' => [UploadedFile::fake()->image('transfer.jpg')],
