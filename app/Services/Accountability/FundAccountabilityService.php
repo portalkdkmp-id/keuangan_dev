@@ -22,7 +22,7 @@ use Illuminate\Validation\ValidationException;
 
 class FundAccountabilityService
 {
-    public function __construct(private readonly DocumentNumberService $numbers, private readonly FundAccountabilityCalculator $calculator, private readonly AuditLogService $audit) {}
+    public function __construct(private readonly DocumentNumberService $numbers, private readonly FundAccountabilityCalculator $calculator, private readonly AuditLogService $audit, private readonly AccountabilityClosingService $closing) {}
 
     public function create(User $actor, FinancialSubmission $submission, array $data, array $files): FundAccountabilityReport
     {
@@ -136,9 +136,12 @@ class FundAccountabilityService
             if ($locked->status !== AccountabilityStatus::FINANCE_VERIFIED) {
                 throw ValidationException::withMessages(['status' => 'Laporan belum terverifikasi.']);
             }
-            $locked->update(['status' => AccountabilityStatus::CLOSED, 'approved_by' => $actor->id, 'approved_at' => now(), 'approval_notes' => $notes, 'closed_at' => now()]);
-            $locked->submission->disbursement?->update(['distribution_status' => DistributionStatus::CLOSED]);
-            $this->audit->record('accountability.closed', 'Pertanggungjawaban disetujui dan ditutup.', $locked);
+            $locked->update(['status' => AccountabilityStatus::APPROVED, 'approved_by' => $actor->id, 'approved_at' => now(), 'approval_notes' => $notes]);
+            $this->closing->settleAfterApproval($locked);
+            if ($locked->fresh()->status === AccountabilityStatus::CLOSED) {
+                $locked->submission->disbursement?->update(['distribution_status' => DistributionStatus::CLOSED]);
+            }
+            $this->audit->record('accountability.approved', 'Pertanggungjawaban disetujui.', $locked, [], ['settlement_status' => $locked->fresh()->status->value]);
             DB::afterCommit(fn () => $locked->submitter->notify(new AccountabilityReportApprovedNotification($locked)));
 
             return $locked;

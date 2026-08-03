@@ -65,6 +65,10 @@ Aplikasi ini digunakan untuk mengelola data wilayah, koperasi, PIC KDKMP, rekeni
 - Review accountability oleh Finance Staff dan approval penutupan oleh Finance Approver.
 - Monitoring KPI dan timeline perjalanan dana.
 - Sidebar berkelompok berdasarkan permission.
+- Reimbursement multi-transaksi dengan bukti pembelian dan bukti pembayaran terpisah.
+- Reimbursement otomatis dari kekurangan pertanggungjawaban.
+- Pengembalian sisa dana ke rekening perusahaan dengan review Finance dan Approval.
+- Penutupan accountability berbasis penyelesaian sisa atau kekurangan dana.
 
 ## Alur Data Master
 
@@ -218,6 +222,8 @@ Finance approver dapat mulai review, menyetujui ke Finance Director, menolak, at
 7. Finance Director dan role monitoring melihat status lengkap melalui Monitoring Dana.
 
 Dokumentasi rinci tersedia di [docs/phase-6-fund-accountability.md](docs/phase-6-fund-accountability.md).
+
+Dokumentasi Phase 7 tersedia di [docs/phase-7-reimbursement-and-fund-return.md](docs/phase-7-reimbursement-and-fund-return.md).
 
 ## Struktur Penting
 

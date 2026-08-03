@@ -111,6 +111,16 @@ class FinanceSubmissionService
             if ($locked->openRevisionRequest()->exists()) {
                 throw ValidationException::withMessages(['revision' => 'Masih ada permintaan revisi aktif.']);
             }
+            if ($locked->isReimbursement()) {
+                $detail = $locked->reimbursementDetail;
+                if ((float) $locked->financeDetail->validated_total_amount > (float) $detail->claimed_amount) {
+                    throw ValidationException::withMessages(['validated_total_amount' => 'Nominal validasi tidak boleh melebihi total klaim reimbursement.']);
+                }
+                if ((float) $locked->financeDetail->validated_total_amount < (float) $detail->claimed_amount && blank($locked->financeDetail->finance_notes)) {
+                    throw ValidationException::withMessages(['finance_notes' => 'Catatan wajib jika nominal validasi lebih kecil dari klaim.']);
+                }
+                $detail->update(['finance_validated_amount' => $locked->financeDetail->validated_total_amount, 'finance_notes' => $locked->financeDetail->finance_notes]);
+            }
 
             $locked->forceFill(['finance_validated_by' => $user->id, 'finance_validated_at' => now()])->save();
 
@@ -129,6 +139,9 @@ class FinanceSubmissionService
                     throw ValidationException::withMessages(['finance_detail' => 'Review staff keuangan wajib disimpan terlebih dahulu.']);
                 }
                 $locked->forceFill(['finance_validated_by' => $user->id, 'finance_validated_at' => now()])->save();
+                if ($locked->isReimbursement()) {
+                    $locked->reimbursementDetail()->update(['finance_validated_amount' => $locked->financeDetail->validated_total_amount, 'finance_notes' => $locked->financeDetail->finance_notes]);
+                }
                 $this->statuses->transition($locked, SubmissionStatus::FINANCE_VALIDATED, $user, 'finance_validated', $locked->financeDetail->finance_notes, [
                     'validated_total_amount' => $locked->financeDetail->validated_total_amount,
                 ]);

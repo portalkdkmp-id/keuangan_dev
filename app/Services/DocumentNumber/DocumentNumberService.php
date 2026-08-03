@@ -26,6 +26,16 @@ class DocumentNumberService
         return $this->generate('FUND_ACCOUNTABILITY', 'ACC', $date);
     }
 
+    public function generateReimbursementNumber(?\DateTimeInterface $date = null): string
+    {
+        return $this->generate('REIMBURSEMENT', 'RMB', $date);
+    }
+
+    public function generateFundReturnNumber(?\DateTimeInterface $date = null): string
+    {
+        return $this->generate('FUND_RETURN', 'RET', $date);
+    }
+
     private function generate(string $documentType, string $prefix, ?\DateTimeInterface $date = null): string
     {
         $date ??= now();

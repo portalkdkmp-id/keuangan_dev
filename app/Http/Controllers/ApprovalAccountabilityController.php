@@ -35,6 +35,6 @@ class ApprovalAccountabilityController extends Controller
         $data = $request->validate(['notes' => ['nullable', 'string', 'max:5000']]);
         $this->service->approve($request->user(), $fundAccountabilityReport, $data['notes'] ?? null);
 
-        return back()->with('success', 'Pertanggungjawaban disetujui dan ditutup.');
+        return back()->with('success', 'Pertanggungjawaban disetujui. Kewajiban selisih akan diselesaikan sebelum ditutup.');
     }
 }

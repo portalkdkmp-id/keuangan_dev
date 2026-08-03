@@ -47,4 +47,14 @@ class FundAccountabilityReport extends Model
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
+
+    public function fundReturn()
+    {
+        return $this->hasOne(FundReturn::class);
+    }
+
+    public function generatedReimbursement()
+    {
+        return $this->hasOne(ReimbursementDetail::class, 'source_accountability_report_id');
+    }
 }
