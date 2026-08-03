@@ -71,7 +71,7 @@ export default function Form({
             : form.post('/reimbursements', options);
     };
     return (
-        <div className="mx-auto w-full space-y-5 p-4">
+        <div className="mx-auto w-full md:w-3/4 space-y-5 p-4">
             <Head
                 title={submission ? 'Edit Reimbursement' : 'Buat Reimbursement'}
             />

@@ -1,18 +1,100 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { SubmissionStatusBadge } from '@/components/Submissions/SubmissionStatusBadge';
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
 import { formatDate } from '@/lib/format';
+import { CreateSubmissionDialog } from '@/components/Submissions/CreateSubmissionDialog';
 
 export default function SubmissionsIndex({ submissions, filters }: any) {
-    return <div className="space-y-4 p-4"><Head title="Pengajuan Dana" />
-        <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Pengajuan Dana</h1><Button asChild><Link href="/submissions/create">Buat Pengajuan Dana</Link></Button></div>
-        <form onSubmit={(e) => { e.preventDefault(); router.get('/submissions', Object.fromEntries(new FormData(e.currentTarget)), { preserveState: true }); }} className="flex gap-2">
-            <Input name="search" defaultValue={filters.search ?? ''} placeholder="Cari nomor, judul, koperasi" />
-            <Button type="submit">Filter</Button>
-        </form>
-        <div className="overflow-hidden rounded-md border"><Table><TableHeader><TableRow><TableHead>Nomor</TableHead><TableHead>Judul</TableHead><TableHead>Koperasi</TableHead><TableHead>Tanggal</TableHead><TableHead>Total</TableHead><TableHead>Status</TableHead><TableHead /></TableRow></TableHeader><TableBody>{submissions.data.map((s: any) => <TableRow key={s.id}><TableCell>{s.submission_number}</TableCell><TableCell>{s.title}</TableCell><TableCell>{s.cooperative?.name}</TableCell><TableCell>{formatDate(s.created_at)}</TableCell><TableCell>{rupiah(s.total_amount)}</TableCell><TableCell><SubmissionStatusBadge status={s.status} /></TableCell><TableCell className="text-right"><Button size="sm" variant="outline" asChild><Link href={`/submissions/${s.id}`}>Lihat</Link></Button></TableCell></TableRow>)}</TableBody></Table></div>
-    </div>;
+    return (
+        <div className="space-y-4 p-4">
+            <Head title="Pengajuan Dana" />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="text-2xl font-semibold">Pengajuan Dana</h1>
+                    <p className="text-sm text-muted-foreground">
+                        Pengajuan dana dan reimbursement Anda.
+                    </p>
+                </div>
+                <CreateSubmissionDialog />
+            </div>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    router.get(
+                        '/submissions',
+                        Object.fromEntries(new FormData(e.currentTarget)),
+                        { preserveState: true },
+                    );
+                }}
+                className="flex gap-2"
+            >
+                <Input
+                    name="search"
+                    defaultValue={filters.search ?? ''}
+                    placeholder="Cari nomor, judul, koperasi"
+                />
+                <Button type="submit">Filter</Button>
+            </form>
+            <div className="overflow-x-auto rounded-md border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Nomor</TableHead>
+                            <TableHead>Jenis</TableHead>
+                            <TableHead>Judul</TableHead>
+                            <TableHead>Koperasi</TableHead>
+                            <TableHead>Tanggal</TableHead>
+                            <TableHead>Total</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead />
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {submissions.data.map((s: any) => (
+                            <TableRow key={s.id}>
+                                <TableCell>{s.submission_number}</TableCell>
+                                <TableCell>
+                                    {s.type === 'reimbursement'
+                                        ? 'Reimbursement'
+                                        : 'Pengajuan Dana'}
+                                </TableCell>
+                                <TableCell>{s.title}</TableCell>
+                                <TableCell>{s.cooperative?.name}</TableCell>
+                                <TableCell>
+                                    {formatDate(s.created_at)}
+                                </TableCell>
+                                <TableCell>{rupiah(s.total_amount)}</TableCell>
+                                <TableCell>
+                                    <SubmissionStatusBadge status={s.status} />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <Button size="sm" variant="outline" asChild>
+                                        <Link
+                                            href={
+                                                s.type === 'reimbursement'
+                                                    ? `/reimbursements/${s.id}`
+                                                    : `/submissions/${s.id}`
+                                            }
+                                        >
+                                            Lihat
+                                        </Link>
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        </div>
+    );
 }

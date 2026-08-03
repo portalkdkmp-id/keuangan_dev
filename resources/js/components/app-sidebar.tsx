@@ -13,7 +13,6 @@ import {
     LayoutGrid,
     ListChecks,
     Monitor,
-    ReceiptText,
     RotateCcw,
     Send,
     ShieldCheck,
@@ -59,11 +58,6 @@ export function AppSidebar() {
                     title: 'Pengajuan Saya',
                     href: '/submissions',
                     icon: FileText,
-                },
-                can('reimbursements.view') && {
-                    title: 'Reimbursement Saya',
-                    href: '/reimbursements',
-                    icon: ReceiptText,
                 },
                 can('finance-submissions.view') && {
                     title: 'Pengajuan Masuk',

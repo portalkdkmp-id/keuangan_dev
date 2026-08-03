@@ -72,6 +72,26 @@ test('complete reimbursement can be submitted once', function () {
     expect(fn () => app(ReimbursementService::class)->submit($user, $submission))->toThrow(ValidationException::class);
 });
 
+test('reimbursement appears in the unified submission list', function () {
+    [$user, $submission] = p7Reimbursement();
+
+    $this->actingAs($user)->get(route('submissions.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Submissions/Index')
+            ->where('submissions.data.0.id', $submission->id)
+            ->where('submissions.data.0.type', 'reimbursement'));
+});
+
+test('finance staff can open both submission creation flows', function () {
+    $staff = User::factory()->create();
+    $staff->assignRole('finance_staff');
+    Cooperative::factory()->create(['is_active' => true]);
+
+    $this->actingAs($staff)->get(route('submissions.create'))->assertOk()->assertInertia(fn ($page) => $page->has('cooperatives', 1));
+    $this->actingAs($staff)->get(route('reimbursements.create'))->assertOk()->assertInertia(fn ($page) => $page->has('cooperatives', 1));
+});
+
 test('fund return expected amount is immutable and approval closes accountability', function () {
     [$pic, $cooperative] = p7Actor();
     $staff = User::factory()->create();
