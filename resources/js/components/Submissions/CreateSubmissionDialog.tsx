@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-import { FilePlus2, ReceiptText } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { Banknote, FilePlus2, ReceiptText } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +10,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import type { SharedData } from '@/types';
 
 export function CreateSubmissionDialog({
     triggerLabel = 'Tambah Pengajuan',
@@ -17,6 +18,7 @@ export function CreateSubmissionDialog({
     triggerLabel?: string;
 }) {
     const [open, setOpen] = useState(false);
+    const permissions = usePage<SharedData>().props.auth.permissions ?? [];
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -52,6 +54,26 @@ export function CreateSubmissionDialog({
                             </span>
                         </Link>
                     </Button>
+                    {permissions.includes('advances.create') && (
+                        <Button
+                            asChild
+                            variant="outline"
+                            className="h-auto justify-start gap-3 p-4 text-left"
+                        >
+                            <Link href="/advances/create">
+                                <Banknote className="size-5" />
+                                <span>
+                                    <span className="block font-semibold">
+                                        Uang Panjar
+                                    </span>
+                                    <span className="block text-xs font-normal text-muted-foreground">
+                                        Dana sementara sebelum transaksi
+                                        dilakukan.
+                                    </span>
+                                </span>
+                            </Link>
+                        </Button>
+                    )}
                     <Button
                         asChild
                         variant="outline"

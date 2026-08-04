@@ -16,4 +16,9 @@ class FundAccountabilityAttachment extends Model
     {
         return $this->belongsTo(FundAccountabilityReport::class, 'fund_accountability_report_id');
     }
+
+    public function item()
+    {
+        return $this->belongsTo(FundAccountabilityItem::class, 'fund_accountability_item_id');
+    }
 }

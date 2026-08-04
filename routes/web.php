@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AdvanceController;
+use App\Http\Controllers\AdvanceSettlementController;
 use App\Http\Controllers\ApprovalAccountabilityController;
 use App\Http\Controllers\ApprovalDirectorRevisionController;
 use App\Http\Controllers\ApprovalFundReturnController;
@@ -125,6 +127,20 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::get('/accountability-reports/{fundAccountabilityReport}/edit', [FundAccountabilityReportController::class, 'edit'])->name('accountability-reports.edit');
     Route::put('/accountability-reports/{fundAccountabilityReport}', [FundAccountabilityReportController::class, 'update'])->name('accountability-reports.update');
     Route::post('/accountability-reports/{fundAccountabilityReport}/submit', [FundAccountabilityReportController::class, 'submit'])->name('accountability-reports.submit');
+    Route::get('/advances', [AdvanceController::class, 'index'])->name('advances.index');
+    Route::get('/advances/create', [AdvanceController::class, 'create'])->name('advances.create');
+    Route::post('/advances', [AdvanceController::class, 'store'])->name('advances.store');
+    Route::get('/advances/{financialSubmission}', [AdvanceController::class, 'show'])->name('advances.show');
+    Route::get('/advances/{financialSubmission}/edit', [AdvanceController::class, 'edit'])->name('advances.edit');
+    Route::put('/advances/{financialSubmission}', [AdvanceController::class, 'update'])->name('advances.update');
+    Route::post('/advances/{financialSubmission}/submit', [AdvanceController::class, 'submit'])->name('advances.submit');
+    Route::get('/advance-settlements', [AdvanceSettlementController::class, 'index'])->name('advance-settlements.index');
+    Route::get('/advance-settlements/create/{advanceDetail}', [AdvanceSettlementController::class, 'create'])->name('advance-settlements.create');
+    Route::post('/advance-settlements/{advanceDetail}', [AdvanceSettlementController::class, 'store'])->name('advance-settlements.store');
+    Route::get('/advance-settlements/{fundAccountabilityReport}', [AdvanceSettlementController::class, 'show'])->name('advance-settlements.show');
+    Route::get('/advance-settlements/{fundAccountabilityReport}/edit', [AdvanceSettlementController::class, 'edit'])->name('advance-settlements.edit');
+    Route::put('/advance-settlements/{fundAccountabilityReport}', [AdvanceSettlementController::class, 'update'])->name('advance-settlements.update');
+    Route::post('/advance-settlements/{fundAccountabilityReport}/submit', [AdvanceSettlementController::class, 'submit'])->name('advance-settlements.submit');
     Route::get('/reimbursements', [ReimbursementController::class, 'index'])->name('reimbursements.index');
     Route::get('/reimbursements/create', [ReimbursementController::class, 'create'])->name('reimbursements.create');
     Route::post('/reimbursements', [ReimbursementController::class, 'store'])->name('reimbursements.store');

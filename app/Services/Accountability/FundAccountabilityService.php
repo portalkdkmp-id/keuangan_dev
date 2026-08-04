@@ -98,6 +98,9 @@ class FundAccountabilityService
             if ($locked->status !== AccountabilityStatus::SUBMITTED) {
                 throw ValidationException::withMessages(['status' => 'Laporan tidak menunggu review.']);
             }
+            if ($locked->source_type === 'advance' && $locked->submitted_by === $actor->id) {
+                throw ValidationException::withMessages(['reviewer' => 'Penanggung jawab panjar tidak dapat mereview settlement miliknya sendiri.']);
+            }
             $locked->update(['status' => AccountabilityStatus::FINANCE_REVIEW, 'finance_reviewed_by' => $actor->id, 'finance_reviewed_at' => now()]);
             $locked->submission->disbursement?->update(['distribution_status' => DistributionStatus::UNDER_VERIFICATION]);
 
@@ -110,6 +113,7 @@ class FundAccountabilityService
         return DB::transaction(function () use ($actor, $report, $notes) {
             $locked = $this->lockFinanceReview($report, $actor);
             $locked->update(['status' => AccountabilityStatus::REVISION_REQUESTED, 'finance_notes' => $notes]);
+            $this->closing->syncAdvanceStatus($locked);
             $this->audit->record('accountability.revision_requested', 'Revisi pertanggungjawaban diminta.', $locked, [], ['notes' => $notes]);
             DB::afterCommit(fn () => $locked->submitter->notify(new AccountabilityRevisionRequestedNotification($locked)));
 
@@ -122,6 +126,7 @@ class FundAccountabilityService
         return DB::transaction(function () use ($actor, $report, $notes) {
             $locked = $this->lockFinanceReview($report, $actor);
             $locked->update(['status' => AccountabilityStatus::FINANCE_VERIFIED, 'finance_notes' => $notes, 'finance_reviewed_at' => now()]);
+            $this->closing->syncAdvanceStatus($locked);
             $this->audit->record('accountability.finance_verified', 'Pertanggungjawaban diverifikasi.', $locked);
             DB::afterCommit(fn () => User::role('finance_approver')->where('is_active', true)->get()->each(fn (User $u) => $u->notify(new AccountabilityReportVerifiedNotification($locked))));
 

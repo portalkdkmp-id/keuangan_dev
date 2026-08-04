@@ -51,6 +51,6 @@ class FundReturnPolicy
 
     public function downloadAttachment(User $u, FundReturn $r): bool
     {
-        return $u->can('fund-returns.download-attachment') && $this->view($u,$r);
+        return $u->can('fund-returns.download-attachment') && $this->view($u, $r);
     }
 }

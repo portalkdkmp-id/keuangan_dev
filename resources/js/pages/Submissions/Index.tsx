@@ -66,7 +66,9 @@ export default function SubmissionsIndex({ submissions, filters }: any) {
                                 <TableCell>
                                     {s.type === 'reimbursement'
                                         ? 'Reimbursement'
-                                        : 'Pengajuan Dana'}
+                                        : s.type === 'advance'
+                                          ? 'Uang Panjar'
+                                          : 'Pengajuan Dana'}
                                 </TableCell>
                                 <TableCell>{s.title}</TableCell>
                                 <TableCell>{s.cooperative?.name}</TableCell>
@@ -83,7 +85,9 @@ export default function SubmissionsIndex({ submissions, filters }: any) {
                                             href={
                                                 s.type === 'reimbursement'
                                                     ? `/reimbursements/${s.id}`
-                                                    : `/submissions/${s.id}`
+                                                    : s.type === 'advance'
+                                                      ? `/advances/${s.id}`
+                                                      : `/submissions/${s.id}`
                                             }
                                         >
                                             Lihat

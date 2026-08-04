@@ -51,6 +51,8 @@ class DirectorSubmissionController extends Controller
     {
         Gate::authorize('view', $financialSubmission);
 
+        $financialSubmission->loadMissing('advanceDetail.responsibleUser:id,name');
+
         return Inertia::render('Director/Submissions/Show', [
             'submission' => $financialSubmission->load(['cooperative.city.province', 'reimbursementDetail.expenses.attachments', 'cooperative.bankAccounts' => fn ($query) => $query->where('is_active', true), 'submitterCity', 'submitter.bankAccounts' => fn ($query) => $query->where('is_active', true), 'requestCategory', 'requestType', 'recipientBankAccount', 'attachments', 'financeDetail', 'approvalDecisionMaker', 'approvalReviews.approver', 'directorReviews.director', 'disbursement.attachments', 'disburser', 'statusHistories.actor']),
             'companyBankAccounts' => CompanyBankAccount::where('is_active', true)->orderByDesc('is_primary')->orderBy('bank_name')->get(['id', 'bank_name', 'account_number', 'account_holder_name']),

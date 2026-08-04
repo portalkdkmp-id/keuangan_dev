@@ -78,6 +78,9 @@ class FinanceApprovalService
             if ($locked->isReimbursement()) {
                 $locked->reimbursementDetail()->update(['approval_approved_amount' => $data['approved_amount'], 'approval_notes' => $data['notes'] ?? null]);
             }
+            if ($locked->isAdvance()) {
+                $locked->advanceDetail()->update(['approved_amount' => $data['approved_amount']]);
+            }
             $locked->directorReviews()->create([
                 'review_number' => 1,
                 'status' => DirectorReviewStatus::PENDING,

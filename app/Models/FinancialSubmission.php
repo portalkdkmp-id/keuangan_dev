@@ -217,6 +217,16 @@ class FinancialSubmission extends Model
         return $this->hasOne(ReimbursementDetail::class);
     }
 
+    public function advanceDetail()
+    {
+        return $this->hasOne(AdvanceDetail::class);
+    }
+
+    public function isAdvance(): bool
+    {
+        return $this->type === SubmissionType::ADVANCE && $this->advanceDetail()->exists();
+    }
+
     public function isReimbursement(): bool
     {
         if ($this->type === SubmissionType::REIMBURSEMENT) {

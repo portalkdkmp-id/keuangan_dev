@@ -57,4 +57,9 @@ class FundAccountabilityReport extends Model
     {
         return $this->hasOne(ReimbursementDetail::class, 'source_accountability_report_id');
     }
+
+    public function advanceDetail()
+    {
+        return $this->belongsTo(AdvanceDetail::class);
+    }
 }

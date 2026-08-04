@@ -14,10 +14,12 @@ class SubmissionRequestMasterSeeder extends Seeder
      */
     public function run(): void
     {
-        foreach (['Pengajuan Dana KDKMP', 'Operasional tim Sales', 'Pengajuan Reimbursement'] as $index => $name) {
+        foreach (['Pengajuan Dana KDKMP', 'Operasional tim Sales', 'Pengajuan Reimbursement', 'Uang Panjar'] as $index => $name) {
             SubmissionRequestCategory::updateOrCreate(
                 ['slug' => Str::slug($name)],
-                ['name' => $name, 'code' => $name === 'Pengajuan Reimbursement' ? 'reimbursement' : Str::slug($name, '_'), 'is_active' => true, 'sort_order' => $index]
+                ['name' => $name, 'code' => match ($name) {
+                    'Pengajuan Reimbursement' => 'reimbursement', 'Uang Panjar' => 'advance', default => Str::slug($name, '_')
+                }, 'is_active' => true, 'sort_order' => $index]
             );
         }
 

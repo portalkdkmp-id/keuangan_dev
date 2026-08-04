@@ -111,6 +111,17 @@ class FinanceSubmissionService
             if ($locked->openRevisionRequest()->exists()) {
                 throw ValidationException::withMessages(['revision' => 'Masih ada permintaan revisi aktif.']);
             }
+            if ($locked->isAdvance()) {
+                if ($locked->submitted_by === $user->id) {
+                    throw ValidationException::withMessages(['advance' => 'Pembuat panjar tidak dapat memvalidasi pengajuannya sendiri.']);
+                }
+                if ((float) $locked->financeDetail->validated_total_amount > (float) $locked->advanceDetail->estimated_amount) {
+                    throw ValidationException::withMessages(['validated_total_amount' => 'Nominal validasi tidak boleh melebihi estimasi panjar.']);
+                }
+                if ((float) $locked->financeDetail->validated_total_amount < (float) $locked->advanceDetail->estimated_amount && blank($locked->financeDetail->finance_notes)) {
+                    throw ValidationException::withMessages(['finance_notes' => 'Catatan wajib jika nominal panjar dikurangi.']);
+                }
+            }
             if ($locked->isReimbursement()) {
                 $detail = $locked->reimbursementDetail;
                 if ((float) $locked->financeDetail->validated_total_amount > (float) $detail->claimed_amount) {
@@ -135,6 +146,9 @@ class FinanceSubmissionService
         return DB::transaction(function () use ($user, $submission) {
             $locked = FinancialSubmission::query()->with(['financeDetail', 'cooperative', 'submitter'])->whereKey($submission->id)->lockForUpdate()->firstOrFail();
             if ($locked->status === SubmissionStatus::FINANCE_REVIEW) {
+                if ($locked->isAdvance() && $locked->submitted_by === $user->id) {
+                    throw ValidationException::withMessages(['advance' => 'Pembuat panjar tidak dapat meneruskan validasi pengajuannya sendiri.']);
+                }
                 if (! $locked->financeDetail?->staff_reviewed_at) {
                     throw ValidationException::withMessages(['finance_detail' => 'Review staff keuangan wajib disimpan terlebih dahulu.']);
                 }
