@@ -9,7 +9,7 @@ class SubmissionAttachmentPolicy
 {
     public function view(User $user, SubmissionAttachment $attachment): bool
     {
-        return $user->can('view', $attachment->submission);
+        return $user->can('submissions.export') || $user->can('view', $attachment->submission);
     }
 
     public function delete(User $user, SubmissionAttachment $attachment): bool

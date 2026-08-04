@@ -13,6 +13,7 @@ import { SubmissionStatusBadge } from '@/components/Submissions/SubmissionStatus
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
 import { formatDate } from '@/lib/format';
 import { CreateSubmissionDialog } from '@/components/Submissions/CreateSubmissionDialog';
+import { ExportSubmissionsButton } from '@/components/Submissions/ExportSubmissionsButton';
 
 export default function SubmissionsIndex({ submissions, filters }: any) {
     return (
@@ -25,7 +26,10 @@ export default function SubmissionsIndex({ submissions, filters }: any) {
                         Pengajuan dana dan reimbursement Anda.
                     </p>
                 </div>
-                <CreateSubmissionDialog />
+                <div className="flex flex-wrap gap-2">
+                    <ExportSubmissionsButton />
+                    <CreateSubmissionDialog />
+                </div>
             </div>
             <form
                 onSubmit={(e) => {

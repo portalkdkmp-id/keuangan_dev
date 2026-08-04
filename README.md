@@ -30,6 +30,7 @@ Aplikasi ini digunakan untuk mengelola data wilayah, koperasi, PIC KDKMP, rekeni
 ## Fitur Aplikasi
 
 - Manajemen user dan role.
+- Manajemen PIC KDKMP terpisah dengan filter, pagination, CRUD, dan bulk assignment koperasi per wilayah.
 - User PIC memiliki area kota/kabupaten dari tabel `cities`.
 - Manajemen wilayah provinsi, kota/kabupaten, kecamatan, dan desa.
 - Import data wilayah.
@@ -69,6 +70,7 @@ Aplikasi ini digunakan untuk mengelola data wilayah, koperasi, PIC KDKMP, rekeni
 - Reimbursement otomatis dari kekurangan pertanggungjawaban.
 - Pengembalian sisa dana ke rekening perusahaan dengan review Finance dan Approval.
 - Penutupan accountability berbasis penyelesaian sisa atau kekurangan dana.
+- Export seluruh pengajuan ke XLSX dengan sheet attachment dan URL download private.
 
 ## Alur Data Master
 
@@ -88,6 +90,19 @@ Koperasi terhubung ke wilayah sampai level desa.
 Saat membuat user PIC, admin memilih area kota/kabupaten dari tabel `cities`.
 
 Saat assign PIC ke koperasi, daftar PIC difilter berdasarkan kota/kabupaten koperasi. Backend juga memvalidasi agar PIC tidak bisa diassign ke koperasi di luar area.
+
+Menu `PIC KDKMP` dapat diakses Super Admin, Finance Staff, dan Finance Approver. Halaman assignment menampilkan koperasi pada kota/kabupaten PIC dan mendukung checklist serta check-all per halaman. Penyimpanan hanya menyinkronkan koperasi pada halaman aktif agar pilihan di halaman pagination lain tidak terhapus.
+
+## Export Pengajuan
+
+Super Admin, Finance Staff, dan Finance Approver dapat mengunduh seluruh pengajuan melalui tombol `Export Semua Pengajuan` pada halaman Pengajuan Dana, Pengajuan Masuk, atau Finance Approval.
+
+Workbook memiliki dua sheet:
+
+1. `Pengajuan`: data utama dan status workflow seluruh pengajuan.
+2. `Attachments`: daftar attachment, metadata file, dan URL download terautentikasi.
+
+Export ditulis secara streaming dan data dibaca per chunk untuk menjaga penggunaan memori ketika jumlah pengajuan besar.
 
 ### Rekening User
 
