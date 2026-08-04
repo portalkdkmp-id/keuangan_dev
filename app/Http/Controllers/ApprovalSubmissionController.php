@@ -49,6 +49,8 @@ class ApprovalSubmissionController extends Controller
     {
         Gate::authorize('view', $financialSubmission);
 
+        $financialSubmission->loadMissing('advanceDetail.responsibleUser:id,name');
+
         return Inertia::render('Approval/Submissions/Show', [
             'submission' => $financialSubmission->load(['cooperative.city.province', 'submitterCity', 'submitter', 'requestCategory', 'requestType', 'recipientBankAccount', 'items', 'attachments', 'reimbursementDetail.expenses.attachments', 'financeDetail', 'financeValidator', 'approvalForwarder', 'approvalReviewer', 'approvalDecisionMaker', 'approvalReviews.approver', 'revisionRequests.response', 'statusHistories.actor', 'disbursement.attachments', 'disbursement.distributions']),
         ]);

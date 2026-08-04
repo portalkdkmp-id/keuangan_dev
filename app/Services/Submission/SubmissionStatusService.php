@@ -5,6 +5,7 @@ namespace App\Services\Submission;
 use App\Enums\SubmissionStatus;
 use App\Models\FinancialSubmission;
 use App\Models\User;
+use App\Services\Advance\AdvanceStatusService;
 use App\Services\Audit\AuditLogService;
 use Illuminate\Validation\ValidationException;
 
@@ -48,6 +49,9 @@ class SubmissionStatusService
                 default => $submission->current_assignee_role,
             },
         ])->save();
+        if ($submission->isAdvance()) {
+            app(AdvanceStatusService::class)->syncFromSubmissionStatus($submission);
+        }
 
         $submission->statusHistories()->create([
             'from_status' => $fromStatus,

@@ -36,6 +36,8 @@ class FinanceSubmissionController extends Controller
     {
         Gate::authorize('view', $financialSubmission);
 
+        $financialSubmission->loadMissing('advanceDetail.responsibleUser:id,name');
+
         return Inertia::render('Finance/Submissions/Show', [
             'submission' => $financialSubmission->load(['cooperative.city.province', 'submitterCity', 'submitter', 'requestCategory', 'requestType', 'recipientBankAccount', 'items', 'attachments', 'reimbursementDetail.expenses.attachments', 'financeDetail', 'revisionRequests.requester', 'revisionRequests.response', 'statusHistories.actor']),
             'requestCategories' => SubmissionRequestCategory::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),

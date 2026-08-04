@@ -36,6 +36,11 @@ class DocumentNumberService
         return $this->generate('FUND_RETURN', 'RET', $date);
     }
 
+    public function generateAdvanceNumber(?\DateTimeInterface $date = null): string
+    {
+        return $this->generate('ADVANCE', 'ADV', $date);
+    }
+
     private function generate(string $documentType, string $prefix, ?\DateTimeInterface $date = null): string
     {
         $date ??= now();

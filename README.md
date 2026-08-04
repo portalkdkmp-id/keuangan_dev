@@ -225,6 +225,12 @@ Dokumentasi rinci tersedia di [docs/phase-6-fund-accountability.md](docs/phase-6
 
 Dokumentasi Phase 7 tersedia di [docs/phase-7-reimbursement-and-fund-return.md](docs/phase-7-reimbursement-and-fund-return.md).
 
+## Alur Uang Panjar
+
+Finance Staff dapat membuat uang panjar dari dialog pengajuan yang sama. Pengajuan melewati review Finance Staff lain, Finance Approval, Director, dan pencairan existing. Setelah dicairkan, penanggung jawab membuat settlement per transaksi dengan bukti pembelian dan pembayaran. Selisih realisasi otomatis diarahkan ke pengembalian sisa dana atau reimbursement sebelum panjar ditutup.
+
+Dokumentasi Phase 8 tersedia di [docs/phase-8-advances.md](docs/phase-8-advances.md).
+
 ## Struktur Penting
 
 - `app/Enums`: enum status, tipe, dan value domain.

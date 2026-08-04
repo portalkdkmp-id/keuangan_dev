@@ -104,7 +104,7 @@ class ReimbursementService
         $amount = $report->additional_amount;
         $submission->update(['total_amount' => $amount]);
         $submission->items()->update(['unit_price' => $amount, 'subtotal' => $amount]);
-        $submission->reimbursementDetail->update(['claimed_amount' => $amount, 'source_type' => 'accountability_shortfall', 'source_accountability_report_id' => $report->id, 'source_additional_amount' => $amount]);
+        $submission->reimbursementDetail->update(['claimed_amount' => $amount, 'source_type' => $report->source_type === 'advance' ? 'advance_shortfall' : 'accountability_shortfall', 'source_accountability_report_id' => $report->id, 'source_advance_detail_id' => $report->advance_detail_id, 'source_additional_amount' => $amount]);
         $this->audit->record('reimbursement.generated_from_accountability', 'Draft reimbursement selisih dibuat.', $submission, [], ['accountability_report_id' => $report->id, 'claimed_amount' => $amount]);
 
         return $submission;

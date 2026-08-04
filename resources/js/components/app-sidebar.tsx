@@ -119,6 +119,11 @@ export function AppSidebar() {
                     href: '/accountability-reports',
                     icon: ClipboardList,
                 },
+                can('advance-settlements.view') && {
+                    title: 'Settlement Uang Panjar',
+                    href: '/advance-settlements',
+                    icon: ClipboardCheck,
+                },
                 can('fund-returns.create') && {
                     title: 'Pengembalian Sisa Dana',
                     href: '/fund-returns',

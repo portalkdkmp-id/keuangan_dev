@@ -46,6 +46,8 @@ class RolePermissionSeeder extends Seeder
         'reimbursements.view', 'reimbursements.create', 'reimbursements.update', 'reimbursements.submit', 'reimbursements.review', 'reimbursements.request-revision', 'reimbursements.validate', 'reimbursements.approve', 'reimbursements.reject', 'reimbursements.download-attachment',
         'fund-returns.view', 'fund-returns.create', 'fund-returns.update', 'fund-returns.submit', 'fund-returns.review', 'fund-returns.request-revision', 'fund-returns.verify', 'fund-returns.approve', 'fund-returns.reject', 'fund-returns.download-attachment',
         'reimbursement-monitoring.view', 'fund-return-monitoring.view',
+        'advances.view', 'advances.create', 'advances.update', 'advances.submit', 'advances.review', 'advances.request-revision', 'advances.validate', 'advances.approve', 'advances.reject', 'advances.disburse', 'advances.monitor', 'advances.download-attachment',
+        'advance-settlements.view', 'advance-settlements.create', 'advance-settlements.update', 'advance-settlements.submit', 'advance-settlements.review', 'advance-settlements.request-revision', 'advance-settlements.verify', 'advance-settlements.approve', 'advance-settlements.reject', 'advance-settlements.download-attachment', 'advance-settlements.monitor',
     ];
 
     public function run(): void
@@ -94,6 +96,8 @@ class RolePermissionSeeder extends Seeder
                     'notifications.view', 'notifications.mark-read',
                     'reimbursements.view', 'reimbursements.create', 'reimbursements.update', 'reimbursements.submit', 'reimbursements.review', 'reimbursements.request-revision', 'reimbursements.validate', 'reimbursements.reject', 'reimbursements.download-attachment',
                     'fund-returns.view', 'fund-returns.review', 'fund-returns.request-revision', 'fund-returns.verify', 'fund-returns.reject', 'fund-returns.download-attachment',
+                    'advances.view', 'advances.create', 'advances.update', 'advances.submit', 'advances.review', 'advances.request-revision', 'advances.validate', 'advances.download-attachment',
+                    'advance-settlements.view', 'advance-settlements.create', 'advance-settlements.update', 'advance-settlements.submit', 'advance-settlements.review', 'advance-settlements.request-revision', 'advance-settlements.verify', 'advance-settlements.download-attachment',
                 ],
                 'finance_approver' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
@@ -111,6 +115,8 @@ class RolePermissionSeeder extends Seeder
                     'notifications.view', 'notifications.mark-read',
                     'reimbursements.view', 'reimbursements.approve', 'reimbursements.reject', 'reimbursements.request-revision', 'reimbursements.download-attachment',
                     'fund-returns.view', 'fund-returns.approve', 'fund-returns.reject', 'fund-returns.download-attachment', 'reimbursement-monitoring.view', 'fund-return-monitoring.view',
+                    'advances.view', 'advances.approve', 'advances.reject', 'advances.monitor', 'advances.download-attachment',
+                    'advance-settlements.view', 'advance-settlements.approve', 'advance-settlements.reject', 'advance-settlements.request-revision', 'advance-settlements.download-attachment', 'advance-settlements.monitor',
                 ],
                 'finance_director' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
@@ -128,6 +134,8 @@ class RolePermissionSeeder extends Seeder
                     'fund-monitoring.view',
                     'notifications.view', 'notifications.mark-read',
                     'reimbursements.view', 'reimbursements.download-attachment', 'reimbursement-monitoring.view', 'fund-return-monitoring.view',
+                    'advances.view', 'advances.disburse', 'advances.monitor', 'advances.download-attachment',
+                    'advance-settlements.view', 'advance-settlements.download-attachment', 'advance-settlements.monitor',
                 ],
             });
         }

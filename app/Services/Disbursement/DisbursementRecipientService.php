@@ -15,7 +15,7 @@ class DisbursementRecipientService
         $type = DisbursementRecipientType::from($data['recipient_type']);
 
         return match ($type) {
-            DisbursementRecipientType::FINANCE_STAFF => $this->userRecipient($data, 'finance_staff', true),
+            DisbursementRecipientType::FINANCE_STAFF => $this->userRecipient($data, 'finance_staff', ! $submission->isAdvance()),
             DisbursementRecipientType::PIC_KDKMP => $this->picRecipient($submission, $data),
             DisbursementRecipientType::COOPERATIVE => $this->cooperativeRecipient($submission, $data),
             DisbursementRecipientType::OTHER => $this->otherRecipient($data),

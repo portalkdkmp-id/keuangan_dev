@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdvanceDetail;
 use App\Models\Cooperative;
 use App\Models\FinancialSubmission;
 use App\Models\FundAccountabilityReport;
@@ -44,7 +45,12 @@ class DashboardController extends Controller
                 'Laporan Approved' => FundAccountabilityReport::where('submitted_by', $user->id)->where('status', 'closed')->count(),
                 'Sisa Dana' => FundAccountabilityReport::where('submitted_by', $user->id)->sum('remaining_amount'),
                 'Kekurangan Dana' => FundAccountabilityReport::where('submitted_by', $user->id)->sum('additional_amount'),
-            ] : [],
+            ] : ($user->hasRole('finance_staff') ? [
+                'Panjar Belum Settlement' => AdvanceDetail::where('responsible_user_id', $user->id)->whereIn('advance_status', ['settlement_due', 'settlement_draft', 'settlement_revision_requested'])->count(),
+                'Panjar Lewat Deadline' => AdvanceDetail::where('responsible_user_id', $user->id)->whereDate('expected_settlement_date', '<', today())->whereNotIn('advance_status', ['closed', 'rejected', 'cancelled'])->count(),
+                'Settlement Direview' => FundAccountabilityReport::where('submitted_by', $user->id)->where('source_type', 'advance')->whereIn('status', ['submitted', 'finance_review', 'finance_verified'])->count(),
+                'Panjar Selesai' => AdvanceDetail::where('responsible_user_id', $user->id)->where('advance_status', 'closed')->count(),
+            ] : []),
         ]);
     }
 }

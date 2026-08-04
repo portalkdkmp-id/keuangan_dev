@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Notifications\DirectorDecisionNotification;
 use App\Notifications\DirectorRevisionRequestedNotification;
 use App\Services\Accountability\AccountabilityClosingService;
+use App\Services\Advance\AdvanceService;
 use App\Services\Audit\AuditLogService;
 use App\Services\Disbursement\DisbursementService;
 use App\Services\Submission\SubmissionStatusService;
@@ -26,6 +27,7 @@ class DirectorSubmissionService
         private readonly DisbursementService $disbursements,
         private readonly AuditLogService $auditLog,
         private readonly AccountabilityClosingService $accountabilityClosing,
+        private readonly AdvanceService $advances,
     ) {}
 
     public function startReview(User $actor, FinancialSubmission $submission): FinancialSubmission
@@ -118,6 +120,7 @@ class DirectorSubmissionService
             ])->save();
             $this->statuses->transition($locked, SubmissionStatus::FUND_DISBURSED, $actor, SubmissionAction::APPROVE_AND_DISBURSE->value, $data['notes'] ?? null, $this->meta($locked, $review, ['disbursement_id' => $disbursement->id]));
             $this->settleReimbursement($locked, $disbursement->amount, $disbursement->transferred_at);
+            $this->advances->markDisbursed($locked, $disbursement);
 
             return $locked->refresh();
         });
@@ -144,6 +147,7 @@ class DirectorSubmissionService
             ])->save();
             $this->statuses->transition($locked, SubmissionStatus::FUND_DISBURSED, $actor, SubmissionAction::DISBURSE_APPROVED_SUBMISSION->value, $data['notes'] ?? null, ['disbursement_id' => $disbursement->id]);
             $this->settleReimbursement($locked, $disbursement->amount, $disbursement->transferred_at);
+            $this->advances->markDisbursed($locked, $disbursement);
 
             return $locked->refresh();
         });
