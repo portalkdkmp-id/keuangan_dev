@@ -3,6 +3,7 @@
 use App\Enums\AdvanceStatus;
 use App\Enums\SubmissionType;
 use App\Models\Cooperative;
+use App\Models\FinancialSubmission;
 use App\Models\SubmissionRequestType;
 use App\Models\User;
 use App\Services\Accountability\FundAccountabilityService;
@@ -68,6 +69,51 @@ test('only finance staff can access advance creation and domain uses stable type
         ->and($submission->isAdvance())->toBeTrue()
         ->and($advance->responsible_user_id)->toBe($staff->id)
         ->and($advance->recipient_account_number_snapshot)->toBe('1234567890');
+});
+
+test('finance staff can save advance draft through multipart form endpoint', function () {
+    $staff = User::factory()->create();
+    $staff->assignRole('finance_staff');
+    $cooperative = Cooperative::factory()->create();
+    $account = $staff->bankAccounts()->create(['bank_name' => 'Bank Staff', 'account_number' => '9988776655', 'account_holder_name' => $staff->name, 'is_active' => true, 'is_primary' => true]);
+
+    $response = $this->actingAs($staff)->post(route('advances.store'), [
+        'title' => 'Panjar kegiatan lapangan',
+        'cooperative_id' => $cooperative->id,
+        'purpose' => 'Kebutuhan operasional kegiatan lapangan',
+        'estimated_amount' => '750000',
+        'expected_transaction_date' => now()->addDay()->toDateString(),
+        'expected_settlement_date' => now()->addDays(7)->toDateString(),
+        'recipient_bank_account_id' => $account->id,
+        'notes' => 'Draft dari form Finance Staff',
+        'attachments' => [UploadedFile::fake()->create('estimasi.pdf', 100, 'application/pdf')],
+    ]);
+
+    $submission = FinancialSubmission::where('submitted_by', $staff->id)->where('type', SubmissionType::ADVANCE)->firstOrFail();
+    $response->assertRedirect(route('advances.show', $submission))->assertSessionHasNoErrors();
+    expect($submission->total_amount)->toBe('750000.00')
+        ->and($submission->advanceDetail->recipient_bank_account_id)->toBe($account->id)
+        ->and($submission->attachments()->count())->toBe(1);
+});
+
+test('finance staff can save internal advance without cooperative', function () {
+    $staff = User::factory()->create();
+    $staff->assignRole('finance_staff');
+    $account = $staff->bankAccounts()->create(['bank_name' => 'Bank Internal', 'account_number' => '112233', 'account_holder_name' => $staff->name, 'is_active' => true]);
+
+    $this->actingAs($staff)->post(route('advances.store'), [
+        'title' => 'Panjar internal kantor',
+        'cooperative_id' => null,
+        'purpose' => 'Kebutuhan kegiatan internal kantor',
+        'estimated_amount' => '500000',
+        'expected_transaction_date' => now()->addDay()->toDateString(),
+        'expected_settlement_date' => now()->addDays(7)->toDateString(),
+        'recipient_bank_account_id' => $account->id,
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $submission = FinancialSubmission::where('submitted_by', $staff->id)->where('type', SubmissionType::ADVANCE)->firstOrFail();
+    expect($submission->cooperative_id)->toBeNull()
+        ->and($submission->advanceDetail->cooperative_id)->toBeNull();
 });
 
 test('advance settlement calculates exact remaining and shortfall amounts', function () {

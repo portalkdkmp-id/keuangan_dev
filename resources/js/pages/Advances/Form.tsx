@@ -1,6 +1,7 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { BackButton } from '@/components/back-button';
 import { MoneyInput } from '@/components/Submissions/MoneyInput';
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
@@ -20,6 +21,7 @@ export default function Form({
     cooperatives,
     bankAccounts,
     defaultSettlementDays,
+    canSubmitInternal,
 }: any) {
     const d = submission?.advance_detail;
     const [step, setStep] = useState(1);
@@ -43,16 +45,44 @@ export default function Form({
         notes: d?.notes ?? '',
         attachments: [] as File[],
     });
-    const save = () =>
-        submission
-            ? router.post(
-                  `/advances/${submission.id}`,
-                  { ...f.data, _method: 'put' },
-                  { forceFormData: true },
-              )
-            : f.post('/advances', { forceFormData: true });
+    const save = () => {
+        const options: any = {
+            forceFormData: true,
+            preserveScroll: true,
+            onError: (errors: Record<string, string>) => {
+                const keys = Object.keys(errors);
+                const targetStep = keys.some((key) =>
+                    key.startsWith('attachments'),
+                )
+                    ? 3
+                    : keys.some((key) =>
+                            [
+                                'estimated_amount',
+                                'expected_transaction_date',
+                                'expected_settlement_date',
+                                'recipient_bank_account_id',
+                                'notes',
+                            ].includes(key),
+                        )
+                      ? 2
+                      : 1;
+                setStep(targetStep);
+                toast.error('Uang panjar belum dapat disimpan', {
+                    description:
+                        Object.values(errors)[0] ??
+                        'Periksa kembali data yang wajib diisi.',
+                });
+            },
+        };
+        if (submission) {
+            f.transform((data: any) => ({ ...data, _method: 'put' }));
+            f.post(`/advances/${submission.id}`, options);
+            return;
+        }
+        f.post('/advances', options);
+    };
     return (
-        <div className="mx-auto max-w-3xl space-y-5 p-4">
+        <div className="mx-auto w-full space-y-5 p-4 md:w-3/4">
             <Head title="Uang Panjar" />
             <BackButton fallback="/submissions" />
             <div>
@@ -73,6 +103,23 @@ export default function Form({
                     </div>
                 ))}
             </div>
+            {Object.keys(f.errors).length > 0 && (
+                <div
+                    className="border-l-4 border-destructive bg-destructive/5 p-3 text-sm"
+                    role="alert"
+                >
+                    <p className="font-medium text-destructive">
+                        Periksa kembali data berikut:
+                    </p>
+                    <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+                        {Object.entries(f.errors)
+                            .slice(0, 6)
+                            .map(([field, message]) => (
+                                <li key={field}>{String(message)}</li>
+                            ))}
+                    </ul>
+                </div>
+            )}
             {step === 1 && (
                 <div className="space-y-4">
                     <div>
@@ -83,17 +130,30 @@ export default function Form({
                         />
                     </div>
                     <div>
-                        <Label>Koperasi</Label>
+                        <Label>
+                            Koperasi{canSubmitInternal ? ' (opsional)' : ''}
+                        </Label>
                         <Select
-                            value={f.data.cooperative_id}
+                            value={
+                                f.data.cooperative_id ||
+                                (canSubmitInternal ? '__internal__' : undefined)
+                            }
                             onValueChange={(v) =>
-                                f.setData('cooperative_id', v)
+                                f.setData(
+                                    'cooperative_id',
+                                    v === '__internal__' ? '' : v,
+                                )
                             }
                         >
                             <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Pilih koperasi" />
                             </SelectTrigger>
                             <SelectContent>
+                                {canSubmitInternal && (
+                                    <SelectItem value="__internal__">
+                                        Internal / Tanpa Koperasi
+                                    </SelectItem>
+                                )}
                                 {cooperatives.map((x: any) => (
                                     <SelectItem key={x.id} value={x.id}>
                                         {x.name}
@@ -220,6 +280,7 @@ export default function Form({
             )}
             <div className="flex justify-between border-t pt-4">
                 <Button
+                    type="button"
                     variant="outline"
                     disabled={step === 1}
                     onClick={() => setStep((x) => x - 1)}
@@ -228,13 +289,17 @@ export default function Form({
                     Kembali
                 </Button>
                 {step < 4 ? (
-                    <Button onClick={() => setStep((x) => x + 1)}>
+                    <Button type="button" onClick={() => setStep((x) => x + 1)}>
                         Lanjut
                         <ChevronRight />
                     </Button>
                 ) : (
-                    <Button disabled={f.processing} onClick={save}>
-                        Simpan Draft
+                    <Button
+                        type="button"
+                        disabled={f.processing}
+                        onClick={save}
+                    >
+                        {f.processing ? 'Menyimpan...' : 'Simpan Draft'}
                     </Button>
                 )}
             </div>

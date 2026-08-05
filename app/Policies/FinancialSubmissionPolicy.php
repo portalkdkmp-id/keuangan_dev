@@ -15,7 +15,7 @@ class FinancialSubmissionPolicy
 
     public function createReimbursement(User $user): bool
     {
-        return $user->can('reimbursements.create') && ($user->hasRole('finance_staff') || $user->assignedCooperatives()->exists());
+        return $user->can('reimbursements.create') && ($user->hasAnyRole(['super_admin', 'finance_staff']) || $user->assignedCooperatives()->exists());
     }
 
     public function updateReimbursement(User $user, FinancialSubmission $submission): bool
@@ -37,6 +37,11 @@ class FinancialSubmissionPolicy
     {
         if ($user->hasRole('super_admin')) {
             return true;
+        }
+
+        if ($submission->isOwnedBy($user) && $user->can('submissions.view')) {
+            return $user->hasRole('finance_staff')
+                || ($submission->cooperative_id && $user->assignedCooperatives()->whereKey($submission->cooperative_id)->exists());
         }
 
         if ($user->can('finance-submissions.view')) {
@@ -90,7 +95,7 @@ class FinancialSubmissionPolicy
 
     public function create(User $user): bool
     {
-        return $user->can('submissions.create') && ($user->hasRole('finance_staff') || $user->assignedCooperatives()->exists());
+        return $user->can('submissions.create') && ($user->hasAnyRole(['super_admin', 'finance_staff']) || $user->assignedCooperatives()->exists());
     }
 
     public function update(User $user, FinancialSubmission $submission): bool

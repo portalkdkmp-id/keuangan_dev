@@ -92,7 +92,7 @@ class ReimbursementController extends Controller
 
     private function form(Request $r, ?FinancialSubmission $s = null): Response
     {
-        return Inertia::render('Reimbursements/Form', ['submission' => $s ? $this->load($s) : null, 'cooperatives' => $r->user()->hasRole('finance_staff') ? Cooperative::where('is_active', true)->orderBy('name')->get(['id', 'name']) : $r->user()->assignedCooperatives()->where('is_active', true)->orderBy('name')->get(['cooperatives.id', 'name']), 'bankAccounts' => $r->user()->bankAccounts()->where('is_active', true)->get(['id', 'bank_name', 'account_number', 'account_holder_name']), 'expenseTypes' => SubmissionRequestType::where('is_active', true)->orderBy('name')->get(['id', 'name'])]);
+        return Inertia::render('Reimbursements/Form', ['submission' => $s ? $this->load($s) : null, 'canSubmitInternal' => $r->user()->hasAnyRole(['super_admin', 'finance_staff']), 'cooperatives' => $r->user()->hasAnyRole(['super_admin', 'finance_staff']) ? Cooperative::where('is_active', true)->orderBy('name')->get(['id', 'name']) : $r->user()->assignedCooperatives()->where('is_active', true)->orderBy('name')->get(['cooperatives.id', 'name']), 'bankAccounts' => $r->user()->bankAccounts()->where('is_active', true)->get(['id', 'bank_name', 'account_number', 'account_holder_name']), 'expenseTypes' => SubmissionRequestType::where('is_active', true)->orderBy('name')->get(['id', 'name'])]);
     }
 
     private function load(FinancialSubmission $s): FinancialSubmission

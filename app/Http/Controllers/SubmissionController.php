@@ -33,7 +33,7 @@ class SubmissionController extends Controller
         return Inertia::render('Submissions/Index', [
             'submissions' => $this->submissions->paginateForPic($request->user(), $request->all()),
             'filters' => $request->only(['search', 'status', 'cooperative_id']),
-            'cooperatives' => $request->user()->hasRole('finance_staff')
+            'cooperatives' => $request->user()->hasAnyRole(['super_admin', 'finance_staff'])
                 ? Cooperative::query()->where('is_active', true)->orderBy('name')->get(['id', 'name'])
                 : $request->user()->assignedCooperatives()->orderBy('name')->get(['cooperatives.id', 'name']),
         ]);
@@ -123,7 +123,8 @@ class SubmissionController extends Controller
     private function formData(Request $request): array
     {
         return [
-            'cooperatives' => $request->user()->hasRole('finance_staff')
+            'canSubmitInternal' => $request->user()->hasAnyRole(['super_admin', 'finance_staff']),
+            'cooperatives' => $request->user()->hasAnyRole(['super_admin', 'finance_staff'])
                 ? Cooperative::query()->where('is_active', true)->orderBy('name')->get(['id', 'name'])
                 : $request->user()->assignedCooperatives()->orderBy('name')->get(['cooperatives.id', 'name']),
             'categories' => SubmissionCategory::where('is_active', true)->orderBy('sort_order')->get(['id', 'code', 'name']),

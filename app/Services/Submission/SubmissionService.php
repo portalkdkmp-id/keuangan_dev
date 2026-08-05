@@ -74,7 +74,7 @@ class SubmissionService
 
     public function createDraft(User $user, array $data): FinancialSubmission
     {
-        $this->ensureAssignedCooperative($user, $data['cooperative_id']);
+        $this->ensureAssignedCooperative($user, $data['cooperative_id'] ?? null);
 
         return DB::transaction(function () use ($user, $data) {
             $account = $user->bankAccounts()->whereKey($data['recipient_bank_account_id'])->first();
@@ -84,7 +84,7 @@ class SubmissionService
                 'status' => SubmissionStatus::DRAFT,
                 'submission_request_category_id' => $data['submission_request_category_id'],
                 'submission_request_type_id' => $data['submission_request_type_id'],
-                'cooperative_id' => $data['cooperative_id'],
+                'cooperative_id' => $data['cooperative_id'] ?? null,
                 'recipient_bank_account_id' => $data['recipient_bank_account_id'],
                 'bank_name_snapshot' => $account?->bank_name,
                 'bank_account_number_snapshot' => $account?->account_number,
@@ -110,13 +110,13 @@ class SubmissionService
     public function updateDraft(User $user, FinancialSubmission $submission, array $data): FinancialSubmission
     {
         $this->ensureDraftOwner($user, $submission);
-        $this->ensureAssignedCooperative($user, $data['cooperative_id']);
+        $this->ensureAssignedCooperative($user, $data['cooperative_id'] ?? null);
 
         return DB::transaction(function () use ($user, $submission, $data) {
             $locked = FinancialSubmission::query()->whereKey($submission->id)->lockForUpdate()->firstOrFail();
             $old = $this->auditPayload($locked);
             $locked->update([
-                'cooperative_id' => $data['cooperative_id'],
+                'cooperative_id' => $data['cooperative_id'] ?? null,
                 'submission_request_category_id' => $data['submission_request_category_id'],
                 'submission_request_type_id' => $data['submission_request_type_id'],
                 'recipient_bank_account_id' => $data['recipient_bank_account_id'],
@@ -203,9 +203,9 @@ class SubmissionService
         }
     }
 
-    private function ensureAssignedCooperative(User $user, string $cooperativeId): void
+    private function ensureAssignedCooperative(User $user, ?string $cooperativeId): void
     {
-        if ($user->hasRole('finance_staff')) {
+        if ($user->hasAnyRole(['super_admin', 'finance_staff'])) {
             return;
         }
 

@@ -78,7 +78,7 @@ class AdvanceController extends Controller
 
     private function form(Request $r, ?FinancialSubmission $submission = null): Response
     {
-        return Inertia::render('Advances/Form', ['submission' => $submission ? $this->load($submission) : null, 'cooperatives' => Cooperative::where('is_active', true)->orderBy('name')->get(['id', 'name']), 'bankAccounts' => $r->user()->bankAccounts()->where('is_active', true)->orderByDesc('is_primary')->get(['id', 'bank_name', 'account_number', 'account_holder_name']), 'defaultSettlementDays' => config('finance.advance.default_settlement_days', 14)]);
+        return Inertia::render('Advances/Form', ['submission' => $submission ? $this->load($submission) : null, 'canSubmitInternal' => $r->user()->hasAnyRole(['super_admin', 'finance_staff']), 'cooperatives' => Cooperative::where('is_active', true)->orderBy('name')->get(['id', 'name']), 'bankAccounts' => $r->user()->bankAccounts()->where('is_active', true)->orderByDesc('is_primary')->get(['id', 'bank_name', 'account_number', 'account_holder_name']), 'defaultSettlementDays' => config('finance.advance.default_settlement_days', 14)]);
     }
 
     private function load(FinancialSubmission $s): FinancialSubmission

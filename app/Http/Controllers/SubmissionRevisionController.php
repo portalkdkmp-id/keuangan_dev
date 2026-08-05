@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Submission\ResubmitSubmissionRequest;
 use App\Http\Requests\Submission\UpdateSubmissionRequest;
+use App\Models\Cooperative;
 use App\Models\FinancialSubmission;
 use App\Models\SubmissionRequestCategory;
 use App\Models\SubmissionRequestType;
@@ -25,7 +26,10 @@ class SubmissionRevisionController extends Controller
 
         return Inertia::render('Submissions/Revision', [
             'submission' => $financialSubmission->load(['items', 'attachments', 'openRevisionRequest.requester']),
-            'cooperatives' => $request->user()->assignedCooperatives()->orderBy('name')->get(['cooperatives.id', 'name']),
+            'canSubmitInternal' => $request->user()->hasAnyRole(['super_admin', 'finance_staff']),
+            'cooperatives' => $request->user()->hasAnyRole(['super_admin', 'finance_staff'])
+                ? Cooperative::query()->where('is_active', true)->orderBy('name')->get(['id', 'name'])
+                : $request->user()->assignedCooperatives()->orderBy('name')->get(['cooperatives.id', 'name']),
             'requestCategories' => SubmissionRequestCategory::where('is_active', true)
                 ->when($request->user()->hasRole('pic_kdkmp'), fn (Builder $query) => $query->whereNot('slug', 'operasional-tim-sales'))
                 ->orderBy('sort_order')

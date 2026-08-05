@@ -1,6 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { BackButton } from '@/components/back-button';
 import { MoneyInput } from '@/components/Submissions/MoneyInput';
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
@@ -30,6 +31,7 @@ export default function Form({
     cooperatives,
     bankAccounts,
     expenseTypes,
+    canSubmitInternal,
 }: any) {
     const detail = submission?.reimbursement_detail;
     const [step, setStep] = useState(1);
@@ -42,8 +44,8 @@ export default function Form({
             ...e,
             actual_amount: String(Math.trunc(Number(e.actual_amount))),
         })) ?? [emptyExpense()],
-        purchase_proofs: {},
-        payment_proofs: {},
+        purchase_proofs: [] as File[][],
+        payment_proofs: [] as File[][],
     });
     const total = useMemo(
         () =>
@@ -60,8 +62,38 @@ export default function Form({
                 x === i ? { ...e, [k]: v } : e,
             ),
         );
+    const setProof = (
+        key: 'purchase_proofs' | 'payment_proofs',
+        index: number,
+        files: File[],
+    ) => {
+        const values = [...form.data[key]];
+        values[index] = files;
+        form.setData(key, values);
+    };
     const submit = () => {
-        const options: any = { forceFormData: true, onError: () => setStep(1) };
+        const options: any = {
+            forceFormData: true,
+            preserveScroll: true,
+            onError: (errors: Record<string, string>) => {
+                const keys = Object.keys(errors);
+                const targetStep = keys.some(
+                    (key) =>
+                        key.startsWith('purchase_proofs') ||
+                        key.startsWith('payment_proofs'),
+                )
+                    ? 3
+                    : keys.some((key) => key.startsWith('expenses'))
+                      ? 2
+                      : 1;
+                setStep(targetStep);
+                toast.error('Reimbursement belum dapat disimpan', {
+                    description:
+                        Object.values(errors)[0] ??
+                        'Periksa kembali data yang wajib diisi.',
+                });
+            },
+        };
         submission
             ? router.post(
                   `/reimbursements/${submission.id}`,
@@ -71,7 +103,7 @@ export default function Form({
             : form.post('/reimbursements', options);
     };
     return (
-        <div className="mx-auto w-full md:w-3/4 space-y-5 p-4">
+        <div className="mx-auto w-full space-y-5 p-4 md:w-3/4">
             <Head
                 title={submission ? 'Edit Reimbursement' : 'Buat Reimbursement'}
             />
@@ -94,6 +126,23 @@ export default function Form({
                     </div>
                 ))}
             </div>
+            {Object.keys(form.errors).length > 0 && (
+                <div
+                    className="border-l-4 border-destructive bg-destructive/5 p-3 text-sm"
+                    role="alert"
+                >
+                    <p className="font-medium text-destructive">
+                        Periksa kembali data berikut:
+                    </p>
+                    <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+                        {Object.entries(form.errors)
+                            .slice(0, 6)
+                            .map(([field, message]) => (
+                                <li key={field}>{String(message)}</li>
+                            ))}
+                    </ul>
+                </div>
+            )}
             {step === 1 && (
                 <section className="space-y-4">
                     <div>
@@ -106,17 +155,30 @@ export default function Form({
                         />
                     </div>
                     <div>
-                        <Label>Koperasi</Label>
+                        <Label>
+                            Koperasi{canSubmitInternal ? ' (opsional)' : ''}
+                        </Label>
                         <Select
-                            value={form.data.cooperative_id}
+                            value={
+                                form.data.cooperative_id ||
+                                (canSubmitInternal ? '__internal__' : undefined)
+                            }
                             onValueChange={(v) =>
-                                form.setData('cooperative_id', v)
+                                form.setData(
+                                    'cooperative_id',
+                                    v === '__internal__' ? '' : v,
+                                )
                             }
                         >
                             <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Pilih koperasi" />
                             </SelectTrigger>
                             <SelectContent>
+                                {canSubmitInternal && (
+                                    <SelectItem value="__internal__">
+                                        Internal / Tanpa Koperasi
+                                    </SelectItem>
+                                )}
                                 {cooperatives.map((x: any) => (
                                     <SelectItem key={x.id} value={x.id}>
                                         {x.name}
@@ -343,12 +405,11 @@ export default function Form({
                                     accept=".pdf,.jpg,.jpeg,.png,.webp"
                                     multiple
                                     onChange={(x) =>
-                                        form.setData('purchase_proofs', {
-                                            ...form.data.purchase_proofs,
-                                            [i]: Array.from(
-                                                x.target.files ?? [],
-                                            ),
-                                        })
+                                        setProof(
+                                            'purchase_proofs',
+                                            i,
+                                            Array.from(x.target.files ?? []),
+                                        )
                                     }
                                 />
                             </div>
@@ -363,12 +424,11 @@ export default function Form({
                                     accept=".pdf,.jpg,.jpeg,.png,.webp"
                                     multiple
                                     onChange={(x) =>
-                                        form.setData('payment_proofs', {
-                                            ...form.data.payment_proofs,
-                                            [i]: Array.from(
-                                                x.target.files ?? [],
-                                            ),
-                                        })
+                                        setProof(
+                                            'payment_proofs',
+                                            i,
+                                            Array.from(x.target.files ?? []),
+                                        )
                                     }
                                 />
                             </div>
@@ -407,6 +467,7 @@ export default function Form({
             )}
             <div className="flex justify-between border-t pt-4">
                 <Button
+                    type="button"
                     variant="outline"
                     disabled={step === 1}
                     onClick={() => setStep((x) => x - 1)}
@@ -415,12 +476,16 @@ export default function Form({
                     Kembali
                 </Button>
                 {step < 4 ? (
-                    <Button onClick={() => setStep((x) => x + 1)}>
+                    <Button type="button" onClick={() => setStep((x) => x + 1)}>
                         Lanjut
                         <ChevronRight />
                     </Button>
                 ) : (
-                    <Button disabled={form.processing} onClick={submit}>
+                    <Button
+                        type="button"
+                        disabled={form.processing}
+                        onClick={submit}
+                    >
                         {form.processing ? 'Menyimpan...' : 'Simpan Draft'}
                     </Button>
                 )}

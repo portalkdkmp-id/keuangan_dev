@@ -28,7 +28,7 @@ class SubmissionRevisionService
             $locked = FinancialSubmission::query()->whereKey($submission->id)->lockForUpdate()->firstOrFail();
             $this->ensureRevisionOwner($user, $locked);
             $locked->update([
-                'cooperative_id' => $data['cooperative_id'],
+                'cooperative_id' => $data['cooperative_id'] ?? null,
                 'submission_request_category_id' => $data['submission_request_category_id'],
                 'submission_request_type_id' => $data['submission_request_type_id'],
                 'recipient_bank_account_id' => $data['recipient_bank_account_id'],
@@ -51,7 +51,7 @@ class SubmissionRevisionService
         return DB::transaction(function () use ($user, $submission, $message) {
             $locked = FinancialSubmission::query()->with(['items', 'cooperative', 'submitter'])->whereKey($submission->id)->lockForUpdate()->firstOrFail();
             $this->ensureRevisionOwner($user, $locked);
-            if (! $user->assignedCooperatives()->whereKey($locked->cooperative_id)->exists()) {
+            if (! $user->hasAnyRole(['super_admin', 'finance_staff']) && ! $user->assignedCooperatives()->whereKey($locked->cooperative_id)->exists()) {
                 throw ValidationException::withMessages(['cooperative_id' => 'Assignment koperasi sudah tidak aktif.']);
             }
             if ($locked->items->isEmpty() || (float) $locked->total_amount <= 0) {
