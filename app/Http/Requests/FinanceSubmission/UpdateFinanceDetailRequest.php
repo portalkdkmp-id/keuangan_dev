@@ -27,6 +27,13 @@ class UpdateFinanceDetailRequest extends FormRequest
             'notes' => ['nullable', 'string', 'max:5000'],
             'finance_notes' => ['nullable', 'string', 'max:5000'],
             'rejection_reason' => ['nullable', 'string', 'max:5000'],
+            'items' => ['sometimes', 'array', 'min:1', 'max:50'],
+            'items.*.name' => ['required_with:items', 'string', 'max:500'],
+            'items.*.request_type_id' => ['required_with:items', 'uuid', Rule::exists('submission_request_types', 'id')->where('is_active', true)],
+            'items.*.other_type_name' => ['nullable', 'string', 'max:255'],
+            'items.*.amount' => ['required_with:items', 'numeric', 'min:0.01'],
+            'attachments' => ['nullable', 'array', 'max:10'],
+            'attachments.*' => ['file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,webp,xlsx,xls,doc,docx'],
         ];
     }
 }

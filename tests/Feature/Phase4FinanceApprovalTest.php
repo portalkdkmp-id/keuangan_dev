@@ -12,12 +12,38 @@ use App\Notifications\SubmissionForwardedToDirectorNotification;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\SubmissionCategorySeeder;
 use Database\Seeders\SubmissionRequestMasterSeeder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
     $this->seed(SubmissionCategorySeeder::class);
     $this->seed(SubmissionRequestMasterSeeder::class);
+    Storage::fake('local');
+});
+
+test('finance staff can forward approval revision to pic and manage attachments', function () {
+    [$pic, $staff, $approver, , $submission] = p4SetupApprovalSubmission();
+    $this->actingAs($approver)->post(route('approval.submissions.start-review', $submission));
+    $this->actingAs($approver)->post(route('approval.submissions.request-revision', $submission), [
+        'revision_subject' => 'Perbaiki dokumen',
+        'revision_message' => 'Lampiran perlu diganti.',
+        'revision_fields' => ['attachments'],
+    ]);
+
+    $this->actingAs($staff)->post(route('submissions.attachments.store', $submission), [
+        'file' => UploadedFile::fake()->image('revisi.jpg'),
+    ])->assertRedirect()->assertSessionHasNoErrors();
+    $this->actingAs($staff)->post(route('finance.approval-revisions.request-pic-revision', $submission), [
+        'message' => 'Mohon PIC melengkapi dokumen sumber.',
+    ])->assertRedirect();
+
+    $submission->refresh();
+    expect($submission->status)->toBe(SubmissionStatus::REVISION_REQUESTED)
+        ->and($submission->attachments()->count())->toBe(1)
+        ->and($submission->openRevisionRequest?->message)->toBe('Mohon PIC melengkapi dokumen sumber.');
+    $this->actingAs($pic)->get(route('submissions.revision.edit', $submission))->assertOk();
 });
 
 function p4SetupApprovalSubmission(): array

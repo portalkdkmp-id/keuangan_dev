@@ -27,7 +27,12 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
+import {
+    emptySubmissionItem,
+    SubmissionItemsEditor,
+} from '@/components/Submissions/SubmissionItemsEditor';
 import { formatDate } from '@/lib/format';
+import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttachments';
 
 function localDate(value?: string | null): Date | undefined {
     if (!value) return undefined;
@@ -49,22 +54,41 @@ export default function SubmissionsCreate({
     requestTypes,
     bankAccounts,
     canSubmitInternal,
+    submission = null,
+    revisionMode = false,
 }: any) {
     const [step, setStep] = useState(1);
     const [accountOpen, setAccountOpen] = useState(false);
     const [dateOpen, setDateOpen] = useState(false);
+    const [resubmitOpen, setResubmitOpen] = useState(false);
+    const [submitOpen, setSubmitOpen] = useState(false);
+    const revision =
+        submission?.open_revision_request ?? submission?.openRevisionRequest;
     const form = useForm({
-        title: '',
-        cooperative_id: canSubmitInternal ? '' : (cooperatives[0]?.id ?? ''),
-        submission_request_category_id: '',
-        submission_request_type_id: '',
-        recipient_bank_account_id: bankAccounts[0]?.id ?? '',
-        amount: '',
-        needed_date: '',
-        notes: '',
+        title: submission?.title ?? '',
+        cooperative_id:
+            submission?.cooperative_id ??
+            (canSubmitInternal ? '' : (cooperatives[0]?.id ?? '')),
+        submission_request_category_id:
+            submission?.submission_request_category_id ?? '',
+        items: submission?.items?.map((item: any) => ({
+            id: item.id,
+            name: item.description,
+            request_type_id:
+                item.request_type_id ??
+                submission.submission_request_type_id ??
+                '',
+            other_type_name: item.other_type_name ?? '',
+            amount: String(Math.trunc(Number(item.unit_price))),
+        })) ?? [emptySubmissionItem()],
+        recipient_bank_account_id:
+            submission?.recipient_bank_account_id ?? bankAccounts[0]?.id ?? '',
+        needed_date: submission?.needed_date?.slice(0, 10) ?? '',
+        notes: submission?.notes ?? '',
         attachments: [] as File[],
         action: 'draft',
     });
+    const responseForm = useForm({ message: '' });
     const accountForm = useForm({
         bank_name: '',
         account_number: '',
@@ -76,31 +100,52 @@ export default function SubmissionsCreate({
         (category: any) =>
             category.id === form.data.submission_request_category_id,
     );
-    const selectedType = requestTypes.find(
-        (type: any) => type.id === form.data.submission_request_type_id,
-    );
     const selectedCooperative = cooperatives.find(
         (cooperative: any) => cooperative.id === form.data.cooperative_id,
     );
     const selectedAccount = bankAccounts.find(
         (account: any) => account.id === form.data.recipient_bank_account_id,
     );
-    const amount = useMemo(
-        () => Number(form.data.amount || 0),
-        [form.data.amount],
+    const totalAmount = form.data.items.reduce(
+        (total: number, item: any) => total + Number(item.amount || 0),
+        0,
     );
+    const itemsComplete =
+        form.data.items.length > 0 &&
+        form.data.items.every((item: any) => {
+            const type = requestTypes.find(
+                (requestType: any) => requestType.id === item.request_type_id,
+            );
+            return (
+                Boolean(item.name) &&
+                Boolean(item.request_type_id) &&
+                Number(item.amount) > 0 &&
+                (!['lainnya', 'other'].includes(type?.slug) ||
+                    Boolean(item.other_type_name))
+            );
+        });
     const errors = Object.values(form.errors ?? {}) as string[];
     const canStep1 =
         Boolean(form.data.submission_request_category_id) &&
         Boolean(form.data.title) &&
-        (canSubmitInternal || Boolean(form.data.cooperative_id)) &&
-        Boolean(form.data.submission_request_type_id);
+        (canSubmitInternal || Boolean(form.data.cooperative_id));
     const canStep2 =
-        Boolean(form.data.amount) &&
+        itemsComplete &&
         Boolean(form.data.needed_date) &&
         Boolean(form.data.recipient_bank_account_id);
 
     const submit = (action: 'draft' | 'submit') => {
+        if (revisionMode) {
+            form.transform((data) => ({ ...data, _method: 'put' }));
+            form.post(`/submissions/${submission.id}/revision`, {
+                forceFormData: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    if (action === 'submit') setResubmitOpen(true);
+                },
+            });
+            return;
+        }
         form.setData('action', action);
         form.transform((data) => ({ ...data, action }));
         form.post('/submissions', { forceFormData: true });
@@ -108,13 +153,28 @@ export default function SubmissionsCreate({
 
     return (
         <div className="space-y-4 p-4">
-            <Head title="Buat Pengajuan" />
+            <Head
+                title={revisionMode ? 'Revisi Pengajuan' : 'Buat Pengajuan'}
+            />
             <div>
-                <h1 className="text-2xl font-semibold">Buat Pengajuan Dana</h1>
+                <h1 className="text-2xl font-semibold">
+                    {revisionMode
+                        ? 'Revisi Pengajuan Dana'
+                        : 'Buat Pengajuan Dana'}
+                </h1>
                 <p className="text-sm text-muted-foreground">
+                    {revisionMode && `${submission.submission_number} · `}
                     Langkah {step} dari 3
                 </p>
             </div>
+            {revisionMode && revision && (
+                <div className="space-y-1 border-l-4 border-amber-500 bg-amber-50 p-4 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+                    <p className="font-semibold">
+                        Catatan Revisi: {revision.subject}
+                    </p>
+                    <p>{revision.message}</p>
+                </div>
+            )}
             {errors.length > 0 && (
                 <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
                     {errors[0]}
@@ -202,35 +262,6 @@ export default function SubmissionsCreate({
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div>
-                            <Label>Jenis Pengajuan</Label>
-                            <Select
-                                value={
-                                    form.data.submission_request_type_id ||
-                                    undefined
-                                }
-                                onValueChange={(value) =>
-                                    form.setData(
-                                        'submission_request_type_id',
-                                        value,
-                                    )
-                                }
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Pilih jenis" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {requestTypes.map((type: any) => (
-                                        <SelectItem
-                                            key={type.id}
-                                            value={type.id}
-                                        >
-                                            {type.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
                     </div>
                     <div className="flex justify-end">
                         <Button disabled={!canStep1} onClick={() => setStep(2)}>
@@ -242,24 +273,12 @@ export default function SubmissionsCreate({
 
             {step === 2 && (
                 <div className="space-y-4 rounded-md border p-4">
-                    <h2 className="font-semibold">
-                        Nominal, Rekening, dan Bukti
-                    </h2>
+                    <h2 className="font-semibold">Item, Rekening, dan Bukti</h2>
+                    <SubmissionItemsEditor
+                        form={form}
+                        requestTypes={requestTypes}
+                    />
                     <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <Label>Nominal</Label>
-                            <Input
-                                inputMode="numeric"
-                                value={form.data.amount ? rupiah(amount) : ''}
-                                onChange={(event) =>
-                                    form.setData(
-                                        'amount',
-                                        event.target.value.replace(/\D/g, ''),
-                                    )
-                                }
-                                placeholder="Rp 0"
-                            />
-                        </div>
                         <div>
                             <Label>Tanggal Dibutuhkan</Label>
                             <Popover open={dateOpen} onOpenChange={setDateOpen}>
@@ -338,6 +357,14 @@ export default function SubmissionsCreate({
                                 </SelectContent>
                             </Select>
                         </div>
+                        {revisionMode && (
+                            <div className="md:col-span-2">
+                                <SubmissionAttachments
+                                    submission={submission}
+                                    editable
+                                />
+                            </div>
+                        )}
                         <div className="md:col-span-2">
                             <Label>Catatan</Label>
                             <Textarea
@@ -386,8 +413,7 @@ export default function SubmissionsCreate({
                                     ? 'Internal / Tanpa Koperasi'
                                     : '-')}
                         </div>
-                        <div>Jenis: {selectedType?.name ?? '-'}</div>
-                        <div>Nominal: {rupiah(amount)}</div>
+                        <div>Total: {rupiah(totalAmount)}</div>
                         <div>
                             Tanggal Dibutuhkan:{' '}
                             {formatDate(form.data.needed_date)}
@@ -401,6 +427,27 @@ export default function SubmissionsCreate({
                         <div className="md:col-span-2">
                             Catatan: {form.data.notes || '-'}
                         </div>
+                    </div>
+                    <div className="space-y-2">
+                        <h3 className="text-sm font-medium">Item Pengajuan</h3>
+                        {form.data.items.map((item: any, index: number) => {
+                            const type = requestTypes.find(
+                                (requestType: any) =>
+                                    requestType.id === item.request_type_id,
+                            );
+                            return (
+                                <div
+                                    key={index}
+                                    className="flex justify-between gap-3 rounded-md border p-3 text-sm"
+                                >
+                                    <span>
+                                        {item.name} ·{' '}
+                                        {item.other_type_name || type?.name}
+                                    </span>
+                                    <strong>{rupiah(item.amount)}</strong>
+                                </div>
+                            );
+                        })}
                     </div>
                     <div className="space-y-2">
                         <h3 className="text-sm font-medium">Attachment</h3>
@@ -427,17 +474,29 @@ export default function SubmissionsCreate({
                             onClick={() => submit('draft')}
                             disabled={form.processing}
                         >
-                            Simpan Draft
+                            {revisionMode ? 'Simpan Revisi' : 'Simpan Draft'}
                         </Button>
                         <Button
-                            onClick={() => submit('submit')}
+                            onClick={() =>
+                                revisionMode
+                                    ? submit('submit')
+                                    : setSubmitOpen(true)
+                            }
                             disabled={form.processing}
                         >
-                            Ajukan ke Keuangan
+                            {revisionMode
+                                ? 'Ajukan Kembali'
+                                : 'Ajukan ke Keuangan'}
                         </Button>
                         <Button
                             variant="outline"
-                            onClick={() => router.visit('/submissions')}
+                            onClick={() =>
+                                router.visit(
+                                    revisionMode
+                                        ? `/submissions/${submission.id}`
+                                        : '/submissions',
+                                )
+                            }
                         >
                             Batal
                         </Button>
@@ -506,6 +565,62 @@ export default function SubmissionsCreate({
                             }
                         >
                             Simpan
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={resubmitOpen} onOpenChange={setResubmitOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Ajukan Kembali ke Finance</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground">
+                        Perubahan revisi sudah disimpan. Tambahkan catatan
+                        balasan bila diperlukan.
+                    </p>
+                    <Textarea
+                        className="min-h-28"
+                        placeholder="Catatan balasan (opsional)"
+                        value={responseForm.data.message}
+                        onChange={(event) =>
+                            responseForm.setData('message', event.target.value)
+                        }
+                    />
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Batal</Button>
+                        </DialogClose>
+                        <Button
+                            disabled={responseForm.processing}
+                            onClick={() =>
+                                responseForm.post(
+                                    `/submissions/${submission.id}/resubmit`,
+                                )
+                            }
+                        >
+                            Kirim ke Finance
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Ajukan ke Finance?</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground">
+                        Pastikan seluruh data, item, rekening, dan attachment
+                        pengajuan sudah benar.
+                    </p>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Batal</Button>
+                        </DialogClose>
+                        <Button
+                            disabled={form.processing}
+                            onClick={() => submit('submit')}
+                        >
+                            Ya, Ajukan
                         </Button>
                     </DialogFooter>
                 </DialogContent>

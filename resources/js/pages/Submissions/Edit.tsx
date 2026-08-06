@@ -11,16 +11,23 @@ export default function SubmissionsEdit({
     bankAccounts,
     canSubmitInternal,
 }: any) {
-    const firstItem = submission.items?.[0];
     const form = useForm({
         title: submission.title ?? '',
         cooperative_id: submission.cooperative_id,
         submission_request_category_id:
             submission.submission_request_category_id ?? '',
-        submission_request_type_id: submission.submission_request_type_id ?? '',
+        items: submission.items.map((item: any) => ({
+            id: item.id,
+            name: item.description,
+            request_type_id:
+                item.request_type_id ??
+                submission.submission_request_type_id ??
+                '',
+            other_type_name: item.other_type_name ?? '',
+            amount: String(Math.trunc(Number(item.unit_price))),
+        })),
         recipient_bank_account_id:
             submission.recipient_bank_account_id ?? bankAccounts[0]?.id ?? '',
-        amount: firstItem?.unit_price ?? submission.total_amount ?? '',
         needed_date: submission.needed_date ?? '',
         notes: submission.notes ?? '',
     });

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +9,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { rupiah } from './SubmissionSummary';
+import { SubmissionItemsEditor } from './SubmissionItemsEditor';
 
 export function SubmissionForm({
     form,
@@ -26,22 +26,28 @@ export function SubmissionForm({
         (category: any) =>
             category.id === form.data.submission_request_category_id,
     );
-    const selectedType = requestTypes.find(
-        (type: any) => type.id === form.data.submission_request_type_id,
-    );
     const selectedAccount = bankAccounts.find(
         (account: any) => account.id === form.data.recipient_bank_account_id,
     );
-    const amount = useMemo(
-        () => Number(form.data.amount || 0),
-        [form.data.amount],
-    );
+    const itemsComplete =
+        form.data.items?.length > 0 &&
+        form.data.items.every((item: any) => {
+            const type = requestTypes.find(
+                (requestType: any) => requestType.id === item.request_type_id,
+            );
+            return (
+                Boolean(item.name) &&
+                Boolean(item.request_type_id) &&
+                Number(item.amount) > 0 &&
+                (!['lainnya', 'other'].includes(type?.slug) ||
+                    Boolean(item.other_type_name))
+            );
+        });
     const canContinue = [
         Boolean(form.data.submission_request_category_id),
         Boolean(form.data.title) &&
-            (canSubmitInternal || Boolean(form.data.cooperative_id)) &&
-            Boolean(form.data.submission_request_type_id),
-        Boolean(form.data.amount) &&
+            (canSubmitInternal || Boolean(form.data.cooperative_id)),
+        itemsComplete &&
             Boolean(form.data.needed_date) &&
             Boolean(form.data.recipient_bank_account_id),
     ][step];
@@ -161,111 +167,69 @@ export function SubmissionForm({
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div>
-                            <Label>Jenis pengajuan</Label>
-                            <Select
-                                value={
-                                    form.data.submission_request_type_id ||
-                                    undefined
-                                }
-                                onValueChange={(value) =>
-                                    form.setData(
-                                        'submission_request_type_id',
-                                        value,
-                                    )
-                                }
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Pilih jenis" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {requestTypes.map((type: any) => (
-                                        <SelectItem
-                                            key={type.id}
-                                            value={type.id}
-                                        >
-                                            {type.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
                     </div>
                 )}
 
                 {step === 2 && (
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <Label>Nominal pengajuan</Label>
-                            <Input
-                                type="number"
-                                inputMode="decimal"
-                                value={form.data.amount}
-                                onChange={(e) =>
-                                    form.setData('amount', e.target.value)
-                                }
-                            />
-                        </div>
-                        <div>
-                            <Label>Tanggal dibutuhkan</Label>
-                            <Input
-                                type="date"
-                                value={form.data.needed_date ?? ''}
-                                onChange={(e) =>
-                                    form.setData('needed_date', e.target.value)
-                                }
-                            />
-                        </div>
-                        <div className="md:col-span-2">
-                            <Label>Rekening penerima</Label>
-                            <Select
-                                value={
-                                    form.data.recipient_bank_account_id ||
-                                    undefined
-                                }
-                                onValueChange={(value) =>
-                                    form.setData(
-                                        'recipient_bank_account_id',
-                                        value,
-                                    )
-                                }
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Pilih rekening" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {bankAccounts.map((account: any) => (
-                                        <SelectItem
-                                            key={account.id}
-                                            value={account.id}
-                                        >
-                                            {account.bank_name} -{' '}
-                                            {account.account_holder_name} -{' '}
-                                            {account.account_number}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="md:col-span-2">
-                            <Label>Catatan</Label>
-                            <textarea
-                                className="min-h-28 w-full rounded-md border bg-background p-3 text-sm"
-                                value={form.data.notes ?? ''}
-                                onChange={(e) =>
-                                    form.setData('notes', e.target.value)
-                                }
-                            />
-                        </div>
-                        <div className="rounded-md bg-muted p-3 text-sm md:col-span-2">
+                    <div className="space-y-4">
+                        <SubmissionItemsEditor
+                            form={form}
+                            requestTypes={requestTypes}
+                        />
+                        <div className="grid gap-4 md:grid-cols-2">
                             <div>
-                                {selectedCategory?.name} · {selectedType?.name}
+                                <Label>Tanggal dibutuhkan</Label>
+                                <Input
+                                    type="date"
+                                    value={form.data.needed_date ?? ''}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'needed_date',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
                             </div>
-                            <div>{rupiah(amount)}</div>
-                            <div>
-                                {selectedAccount
-                                    ? `${selectedAccount.bank_name} - ${selectedAccount.account_holder_name}`
-                                    : '-'}
+                            <div className="md:col-span-2">
+                                <Label>Rekening penerima</Label>
+                                <Select
+                                    value={
+                                        form.data.recipient_bank_account_id ||
+                                        undefined
+                                    }
+                                    onValueChange={(value) =>
+                                        form.setData(
+                                            'recipient_bank_account_id',
+                                            value,
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Pilih rekening" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {bankAccounts.map((account: any) => (
+                                            <SelectItem
+                                                key={account.id}
+                                                value={account.id}
+                                            >
+                                                {account.bank_name} -{' '}
+                                                {account.account_holder_name} -{' '}
+                                                {account.account_number}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="md:col-span-2">
+                                <Label>Catatan</Label>
+                                <textarea
+                                    className="min-h-28 w-full rounded-md border bg-background p-3 text-sm"
+                                    value={form.data.notes ?? ''}
+                                    onChange={(e) =>
+                                        form.setData('notes', e.target.value)
+                                    }
+                                />
                             </div>
                         </div>
                     </div>

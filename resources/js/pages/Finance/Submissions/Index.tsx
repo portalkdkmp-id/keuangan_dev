@@ -20,6 +20,7 @@ import { SubmissionStatusBadge } from '@/components/Submissions/SubmissionStatus
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
 import { formatDate } from '@/lib/format';
 import { ExportSubmissionsButton } from '@/components/Submissions/ExportSubmissionsButton';
+import { SimplePagination } from '@/components/simple-pagination';
 
 export default function FinanceSubmissionsIndex({ submissions, filters }: any) {
     const sort = (column: string) =>
@@ -99,6 +100,7 @@ export default function FinanceSubmissionsIndex({ submissions, filters }: any) {
                                 </button>
                             </TableHead>
                             <TableHead>Koperasi</TableHead>
+                            <TableHead>Judul</TableHead>
                             <TableHead>PIC</TableHead>
                             <TableHead>
                                 <button onClick={() => sort('submitted_at')}>
@@ -123,6 +125,7 @@ export default function FinanceSubmissionsIndex({ submissions, filters }: any) {
                             <TableRow key={s.id}>
                                 <TableCell>{s.submission_number}</TableCell>
                                 <TableCell>{s.cooperative?.name}</TableCell>
+                                <TableCell>{s.title}</TableCell>
                                 <TableCell>{s.submitter?.name}</TableCell>
                                 <TableCell>
                                     {formatDate(s.created_at)}
@@ -157,6 +160,7 @@ export default function FinanceSubmissionsIndex({ submissions, filters }: any) {
                     </TableBody>
                 </Table>
             </div>
+            <SimplePagination meta={submissions} />
         </div>
     );
 }

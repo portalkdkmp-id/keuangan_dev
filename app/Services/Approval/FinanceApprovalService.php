@@ -16,6 +16,7 @@ use App\Notifications\ApprovalRevisionRequestedNotification;
 use App\Notifications\SubmissionApprovedByFinanceApproverNotification;
 use App\Notifications\SubmissionForwardedToDirectorNotification;
 use App\Notifications\SubmissionRejectedByFinanceApproverNotification;
+use App\Notifications\SubmissionRevisionRequestedNotification;
 use App\Services\Audit\AuditLogService;
 use App\Services\FinanceSubmission\FinanceSubmissionService;
 use App\Services\Submission\SubmissionStatusService;
@@ -198,6 +199,36 @@ class FinanceApprovalService
             $this->auditLog->record('approval.resubmitted', 'Pengajuan dikirim ulang ke finance approval.', $locked, [], $this->meta($locked, $next));
 
             DB::afterCommit(fn () => User::role('finance_approver')->where('is_active', true)->get()->each(fn (User $approver) => $approver->notify(new ApprovalResubmittedNotification($locked->fresh(), $next->fresh(), $actor, $data['change_summary']))));
+
+            return $locked->refresh();
+        });
+    }
+
+    public function forwardRevisionToPic(User $actor, FinancialSubmission $submission, string $message): FinancialSubmission
+    {
+        return DB::transaction(function () use ($actor, $submission, $message) {
+            $locked = FinancialSubmission::query()->with('submitter')->whereKey($submission->id)->lockForUpdate()->firstOrFail();
+            $this->ensureStatus($locked, SubmissionStatus::APPROVAL_REVISION_REQUESTED, 'Pengajuan tidak sedang revisi approval.');
+            $review = $this->activeReview($locked);
+            if ($review->status !== ApprovalReviewStatus::REVISION_REQUESTED) {
+                throw ValidationException::withMessages(['approval' => 'Tidak ada revisi approval aktif.']);
+            }
+
+            $revision = $locked->revisionRequests()->create([
+                'requested_by' => $actor->id,
+                'revision_number' => $locked->revision_count + 1,
+                'subject' => 'Revisi lanjutan dari Finance Approval',
+                'message' => $message,
+                'fields' => ['other'],
+                'status' => 'open',
+                'requested_at' => now(),
+            ]);
+            $review->update(['status' => ApprovalReviewStatus::SUPERSEDED, 'resolved_at' => now(), 'change_summary' => 'Diteruskan ke PIC']);
+            $locked->forceFill(['revision_count' => $revision->revision_number, 'last_revision_requested_at' => now()])->save();
+            $this->statuses->transition($locked, SubmissionStatus::REVISION_REQUESTED, $actor, 'approval_revision_forwarded_to_pic', $message);
+            $this->auditLog->record('approval.revision_forwarded_to_pic', 'Revisi approval diteruskan ke PIC.', $locked, [], ['revision_id' => $revision->id]);
+
+            DB::afterCommit(fn () => $locked->submitter?->notify(new SubmissionRevisionRequestedNotification($locked->fresh(), $revision->fresh(), $actor)));
 
             return $locked->refresh();
         });

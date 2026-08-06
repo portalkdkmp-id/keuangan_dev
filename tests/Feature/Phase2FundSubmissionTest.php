@@ -70,6 +70,26 @@ test('pic can create draft only for assigned cooperative and backend calculates 
         ->and((float) $submission->items()->first()->subtotal)->toBe(300000.0);
 });
 
+test('one submission number can contain multiple request items', function () {
+    [$pic, $cooperative] = picWithCooperative();
+    $types = SubmissionRequestType::take(2)->get();
+    $payload = submissionPayload($cooperative);
+    unset($payload['amount'], $payload['submission_request_type_id']);
+    $payload['items'] = [
+        ['name' => 'Sewa kendaraan', 'request_type_id' => $types[0]->id, 'amount' => 500000],
+        ['name' => 'Pengiriman dokumen', 'request_type_id' => $types[1]->id, 'amount' => 125000],
+    ];
+
+    $this->actingAs($pic)->post(route('submissions.store'), $payload)->assertRedirect()->assertSessionHasNoErrors();
+
+    $submission = FinancialSubmission::with('items')->firstOrFail();
+    expect($submission->items)->toHaveCount(2)
+        ->and((float) $submission->total_amount)->toBe(625000.0)
+        ->and($submission->items[0]->description)->toBe('Sewa kendaraan')
+        ->and($submission->items[1]->request_type_id)->toBe($types[1]->id)
+        ->and($submission->submission_number)->not->toBeEmpty();
+});
+
 test('finance staff can create an internal fund submission without cooperative', function () {
     $staff = User::factory()->create();
     $staff->assignRole('finance_staff');

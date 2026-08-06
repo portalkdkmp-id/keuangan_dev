@@ -27,6 +27,7 @@ class DirectorSubmissionController extends Controller
     {
         Gate::authorize('director-submissions.view');
         $status = $request->input('status');
+        $search = $request->input('search');
 
         return Inertia::render('Director/Submissions/Index', [
             'submissions' => FinancialSubmission::query()
@@ -39,11 +40,12 @@ class DirectorSubmissionController extends Controller
                     SubmissionStatus::DIRECTOR_REJECTED,
                 ])
                 ->when($status, fn ($query) => $query->where('status', $status))
+                ->when($search, fn ($query) => $query->where(fn ($q) => $q->where('submission_number', 'like', "%{$search}%")->orWhere('title', 'like', "%{$search}%")->orWhereHas('cooperative', fn ($cooperative) => $cooperative->where('name', 'like', "%{$search}%"))))
                 ->with(['cooperative.city.province', 'submitter', 'requestCategory', 'requestType', 'approvalDecisionMaker:id,name', 'financeValidator:id,name', 'directorReviewer:id,name', 'directorReviews.director'])
-                ->orderBy('forwarded_to_director_at')
+                ->latest('created_at')
                 ->paginate(10)
                 ->withQueryString(),
-            'filters' => $request->only(['status']),
+            'filters' => $request->only(['status', 'search']),
         ]);
     }
 

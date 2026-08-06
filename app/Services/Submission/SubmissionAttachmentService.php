@@ -3,6 +3,7 @@
 namespace App\Services\Submission;
 
 use App\Enums\SubmissionAttachmentType;
+use App\Enums\SubmissionStatus;
 use App\Models\FinancialSubmission;
 use App\Models\SubmissionAttachment;
 use App\Models\User;
@@ -20,7 +21,7 @@ class SubmissionAttachmentService
 
     public function upload(User $user, FinancialSubmission $submission, UploadedFile $file, array $metadata = []): SubmissionAttachment
     {
-        if (! $submission->canBeEditedBy($user)) {
+        if (! $this->canManage($user, $submission)) {
             throw ValidationException::withMessages(['file' => 'Attachment hanya dapat ditambahkan pada draft milik Anda.']);
         }
 
@@ -69,7 +70,7 @@ class SubmissionAttachmentService
     public function delete(User $user, SubmissionAttachment $attachment): void
     {
         $submission = $attachment->submission;
-        if (! $submission->canBeEditedBy($user)) {
+        if (! $this->canManage($user, $submission)) {
             throw ValidationException::withMessages(['attachment' => 'Attachment tidak dapat dihapus.']);
         }
 
@@ -83,5 +84,12 @@ class SubmissionAttachmentService
         } catch (\Throwable $exception) {
             Log::error('Failed deleting submission attachment file', ['attachment_id' => $attachment->id, 'error' => $exception->getMessage()]);
         }
+    }
+
+    private function canManage(User $user, FinancialSubmission $submission): bool
+    {
+        return $submission->canBeEditedBy($user)
+            || ($submission->status === SubmissionStatus::APPROVAL_REVISION_REQUESTED
+                && $user->can('finance-submissions.update-approval-revision'));
     }
 }

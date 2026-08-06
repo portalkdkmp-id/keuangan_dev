@@ -6,7 +6,6 @@ use App\Enums\RevisionRequestStatus;
 use App\Enums\SubmissionStatus;
 use App\Enums\SubmissionType;
 use App\Models\FinancialSubmission;
-use App\Models\SubmissionCategory;
 use App\Models\SubmissionRequestCategory;
 use App\Models\SubmissionRequestType;
 use App\Models\User;
@@ -51,6 +50,7 @@ class SubmissionService
             'needed_date' => 'needed_date',
             'status' => 'status',
             'submitted_at' => 'submitted_at',
+            'created_at' => 'created_at',
         ];
         $sort = $sortMap[$filters['sort'] ?? ''] ?? null;
         $direction = ($filters['direction'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
@@ -64,10 +64,7 @@ class SubmissionService
                 ->orWhere('title', 'like', "%{$search}%")
                 ->orWhereHas('cooperative', fn ($cooperative) => $cooperative->where('name', 'like', "%{$search}%"))))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
-            ->when($sort, fn ($query) => $query->orderBy($sort, $direction), fn ($query) => $query
-                ->orderByRaw("case when status = 'submitted' then 0 else 1 end")
-                ->orderByRaw('needed_date asc nulls last')
-                ->orderBy('submitted_at'))
+            ->when($sort, fn ($query) => $query->orderBy($sort, $direction), fn ($query) => $query->latest('created_at'))
             ->paginate((int) ($filters['per_page'] ?? 10))
             ->withQueryString();
     }
@@ -83,7 +80,7 @@ class SubmissionService
                 'type' => SubmissionType::FUND_REQUEST,
                 'status' => SubmissionStatus::DRAFT,
                 'submission_request_category_id' => $data['submission_request_category_id'],
-                'submission_request_type_id' => $data['submission_request_type_id'],
+                'submission_request_type_id' => $data['items'][0]['request_type_id'],
                 'cooperative_id' => $data['cooperative_id'] ?? null,
                 'recipient_bank_account_id' => $data['recipient_bank_account_id'],
                 'bank_name_snapshot' => $account?->bank_name,
@@ -98,7 +95,7 @@ class SubmissionService
                 'total_amount' => 0,
             ]);
 
-            $total = $this->items->replaceItems($submission, $this->itemsFromSimplePayload($data));
+            $total = $this->items->replaceItems($submission, $this->submissionItems($data));
             $submission->update(['total_amount' => $total]);
             $submission->statusHistories()->create(['to_status' => SubmissionStatus::DRAFT, 'changed_by' => $user->id, 'action' => 'created', 'created_at' => now()]);
             $this->auditLog->record('submission.draft_created', 'Draft pengajuan dibuat.', $submission, [], $this->auditPayload($submission));
@@ -118,7 +115,7 @@ class SubmissionService
             $locked->update([
                 'cooperative_id' => $data['cooperative_id'] ?? null,
                 'submission_request_category_id' => $data['submission_request_category_id'],
-                'submission_request_type_id' => $data['submission_request_type_id'],
+                'submission_request_type_id' => $data['items'][0]['request_type_id'],
                 'recipient_bank_account_id' => $data['recipient_bank_account_id'],
                 'submitter_city_id' => $user->city_id,
                 'title' => $data['title'] ?? $this->generatedTitle($data),
@@ -126,7 +123,7 @@ class SubmissionService
                 'needed_date' => $data['needed_date'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
-            $total = $this->items->replaceItems($locked, $this->itemsFromSimplePayload($data));
+            $total = $this->items->replaceItems($locked, $this->submissionItems($data));
             $locked->update(['total_amount' => $total]);
             $locked->statusHistories()->create(['from_status' => SubmissionStatus::DRAFT, 'to_status' => SubmissionStatus::DRAFT, 'changed_by' => $user->id, 'action' => 'updated', 'created_at' => now()]);
             $this->auditLog->record('submission.draft_updated', 'Draft pengajuan diperbarui.', $locked, $old, $this->auditPayload($locked));
@@ -156,10 +153,6 @@ class SubmissionService
             if ($locked->items->isEmpty() || (float) $locked->total_amount <= 0) {
                 throw ValidationException::withMessages(['submission' => 'Pengajuan harus memiliki item dengan total lebih dari 0.']);
             }
-            if ($locked->items->count() !== 1) {
-                throw ValidationException::withMessages(['submission' => 'Pengajuan hanya boleh memiliki satu nominal pengajuan.']);
-            }
-
             $this->statuses->transition($locked, SubmissionStatus::SUBMITTED, $user, 'submitted');
 
             DB::afterCommit(function () use ($locked, $user) {
@@ -225,32 +218,30 @@ class SubmissionService
         ];
     }
 
-    private function itemsFromSimplePayload(array $data): array
+    private function submissionItems(array $data): array
     {
-        $category = SubmissionCategory::where('code', 'other')->first() ?? SubmissionCategory::firstOrFail();
-        $type = SubmissionRequestType::find($data['submission_request_type_id']);
-
-        return [[
-            'category_id' => $category->id,
-            'description' => $type?->name ?? 'Pengajuan dana',
+        return collect($data['items'])->map(fn (array $item) => [
+            'request_type_id' => $item['request_type_id'],
+            'other_type_name' => $item['other_type_name'] ?? null,
+            'description' => $item['name'],
             'quantity' => 1,
-            'unit' => 'pengajuan',
-            'unit_price' => $data['amount'],
+            'unit' => 'item',
+            'unit_price' => $item['amount'],
             'notes' => $data['notes'] ?? null,
-        ]];
+        ])->all();
     }
 
     private function generatedTitle(array $data): string
     {
         $category = SubmissionRequestCategory::find($data['submission_request_category_id']);
-        $type = SubmissionRequestType::find($data['submission_request_type_id']);
+        $type = SubmissionRequestType::find($data['items'][0]['request_type_id']);
 
         return trim(($category?->name ?? 'Pengajuan Dana').' - '.($type?->name ?? 'Umum'));
     }
 
     private function generatedPurpose(array $data): string
     {
-        $type = SubmissionRequestType::find($data['submission_request_type_id']);
+        $type = SubmissionRequestType::find($data['items'][0]['request_type_id']);
 
         return 'Pengajuan dana untuk '.($type?->name ?? 'kebutuhan operasional').'.';
     }

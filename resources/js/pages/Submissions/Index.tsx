@@ -14,6 +14,7 @@ import { rupiah } from '@/components/Submissions/SubmissionSummary';
 import { formatDate } from '@/lib/format';
 import { CreateSubmissionDialog } from '@/components/Submissions/CreateSubmissionDialog';
 import { ExportSubmissionsButton } from '@/components/Submissions/ExportSubmissionsButton';
+import { SimplePagination } from '@/components/simple-pagination';
 
 export default function SubmissionsIndex({ submissions, filters }: any) {
     return (
@@ -103,6 +104,7 @@ export default function SubmissionsIndex({ submissions, filters }: any) {
                     </TableBody>
                 </Table>
             </div>
+            <SimplePagination meta={submissions} />
         </div>
     );
 }

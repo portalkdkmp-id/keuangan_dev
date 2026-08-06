@@ -1,28 +1,282 @@
 import { Head, router, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttachments';
+import { SubmissionItemsEditor } from '@/components/Submissions/SubmissionItemsEditor';
 
-export default function FinanceApprovalRevisionShow({ submission, requestCategories, requestTypes }: any) {
+export default function FinanceApprovalRevisionShow({
+    submission,
+    requestCategories,
+    requestTypes,
+}: any) {
     const review = submission.approval_reviews?.[0];
-    const firstItem = submission.items?.[0];
-    const form = useForm({ title: submission.title ?? '', submission_request_category_id: submission.submission_request_category_id ?? '', submission_request_type_id: submission.submission_request_type_id ?? '', amount: firstItem?.unit_price ?? submission.total_amount ?? '', needed_date: submission.needed_date ?? '', notes: submission.notes ?? '', finance_notes: submission.finance_detail?.finance_notes ?? '' });
+    const [confirm, setConfirm] = useState<'approval' | 'pic' | null>(null);
+    const form = useForm({
+        title: submission.title ?? '',
+        submission_request_category_id:
+            submission.submission_request_category_id ?? '',
+        submission_request_type_id: submission.submission_request_type_id ?? '',
+        amount: submission.total_amount ?? '',
+        items: submission.items.map((item: any) => ({
+            id: item.id,
+            name: item.description,
+            request_type_id:
+                item.request_type_id ??
+                submission.submission_request_type_id ??
+                '',
+            other_type_name: item.other_type_name ?? '',
+            amount: String(Math.trunc(Number(item.unit_price))),
+        })),
+        needed_date: String(submission.needed_date ?? '').slice(0, 10),
+        notes: submission.notes ?? '',
+        finance_notes: submission.finance_detail?.finance_notes ?? '',
+        attachments: [] as File[],
+    });
     const resubmitForm = useForm({ change_summary: '', notes: '' });
-    return <div className="space-y-4 p-4"><Head title={submission.submission_number} /><h1 className="text-2xl font-semibold">Revisi Approval {submission.submission_number}</h1>
-        <div className="rounded-md border p-4 text-sm"><h2 className="font-semibold">{review?.revision_subject}</h2><p>{review?.revision_message}</p><p className="text-muted-foreground">{review?.revision_fields?.join(', ')}</p></div>
-        <form onSubmit={(e) => { e.preventDefault(); form.put(`/finance/approval-revisions/${submission.id}`); }} className="grid gap-3 rounded-md border p-4 md:grid-cols-2">
-            <div className="md:col-span-2"><Label>Title</Label><Input value={form.data.title} onChange={(e) => form.setData('title', e.target.value)} /></div>
-            <div><Label>Kategori</Label><Select value={form.data.submission_request_category_id || undefined} onValueChange={(v) => form.setData('submission_request_category_id', v)}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent>{requestCategories.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Jenis</Label><Select value={form.data.submission_request_type_id || undefined} onValueChange={(v) => form.setData('submission_request_type_id', v)}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent>{requestTypes.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Nominal</Label><Input type="number" value={form.data.amount} onChange={(e) => form.setData('amount', e.target.value)} /></div>
-            <div><Label>Tanggal dibutuhkan</Label><Input type="date" value={String(form.data.needed_date ?? '').slice(0, 10)} onChange={(e) => form.setData('needed_date', e.target.value)} /></div>
-            <div><Label>Catatan PIC</Label><textarea className="min-h-24 w-full rounded-md border bg-background p-3 text-sm" value={form.data.notes ?? ''} onChange={(e) => form.setData('notes', e.target.value)} /></div>
-            <div><Label>Catatan Finance</Label><textarea className="min-h-24 w-full rounded-md border bg-background p-3 text-sm" value={form.data.finance_notes ?? ''} onChange={(e) => form.setData('finance_notes', e.target.value)} /></div>
-            <Button>Simpan Perbaikan</Button>
-        </form>
-        <SubmissionAttachments submission={submission} />
-        <form onSubmit={(e) => { e.preventDefault(); resubmitForm.post(`/finance/approval-revisions/${submission.id}/resubmit`); }} className="space-y-3 rounded-md border p-4"><Label>Ringkasan perubahan</Label><textarea className="min-h-24 w-full rounded-md border bg-background p-3 text-sm" value={resubmitForm.data.change_summary} onChange={(e) => resubmitForm.setData('change_summary', e.target.value)} /><Label>Catatan ke approver</Label><textarea className="min-h-20 w-full rounded-md border bg-background p-3 text-sm" value={resubmitForm.data.notes} onChange={(e) => resubmitForm.setData('notes', e.target.value)} /><Button>Kirim Ulang ke Approval</Button><Button type="button" variant="outline" onClick={() => router.visit('/finance/approval-revisions')}>Cancel</Button></form>
-    </div>;
+    const picForm = useForm({ message: '' });
+    const save = (onSuccess?: () => void) =>
+        form.post(`/finance/approval-revisions/${submission.id}`, {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess,
+        });
+
+    return (
+        <div className="space-y-4 p-4">
+            <Head title={submission.submission_number} />
+            <div>
+                <h1 className="text-2xl font-semibold">Revisi Approval</h1>
+                <p className="text-sm text-muted-foreground">
+                    {submission.submission_number} · {submission.title}
+                </p>
+            </div>
+            <div className="border-l-4 border-amber-500 bg-amber-50 p-4 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+                <h2 className="font-semibold">{review?.revision_subject}</h2>
+                <p>{review?.revision_message}</p>
+            </div>
+            <form
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    form.transform((data: any) => ({
+                        ...data,
+                        _method: 'put',
+                    }));
+                    save();
+                }}
+                className="space-y-4 rounded-md border p-4"
+            >
+                <div className="grid gap-3 md:grid-cols-2">
+                    <div className="md:col-span-2">
+                        <Label>Judul</Label>
+                        <Input
+                            value={form.data.title}
+                            onChange={(event) =>
+                                form.setData('title', event.target.value)
+                            }
+                        />
+                    </div>
+                    <div>
+                        <Label>Kategori</Label>
+                        <Select
+                            value={
+                                form.data.submission_request_category_id ||
+                                undefined
+                            }
+                            onValueChange={(value) =>
+                                form.setData(
+                                    'submission_request_category_id',
+                                    value,
+                                )
+                            }
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {requestCategories.map((category: any) => (
+                                    <SelectItem
+                                        key={category.id}
+                                        value={category.id}
+                                    >
+                                        {category.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label>Tanggal dibutuhkan</Label>
+                        <Input
+                            type="date"
+                            value={form.data.needed_date}
+                            onChange={(event) =>
+                                form.setData('needed_date', event.target.value)
+                            }
+                        />
+                    </div>
+                </div>
+                <SubmissionItemsEditor
+                    form={form}
+                    requestTypes={requestTypes}
+                />
+                <div className="grid gap-3 md:grid-cols-2">
+                    <div>
+                        <Label>Catatan PIC</Label>
+                        <Textarea
+                            className="min-h-24"
+                            value={form.data.notes}
+                            onChange={(event) =>
+                                form.setData('notes', event.target.value)
+                            }
+                        />
+                    </div>
+                    <div>
+                        <Label>Catatan Finance</Label>
+                        <Textarea
+                            className="min-h-24"
+                            value={form.data.finance_notes}
+                            onChange={(event) =>
+                                form.setData(
+                                    'finance_notes',
+                                    event.target.value,
+                                )
+                            }
+                        />
+                    </div>
+                    <div className="md:col-span-2">
+                        <Label>Attachment baru</Label>
+                        <Input
+                            type="file"
+                            multiple
+                            onChange={(event) =>
+                                form.setData(
+                                    'attachments',
+                                    Array.from(event.target.files ?? []),
+                                )
+                            }
+                        />
+                    </div>
+                </div>
+                <Button disabled={form.processing}>Simpan Perbaikan</Button>
+            </form>
+            <SubmissionAttachments submission={submission} editable />
+            <div className="space-y-3 rounded-md border p-4">
+                <Label>Ringkasan perubahan</Label>
+                <Textarea
+                    value={resubmitForm.data.change_summary}
+                    onChange={(event) =>
+                        resubmitForm.setData(
+                            'change_summary',
+                            event.target.value,
+                        )
+                    }
+                />
+                <Label>Catatan ke Approver</Label>
+                <Textarea
+                    value={resubmitForm.data.notes}
+                    onChange={(event) =>
+                        resubmitForm.setData('notes', event.target.value)
+                    }
+                />
+                <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => setConfirm('approval')}>
+                        Kirim Ulang ke Approval
+                    </Button>
+                    <Button variant="outline" onClick={() => setConfirm('pic')}>
+                        Teruskan Revisi ke PIC
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={() =>
+                            router.visit('/finance/approval-revisions')
+                        }
+                    >
+                        Batal
+                    </Button>
+                </div>
+            </div>
+            <Dialog
+                open={confirm === 'approval'}
+                onOpenChange={(open) => !open && setConfirm(null)}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Kirim ulang ke Approval?</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground">
+                        Pastikan seluruh perbaikan dan attachment sudah benar.
+                    </p>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Batal</Button>
+                        </DialogClose>
+                        <Button
+                            disabled={resubmitForm.processing}
+                            onClick={() =>
+                                resubmitForm.post(
+                                    `/finance/approval-revisions/${submission.id}/resubmit`,
+                                )
+                            }
+                        >
+                            Ya, Kirim
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog
+                open={confirm === 'pic'}
+                onOpenChange={(open) => !open && setConfirm(null)}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Teruskan revisi ke PIC?</DialogTitle>
+                    </DialogHeader>
+                    <Label>Catatan untuk PIC</Label>
+                    <Textarea
+                        className="min-h-28"
+                        value={picForm.data.message}
+                        onChange={(event) =>
+                            picForm.setData('message', event.target.value)
+                        }
+                    />
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Batal</Button>
+                        </DialogClose>
+                        <Button
+                            disabled={
+                                picForm.processing ||
+                                !picForm.data.message.trim()
+                            }
+                            onClick={() =>
+                                picForm.post(
+                                    `/finance/approval-revisions/${submission.id}/request-pic-revision`,
+                                )
+                            }
+                        >
+                            Kirim ke PIC
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
 }

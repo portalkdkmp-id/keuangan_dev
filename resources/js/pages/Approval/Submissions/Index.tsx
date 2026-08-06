@@ -13,6 +13,8 @@ import { SubmissionStatusBadge } from '@/components/Submissions/SubmissionStatus
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
 import { formatDate } from '@/lib/format';
 import { ExportSubmissionsButton } from '@/components/Submissions/ExportSubmissionsButton';
+import { Input } from '@/components/ui/input';
+import { SimplePagination } from '@/components/simple-pagination';
 
 export default function ApprovalSubmissionsIndex({
     submissions,
@@ -26,10 +28,53 @@ export default function ApprovalSubmissionsIndex({
         <div className="space-y-4 p-4">
             <Head title="Approval Keuangan" />
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h1 className="text-2xl font-semibold">Approval Keuangan</h1>
+                <div>
+                    <h1 className="text-2xl font-semibold">
+                        Approval Keuangan
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                        Daftar pengajuan yang masuk untuk persetujuan.
+                    </p>
+                </div>
                 <ExportSubmissionsButton />
             </div>
+            <form
+                className="flex gap-2"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    router.get(
+                        '/approval/submissions',
+                        {
+                            ...filters,
+                            ...Object.fromEntries(
+                                new FormData(event.currentTarget),
+                            ),
+                        },
+                        { preserveState: true },
+                    );
+                }}
+            >
+                <Input
+                    name="search"
+                    defaultValue={filters.search ?? ''}
+                    placeholder="Cari nomor, judul, koperasi"
+                />
+                <Button>Filter</Button>
+            </form>
             <div className="flex flex-wrap gap-2 text-sm">
+                <Button
+                    size="sm"
+                    variant={!filters.status ? 'default' : 'outline'}
+                    onClick={() =>
+                        router.get(
+                            '/approval/submissions',
+                            { search: filters.search },
+                            { preserveState: true },
+                        )
+                    }
+                >
+                    Semua
+                </Button>
                 {[
                     'approval_review',
                     'approval_in_review',
@@ -60,6 +105,7 @@ export default function ApprovalSubmissionsIndex({
                     <TableHeader>
                         <TableRow>
                             <TableHead>Nomor</TableHead>
+                            <TableHead>Judul</TableHead>
                             <TableHead>Koperasi</TableHead>
                             <TableHead>PIC</TableHead>
                             <TableHead>Tanggal</TableHead>
@@ -74,6 +120,7 @@ export default function ApprovalSubmissionsIndex({
                                 <TableCell>
                                     {submission.submission_number}
                                 </TableCell>
+                                <TableCell>{submission.title}</TableCell>
                                 <TableCell>
                                     {submission.cooperative?.name}
                                 </TableCell>
@@ -134,6 +181,7 @@ export default function ApprovalSubmissionsIndex({
                     </TableBody>
                 </Table>
             </div>
+            <SimplePagination meta={submissions} />
         </div>
     );
 }

@@ -22,6 +22,7 @@ class ApprovalSubmissionController extends Controller
     {
         Gate::authorize('approval-submissions.view');
         $status = $request->input('status');
+        $search = $request->input('search');
 
         return Inertia::render('Approval/Submissions/Index', [
             'submissions' => FinancialSubmission::query()
@@ -36,12 +37,12 @@ class ApprovalSubmissionController extends Controller
                     SubmissionStatus::FUND_DISBURSED,
                 ])
                 ->when($status, fn ($query) => $query->where('status', $status))
+                ->when($search, fn ($query) => $query->where(fn ($q) => $q->where('submission_number', 'like', "%{$search}%")->orWhere('title', 'like', "%{$search}%")->orWhereHas('cooperative', fn ($cooperative) => $cooperative->where('name', 'like', "%{$search}%"))))
                 ->with(['cooperative.city.province', 'submitter', 'financeValidator:id,name', 'approvalReviewer:id,name', 'approvalReviews.approver'])
-                ->orderByRaw("case when status = 'approval_review' then 0 when status = 'approval_in_review' then 1 else 2 end")
-                ->orderBy('forwarded_to_approval_at')
+                ->latest('created_at')
                 ->paginate(10)
                 ->withQueryString(),
-            'filters' => $request->only(['status']),
+            'filters' => $request->only(['status', 'search']),
         ]);
     }
 

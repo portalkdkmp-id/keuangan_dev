@@ -1,4 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BackButton } from '@/components/back-button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatDate } from '@/lib/format';
 import { ReimbursementDetail } from '@/components/Reimbursements/ReimbursementDetail';
 import { AdvanceDetail } from '@/components/Advances/AdvanceDetail';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { SubmissionItemsTable } from '@/components/Submissions/SubmissionItemsTable';
 
 function dateInputValue(value?: string | null): string {
     return value ? value.slice(0, 10) : '';
@@ -29,6 +39,7 @@ export default function FinanceSubmissionsShow({
     requestCategories,
     requestTypes,
 }: any) {
+    const [confirmForward, setConfirmForward] = useState(false);
     const detail = submission.finance_detail ?? submission.financeDetail ?? {};
     const firstItem = submission.items?.[0];
     const reviewForm = useForm({
@@ -108,6 +119,11 @@ export default function FinanceSubmissionsShow({
                 <div className="font-semibold md:col-span-2">
                     Nominal saat ini: {rupiah(submission.total_amount)}
                 </div>
+            </div>
+
+            <div className="space-y-3">
+                <h2 className="font-semibold">Item Pengajuan</h2>
+                <SubmissionItemsTable items={submission.items} />
             </div>
 
             <SubmissionAttachments submission={submission} />
@@ -263,7 +279,7 @@ export default function FinanceSubmissionsShow({
                         </Button>
                         <Button
                             type="button"
-                            onClick={submitToApproval}
+                            onClick={() => setConfirmForward(true)}
                             disabled={reviewForm.processing}
                         >
                             Ajukan ke Approval
@@ -271,6 +287,27 @@ export default function FinanceSubmissionsShow({
                     </div>
                 )}
             </form>
+            <Dialog open={confirmForward} onOpenChange={setConfirmForward}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Ajukan ke Approval?</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground">
+                        Pastikan data review dan nominal pengajuan sudah benar.
+                    </p>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Batal</Button>
+                        </DialogClose>
+                        <Button
+                            onClick={submitToApproval}
+                            disabled={reviewForm.processing}
+                        >
+                            Ya, Ajukan
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {isReview && (
                 <form

@@ -7,8 +7,6 @@ use App\Enums\RevisionRequestStatus;
 use App\Enums\SubmissionStatus;
 use App\Models\FinanceSubmissionDetail;
 use App\Models\FinancialSubmission;
-use App\Models\SubmissionCategory;
-use App\Models\SubmissionRequestType;
 use App\Models\SubmissionRevisionRequest;
 use App\Models\User;
 use App\Notifications\SubmissionForwardedToApprovalNotification;
@@ -39,9 +37,12 @@ class FinanceSubmissionService
                 'needed_date' => $data['needed_date'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
-            $total = $this->items->replaceItems($locked, $this->itemsFromReviewPayload($data));
-            $locked->update(['total_amount' => $total]);
-
+            if (isset($data['items'])) {
+                $items = collect($data['items'])->map(fn (array $item) => ['request_type_id' => $item['request_type_id'], 'other_type_name' => $item['other_type_name'] ?? null, 'description' => $item['name'], 'quantity' => 1, 'unit' => 'item', 'unit_price' => $item['amount'], 'notes' => $data['notes'] ?? null])->all();
+                $total = $this->items->replaceItems($locked, $items);
+                $locked->update(['submission_request_type_id' => $data['items'][0]['request_type_id'], 'total_amount' => $total]);
+                $data['amount'] = $total;
+            }
             $detail = FinanceSubmissionDetail::updateOrCreate(
                 ['financial_submission_id' => $locked->id],
                 [
@@ -217,8 +218,12 @@ class FinanceSubmissionService
                 'needed_date' => $data['needed_date'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
-            $total = $this->items->replaceItems($locked, $this->itemsFromReviewPayload($data));
-            $locked->update(['total_amount' => $total]);
+            if (isset($data['items'])) {
+                $items = collect($data['items'])->map(fn (array $item) => ['request_type_id' => $item['request_type_id'], 'other_type_name' => $item['other_type_name'] ?? null, 'description' => $item['name'], 'quantity' => 1, 'unit' => 'item', 'unit_price' => $item['amount'], 'notes' => $data['notes'] ?? null])->all();
+                $total = $this->items->replaceItems($locked, $items);
+                $locked->update(['submission_request_type_id' => $data['items'][0]['request_type_id'], 'total_amount' => $total]);
+                $data['amount'] = $total;
+            }
 
             return FinanceSubmissionDetail::updateOrCreate(
                 ['financial_submission_id' => $locked->id],
@@ -238,20 +243,5 @@ class FinanceSubmissionService
         if ($submission->status !== $status) {
             throw ValidationException::withMessages(['status' => $message]);
         }
-    }
-
-    private function itemsFromReviewPayload(array $data): array
-    {
-        $category = SubmissionCategory::where('code', 'other')->first() ?? SubmissionCategory::firstOrFail();
-        $type = SubmissionRequestType::find($data['submission_request_type_id']);
-
-        return [[
-            'category_id' => $category->id,
-            'description' => $type?->name ?? 'Pengajuan dana',
-            'quantity' => 1,
-            'unit' => 'pengajuan',
-            'unit_price' => $data['amount'],
-            'notes' => $data['notes'] ?? null,
-        ]];
     }
 }
