@@ -41,7 +41,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 
-Route::middleware(['auth', 'verified', 'active'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::resource('users', UserController::class)->except(['show']);
     Route::get('pics', [PicUserController::class, 'index'])->name('pics.index');

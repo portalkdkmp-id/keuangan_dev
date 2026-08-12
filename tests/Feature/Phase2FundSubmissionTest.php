@@ -55,7 +55,13 @@ test('pic can create draft only for assigned cooperative and backend calculates 
     [$pic, $cooperative] = picWithCooperative();
     $other = Cooperative::factory()->create();
 
-    $this->actingAs($pic)->get(route('submissions.create'))->assertOk();
+    $this->actingAs($pic)->get(route('submissions.create'))->assertOk()->assertInertia(fn ($page) => $page
+        ->component('Submissions/Create')
+        ->where('canSubmitInternal', false)
+        ->has('cooperatives')
+        ->has('requestCategories')
+        ->has('requestTypes')
+        ->has('bankAccounts'));
 
     $this->actingAs($pic)->post(route('submissions.store'), submissionPayload($other))->assertSessionHasErrors('cooperative_id');
 
