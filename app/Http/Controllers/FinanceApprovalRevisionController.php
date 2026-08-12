@@ -9,14 +9,16 @@ use App\Models\FinancialSubmission;
 use App\Models\SubmissionRequestCategory;
 use App\Models\SubmissionRequestType;
 use App\Services\Approval\FinanceApprovalService;
+use App\Services\Submission\SubmissionAttachmentService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class FinanceApprovalRevisionController extends Controller
 {
-    public function __construct(private readonly FinanceApprovalService $approvals) {}
+    public function __construct(private readonly FinanceApprovalService $approvals, private readonly SubmissionAttachmentService $attachments) {}
 
     public function index(): Response
     {
@@ -38,7 +40,7 @@ class FinanceApprovalRevisionController extends Controller
         return Inertia::render('Finance/ApprovalRevisions/Show', [
             'submission' => $financialSubmission->load(['cooperative.city.province', 'submitterCity', 'submitter', 'requestCategory', 'requestType', 'recipientBankAccount', 'items', 'attachments', 'financeDetail', 'approvalReviews.approver', 'statusHistories.actor']),
             'requestCategories' => SubmissionRequestCategory::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
-            'requestTypes' => SubmissionRequestType::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'requestTypes' => SubmissionRequestType::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'slug']),
         ]);
     }
 
@@ -46,8 +48,20 @@ class FinanceApprovalRevisionController extends Controller
     {
         Gate::authorize('updateApprovalRevision', $financialSubmission);
         $this->approvals->updateApprovalRevision($request->user(), $financialSubmission, $request->validated());
+        foreach ($request->file('attachments', []) as $file) {
+            $this->attachments->upload($request->user(), $financialSubmission, $file);
+        }
 
         return back()->with('success', 'Perbaikan approval berhasil disimpan.');
+    }
+
+    public function requestPicRevision(Request $request, FinancialSubmission $financialSubmission): RedirectResponse
+    {
+        Gate::authorize('updateApprovalRevision', $financialSubmission);
+        $data = $request->validate(['message' => ['required', 'string', 'max:5000']]);
+        $this->approvals->forwardRevisionToPic($request->user(), $financialSubmission, $data['message']);
+
+        return to_route('finance.approval-revisions.index')->with('success', 'Permintaan revisi diteruskan ke PIC.');
     }
 
     public function resubmit(ResubmitApprovalRequest $request, FinancialSubmission $financialSubmission): RedirectResponse

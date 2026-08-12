@@ -50,7 +50,6 @@ export default function Assignments({
                 ? [...form.data.cooperative_ids, id]
                 : form.data.cooperative_ids.filter((item) => item !== id),
         );
-
     return (
         <div className="space-y-5 p-4 sm:p-6">
             <Head title={`Assign Koperasi - ${pic.name}`} />
@@ -97,23 +96,23 @@ export default function Assignments({
                 <Button>Terapkan Filter</Button>
             </form>
             <form
-                className="space-y-4"
                 onSubmit={(event) => {
                     event.preventDefault();
                     form.put(`/pics/${pic.id}/assignments`, {
                         preserveScroll: true,
                     });
                 }}
+                className="space-y-4"
             >
-                <div className="overflow-x-auto rounded-md border">
+                <div className="overflow-x-auto border">
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-12">
                                     <Checkbox
                                         checked={allChecked}
-                                        onCheckedChange={(value) =>
-                                            toggleAll(value === true)
+                                        onCheckedChange={(checked) =>
+                                            toggleAll(checked === true)
                                         }
                                         aria-label="Pilih semua koperasi pada halaman ini"
                                     />
@@ -132,10 +131,10 @@ export default function Assignments({
                                             checked={form.data.cooperative_ids.includes(
                                                 cooperative.id,
                                             )}
-                                            onCheckedChange={(value) =>
+                                            onCheckedChange={(checked) =>
                                                 toggle(
                                                     cooperative.id,
-                                                    value === true,
+                                                    checked === true,
                                                 )
                                             }
                                             aria-label={`Pilih ${cooperative.name}`}
@@ -167,11 +166,6 @@ export default function Assignments({
                         </TableBody>
                     </Table>
                 </div>
-                {form.errors.cooperative_ids && (
-                    <p className="text-sm text-destructive">
-                        {form.errors.cooperative_ids}
-                    </p>
-                )}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <SimplePagination meta={cooperatives} />
                     <Button

@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Building2 } from 'lucide-react';
+import { Building2, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { SimplePagination } from '@/components/simple-pagination';
 import { Button } from '@/components/ui/button';
@@ -27,15 +27,22 @@ export default function Index({ pics, cities, filters }: any) {
             ? 'all'
             : String(filters.is_active),
     );
-
     return (
         <div className="space-y-5 p-4 sm:p-6">
             <Head title="PIC KDKMP" />
-            <header>
-                <h1 className="text-2xl font-semibold">PIC KDKMP</h1>
-                <p className="text-sm text-muted-foreground">
-                    Kelola assignment koperasi berdasarkan wilayah PIC.
-                </p>
+            <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="text-2xl font-semibold">PIC KDKMP</h1>
+                    <p className="text-sm text-muted-foreground">
+                        Kelola user PIC dan assignment koperasi berdasarkan
+                        wilayah.
+                    </p>
+                </div>
+                <Button asChild>
+                    <Link href="/pics/create">
+                        <Plus className="size-4" /> Tambah PIC
+                    </Link>
+                </Button>
             </header>
             <form
                 className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
@@ -84,7 +91,7 @@ export default function Index({ pics, cities, filters }: any) {
                 </Select>
                 <Button type="submit">Terapkan Filter</Button>
             </form>
-            <div className="overflow-x-auto rounded-md border">
+            <div className="overflow-x-auto border">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -103,7 +110,7 @@ export default function Index({ pics, cities, filters }: any) {
                                     {pic.name}
                                 </TableCell>
                                 <TableCell>
-                                    {pic.email}
+                                    <div>{pic.email}</div>
                                     <div className="text-xs text-muted-foreground">
                                         {pic.phone || '-'}
                                     </div>
@@ -115,20 +122,33 @@ export default function Index({ pics, cities, filters }: any) {
                                 <TableCell>
                                     {pic.is_active ? 'Aktif' : 'Tidak aktif'}
                                 </TableCell>
-                                <TableCell className="text-right">
-                                    <Button
-                                        asChild
-                                        size="sm"
-                                        variant="outline"
-                                        disabled={!pic.city_id}
-                                    >
-                                        <Link
-                                            href={`/pics/${pic.id}/assignments`}
+                                <TableCell>
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            asChild
+                                            size="sm"
+                                            variant="outline"
                                         >
-                                            <Building2 className="size-4" />{' '}
-                                            Assign Koperasi
-                                        </Link>
-                                    </Button>
+                                            <Link
+                                                href={`/pics/${pic.id}/assignments`}
+                                            >
+                                                <Building2 className="size-4" />{' '}
+                                                Assign Koperasi
+                                            </Link>
+                                        </Button>
+                                        <Button
+                                            asChild
+                                            size="icon"
+                                            variant="ghost"
+                                        >
+                                            <Link
+                                                href={`/pics/${pic.id}/edit`}
+                                                aria-label={`Edit ${pic.name}`}
+                                            >
+                                                <Pencil className="size-4" />
+                                            </Link>
+                                        </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}

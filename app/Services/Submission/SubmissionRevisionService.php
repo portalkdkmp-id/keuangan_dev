@@ -5,7 +5,6 @@ namespace App\Services\Submission;
 use App\Enums\RevisionRequestStatus;
 use App\Enums\SubmissionStatus;
 use App\Models\FinancialSubmission;
-use App\Models\SubmissionCategory;
 use App\Models\SubmissionRequestCategory;
 use App\Models\SubmissionRequestType;
 use App\Models\User;
@@ -28,9 +27,9 @@ class SubmissionRevisionService
             $locked = FinancialSubmission::query()->whereKey($submission->id)->lockForUpdate()->firstOrFail();
             $this->ensureRevisionOwner($user, $locked);
             $locked->update([
-                'cooperative_id' => $data['cooperative_id'],
+                'cooperative_id' => $data['cooperative_id'] ?? null,
                 'submission_request_category_id' => $data['submission_request_category_id'],
-                'submission_request_type_id' => $data['submission_request_type_id'],
+                'submission_request_type_id' => $data['items'][0]['request_type_id'],
                 'recipient_bank_account_id' => $data['recipient_bank_account_id'],
                 'submitter_city_id' => $user->city_id,
                 'title' => $data['title'] ?? $this->generatedTitle($data),
@@ -38,7 +37,7 @@ class SubmissionRevisionService
                 'needed_date' => $data['needed_date'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
-            $total = $this->items->replaceItems($locked, $this->itemsFromSimplePayload($data));
+            $total = $this->items->replaceItems($locked, $this->submissionItems($data));
             $locked->update(['total_amount' => $total]);
             $this->auditLog->record('submission.revision_updated', 'Revisi pengajuan disimpan.', $locked, [], ['submission_id' => $locked->id, 'revision_count' => $locked->revision_count]);
 
@@ -51,16 +50,12 @@ class SubmissionRevisionService
         return DB::transaction(function () use ($user, $submission, $message) {
             $locked = FinancialSubmission::query()->with(['items', 'cooperative', 'submitter'])->whereKey($submission->id)->lockForUpdate()->firstOrFail();
             $this->ensureRevisionOwner($user, $locked);
-            if (! $user->assignedCooperatives()->whereKey($locked->cooperative_id)->exists()) {
+            if (! $user->hasAnyRole(['super_admin', 'finance_staff']) && ! $user->assignedCooperatives()->whereKey($locked->cooperative_id)->exists()) {
                 throw ValidationException::withMessages(['cooperative_id' => 'Assignment koperasi sudah tidak aktif.']);
             }
             if ($locked->items->isEmpty() || (float) $locked->total_amount <= 0) {
                 throw ValidationException::withMessages(['submission' => 'Pengajuan harus memiliki item dengan total lebih dari 0.']);
             }
-            if ($locked->items->count() !== 1) {
-                throw ValidationException::withMessages(['submission' => 'Pengajuan hanya boleh memiliki satu nominal pengajuan.']);
-            }
-
             $revision = $locked->openRevisionRequest()->lockForUpdate()->first();
             if (! $revision) {
                 throw ValidationException::withMessages(['revision' => 'Tidak ada permintaan revisi aktif.']);
@@ -99,32 +94,30 @@ class SubmissionRevisionService
         }
     }
 
-    private function itemsFromSimplePayload(array $data): array
+    private function submissionItems(array $data): array
     {
-        $category = SubmissionCategory::where('code', 'other')->first() ?? SubmissionCategory::firstOrFail();
-        $type = SubmissionRequestType::find($data['submission_request_type_id']);
-
-        return [[
-            'category_id' => $category->id,
-            'description' => $type?->name ?? 'Pengajuan dana',
+        return collect($data['items'])->map(fn (array $item) => [
+            'request_type_id' => $item['request_type_id'],
+            'other_type_name' => $item['other_type_name'] ?? null,
+            'description' => $item['name'],
             'quantity' => 1,
-            'unit' => 'pengajuan',
-            'unit_price' => $data['amount'],
+            'unit' => 'item',
+            'unit_price' => $item['amount'],
             'notes' => $data['notes'] ?? null,
-        ]];
+        ])->all();
     }
 
     private function generatedTitle(array $data): string
     {
         $category = SubmissionRequestCategory::find($data['submission_request_category_id']);
-        $type = SubmissionRequestType::find($data['submission_request_type_id']);
+        $type = SubmissionRequestType::find($data['items'][0]['request_type_id']);
 
         return trim(($category?->name ?? 'Pengajuan Dana').' - '.($type?->name ?? 'Umum'));
     }
 
     private function generatedPurpose(array $data): string
     {
-        $type = SubmissionRequestType::find($data['submission_request_type_id']);
+        $type = SubmissionRequestType::find($data['items'][0]['request_type_id']);
 
         return 'Pengajuan dana untuk '.($type?->name ?? 'kebutuhan operasional').'.';
     }

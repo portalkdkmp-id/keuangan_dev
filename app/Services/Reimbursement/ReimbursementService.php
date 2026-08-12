@@ -26,6 +26,8 @@ class ReimbursementService
 
     public function createDraft(User $actor, array $data, array $purchase = [], array $payments = []): FinancialSubmission
     {
+        $data['cooperative_id'] ??= null;
+
         return DB::transaction(function () use ($actor, $data, $purchase, $payments) {
             $this->guardReferences($actor, $data);
             $category = SubmissionRequestCategory::where('code', 'reimbursement')->firstOrFail();
@@ -44,6 +46,8 @@ class ReimbursementService
 
     public function updateDraft(User $actor, FinancialSubmission $submission, array $data, array $purchase = [], array $payments = []): FinancialSubmission
     {
+        $data['cooperative_id'] ??= null;
+
         return DB::transaction(function () use ($actor, $submission, $data, $purchase, $payments) {
             $locked = FinancialSubmission::whereKey($submission->id)->lockForUpdate()->firstOrFail();
             if (! $locked->canBeEditedBy($actor) || ! $locked->isReimbursement()) {
@@ -112,7 +116,7 @@ class ReimbursementService
 
     private function guardReferences(User $actor, array $data): void
     {
-        if (! $actor->hasRole('finance_staff') && ! $actor->assignedCooperatives()->whereKey($data['cooperative_id'])->exists()) {
+        if (! $actor->hasAnyRole(['super_admin', 'finance_staff']) && ! $actor->assignedCooperatives()->whereKey($data['cooperative_id'] ?? null)->exists()) {
             throw ValidationException::withMessages(['cooperative_id' => 'Koperasi tidak terhubung dengan user.']);
         }if (! $actor->bankAccounts()->where('is_active', true)->whereKey($data['claimant_bank_account_id'])->exists()) {
             throw ValidationException::withMessages(['claimant_bank_account_id' => 'Rekening harus aktif dan milik claimant.']);

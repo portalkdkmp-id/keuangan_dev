@@ -23,6 +23,8 @@ class AdvanceService
 
     public function createDraft(User $actor, array $data): FinancialSubmission
     {
+        $data['cooperative_id'] ??= null;
+
         return DB::transaction(function () use ($actor, $data) {
             $this->guardActor($actor);
             $account = $actor->bankAccounts()->where('is_active', true)->findOrFail($data['recipient_bank_account_id']);
@@ -40,6 +42,8 @@ class AdvanceService
 
     public function updateDraft(User $actor, FinancialSubmission $submission, array $data): FinancialSubmission
     {
+        $data['cooperative_id'] ??= null;
+
         return DB::transaction(function () use ($actor, $submission, $data) {
             $locked = FinancialSubmission::whereKey($submission->id)->lockForUpdate()->firstOrFail();
             if (! $locked->isAdvance() || ! $locked->canBeEditedBy($actor)) {

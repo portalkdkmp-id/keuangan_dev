@@ -37,9 +37,9 @@ Dokumen ini menjadi aturan kerja untuk pengembangan aplikasi pencatatan keuangan
 
 ## Alur Pengajuan Dana
 
-- Satu pengajuan dana adalah satu record utama di `financial_submissions`.
-- Tabel `submission_items` hanya dipakai sebagai detail internal satu baris untuk kompatibilitas kalkulasi dan workflow lama.
-- User tidak boleh mengirim banyak item pengajuan.
+- Satu nomor pengajuan adalah satu record utama di `financial_submissions` dan dapat memiliki beberapa detail di `submission_items`.
+- Total pengajuan selalu dihitung backend dari seluruh item; nominal dari client tidak boleh dipercaya sebagai total akhir.
+- Setiap item memiliki nama, jenis item dari master Jenis Pengajuan, jenis lainnya bila dipilih, dan nominal.
 - PIC KDKMP hanya boleh memilih kategori:
   - Pengajuan Dana KDKMP
   - Pengajuan Reimbursement

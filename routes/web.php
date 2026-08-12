@@ -31,6 +31,7 @@ use App\Http\Controllers\RegionController;
 use App\Http\Controllers\ReimbursementController;
 use App\Http\Controllers\SubmissionAttachmentController;
 use App\Http\Controllers\SubmissionController;
+use App\Http\Controllers\SubmissionExportController;
 use App\Http\Controllers\SubmissionRequestCategoryController;
 use App\Http\Controllers\SubmissionRequestTypeController;
 use App\Http\Controllers\SubmissionRevisionController;
@@ -44,6 +45,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::resource('users', UserController::class)->except(['show']);
     Route::get('pics', [PicUserController::class, 'index'])->name('pics.index');
+    Route::get('pics/create', [PicUserController::class, 'create'])->name('pics.create');
+    Route::post('pics', [PicUserController::class, 'store'])->name('pics.store');
+    Route::get('pics/{pic}/edit', [PicUserController::class, 'edit'])->name('pics.edit');
+    Route::put('pics/{pic}', [PicUserController::class, 'update'])->name('pics.update');
+    Route::delete('pics/{pic}', [PicUserController::class, 'destroy'])->name('pics.destroy');
     Route::get('pics/{pic}/assignments', [PicUserController::class, 'assignments'])->name('pics.assignments');
     Route::put('pics/{pic}/assignments', [PicUserController::class, 'syncAssignments'])->name('pics.assignments.sync');
     Route::post('bank-accounts/quick-store', [UserBankAccountController::class, 'quickStore'])->name('bank-accounts.quick-store');
@@ -67,6 +73,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('regions/villages', [RegionController::class, 'villages'])->name('regions.villages');
     Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::get('/submissions', [SubmissionController::class, 'index'])->name('submissions.index');
+    Route::get('/submission-exports/all', SubmissionExportController::class)->name('submissions.export');
     Route::get('/submissions/create', [SubmissionController::class, 'create'])->name('submissions.create');
     Route::post('/submissions', [SubmissionController::class, 'store'])->name('submissions.store');
     Route::get('/submissions/{financialSubmission}', [SubmissionController::class, 'show'])->name('submissions.show');
@@ -95,6 +102,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/finance/approval-revisions/{financialSubmission}', [FinanceApprovalRevisionController::class, 'show'])->name('finance.approval-revisions.show');
     Route::put('/finance/approval-revisions/{financialSubmission}', [FinanceApprovalRevisionController::class, 'update'])->name('finance.approval-revisions.update');
     Route::post('/finance/approval-revisions/{financialSubmission}/resubmit', [FinanceApprovalRevisionController::class, 'resubmit'])->name('finance.approval-revisions.resubmit');
+    Route::post('/finance/approval-revisions/{financialSubmission}/request-pic-revision', [FinanceApprovalRevisionController::class, 'requestPicRevision'])->name('finance.approval-revisions.request-pic-revision');
     Route::get('/approval/submissions', [ApprovalSubmissionController::class, 'index'])->name('approval.submissions.index');
     Route::get('/approval/submissions/{financialSubmission}', [ApprovalSubmissionController::class, 'show'])->name('approval.submissions.show');
     Route::match(['get', 'post'], '/approval/submissions/{financialSubmission}/start-review', [ApprovalSubmissionController::class, 'startReview'])->name('approval.submissions.start-review');

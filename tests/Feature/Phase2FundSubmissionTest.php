@@ -76,15 +76,51 @@ test('pic can create draft only for assigned cooperative and backend calculates 
         ->and((float) $submission->items()->first()->subtotal)->toBe(300000.0);
 });
 
-test('pic without cooperative assignment can open create form but cannot use an unassigned cooperative', function () {
-    $pic = User::factory()->create();
-    $pic->assignRole('pic_kdkmp');
-    $cooperative = Cooperative::factory()->create();
+test('one submission number can contain multiple request items', function () {
+    [$pic, $cooperative] = picWithCooperative();
+    $types = SubmissionRequestType::take(2)->get();
+    $payload = submissionPayload($cooperative);
+    unset($payload['amount'], $payload['submission_request_type_id']);
+    $payload['items'] = [
+        ['name' => 'Sewa kendaraan', 'request_type_id' => $types[0]->id, 'amount' => 500000],
+        ['name' => 'Pengiriman dokumen', 'request_type_id' => $types[1]->id, 'amount' => 125000],
+    ];
 
-    $this->actingAs($pic)->get(route('submissions.create'))->assertOk();
-    $this->actingAs($pic)->post(route('submissions.store'), [
-        'cooperative_id' => $cooperative->id,
-    ])->assertRedirect()->assertSessionHasErrors('cooperative_id');
+    $this->actingAs($pic)->post(route('submissions.store'), $payload)->assertRedirect()->assertSessionHasNoErrors();
+
+    $submission = FinancialSubmission::with('items')->firstOrFail();
+    expect($submission->items)->toHaveCount(2)
+        ->and((float) $submission->total_amount)->toBe(625000.0)
+        ->and($submission->items[0]->description)->toBe('Sewa kendaraan')
+        ->and($submission->items[1]->request_type_id)->toBe($types[1]->id)
+        ->and($submission->submission_number)->not->toBeEmpty();
+});
+
+test('finance staff can create an internal fund submission without cooperative', function () {
+    $staff = User::factory()->create();
+    $staff->assignRole('finance_staff');
+    $account = $staff->bankAccounts()->create(['bank_name' => 'Bank Internal', 'account_number' => '456', 'account_holder_name' => $staff->name, 'is_active' => true]);
+    $payload = submissionPayload(Cooperative::factory()->create());
+    $payload['cooperative_id'] = null;
+    $payload['recipient_bank_account_id'] = $account->id;
+
+    $this->actingAs($staff)->post(route('submissions.store'), $payload)->assertRedirect()->assertSessionHasNoErrors();
+
+    expect(FinancialSubmission::where('submitted_by', $staff->id)->firstOrFail()->cooperative_id)->toBeNull();
+});
+
+test('superadmin can create an internal fund submission without cooperative', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+    $account = $admin->bankAccounts()->create(['bank_name' => 'Bank Admin', 'account_number' => '789', 'account_holder_name' => $admin->name, 'is_active' => true]);
+    $payload = submissionPayload(Cooperative::factory()->create());
+    $payload['cooperative_id'] = null;
+    $payload['recipient_bank_account_id'] = $account->id;
+
+    $this->actingAs($admin)->get(route('submissions.create'))->assertOk();
+    $this->actingAs($admin)->post(route('submissions.store'), $payload)->assertRedirect()->assertSessionHasNoErrors();
+
+    expect(FinancialSubmission::where('submitted_by', $admin->id)->firstOrFail()->cooperative_id)->toBeNull();
 });
 
 test('pic can submit draft and active finance staff receive database notification', function () {

@@ -19,7 +19,7 @@ class SubmissionStatusService
         'finance_validated' => ['approval_review'],
         'approval_review' => ['approval_in_review'],
         'approval_in_review' => ['approval_revision_requested', 'approval_rejected', 'director_review'],
-        'approval_revision_requested' => ['approval_review'],
+        'approval_revision_requested' => ['approval_review', 'revision_requested'],
         'director_review' => ['director_in_review'],
         'director_in_review' => ['director_revision_requested', 'director_rejected', 'pending_disbursement', 'fund_disbursed'],
         'director_revision_requested' => ['director_review'],

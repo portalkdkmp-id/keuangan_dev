@@ -72,6 +72,59 @@ test('complete reimbursement can be submitted once', function () {
     expect(fn () => app(ReimbursementService::class)->submit($user, $submission))->toThrow(ValidationException::class);
 });
 
+test('pic can save reimbursement draft through multipart form endpoint', function () {
+    [$user, $cooperative, $account] = p7Actor();
+    $type = SubmissionRequestType::firstOrFail();
+
+    $response = $this->actingAs($user)->post(route('reimbursements.store'), [
+        'title' => 'Reimbursement perjalanan PIC',
+        'cooperative_id' => $cooperative->id,
+        'claimant_bank_account_id' => $account->id,
+        'summary' => 'Biaya perjalanan lapangan',
+        'expenses' => [[
+            'expense_date' => today()->toDateString(),
+            'expense_type_id' => $type->id,
+            'vendor_name' => 'Transportasi Lokal',
+            'description' => 'Transportasi kunjungan koperasi',
+            'actual_amount' => '250000',
+            'payment_method' => 'bank_transfer',
+            'payment_reference' => 'TRX-001',
+            'notes' => null,
+        ]],
+        'purchase_proofs' => [[UploadedFile::fake()->image('nota.jpg')]],
+        'payment_proofs' => [[UploadedFile::fake()->image('transfer.jpg')]],
+    ]);
+
+    $submission = FinancialSubmission::where('submitted_by', $user->id)->where('type', SubmissionType::REIMBURSEMENT)->firstOrFail();
+    $response->assertRedirect(route('reimbursements.show', $submission))->assertSessionHasNoErrors();
+    expect($submission->total_amount)->toBe('250000.00')
+        ->and($submission->reimbursementDetail->expenses()->count())->toBe(1)
+        ->and($submission->reimbursementDetail->expenses()->first()->attachments()->count())->toBe(2);
+});
+
+test('finance staff can save internal reimbursement without cooperative', function () {
+    $staff = User::factory()->create();
+    $staff->assignRole('finance_staff');
+    $account = $staff->bankAccounts()->create(['bank_name' => 'Bank Internal', 'account_number' => '445566', 'account_holder_name' => $staff->name, 'is_active' => true]);
+    $type = SubmissionRequestType::firstOrFail();
+
+    $this->actingAs($staff)->post(route('reimbursements.store'), [
+        'title' => 'Reimbursement internal kantor',
+        'cooperative_id' => null,
+        'claimant_bank_account_id' => $account->id,
+        'expenses' => [[
+            'expense_date' => today()->toDateString(),
+            'expense_type_id' => $type->id,
+            'vendor_name' => 'Vendor Internal',
+            'description' => 'Kebutuhan internal kantor',
+            'actual_amount' => '150000',
+            'payment_method' => 'cash',
+        ]],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect(FinancialSubmission::where('submitted_by', $staff->id)->where('type', SubmissionType::REIMBURSEMENT)->firstOrFail()->cooperative_id)->toBeNull();
+});
+
 test('reimbursement appears in the unified submission list', function () {
     [$user, $submission] = p7Reimbursement();
 

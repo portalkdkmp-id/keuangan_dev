@@ -1,4 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BackButton } from '@/components/back-button';
 import { Input } from '@/components/ui/input';
@@ -10,10 +11,19 @@ import { rupiah } from '@/components/Submissions/SubmissionSummary';
 import { SubmissionTimeline } from '@/components/Submissions/SubmissionTimeline';
 import { ReimbursementDetail } from '@/components/Reimbursements/ReimbursementDetail';
 import { AdvanceDetail } from '@/components/Advances/AdvanceDetail';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate } from '@/lib/format';
 
 export default function ApprovalSubmissionsShow({ submission }: any) {
+    const [confirmApprove, setConfirmApprove] = useState(false);
     const review =
         submission.active_approval_review ??
         submission.activeApprovalReview ??
@@ -100,9 +110,7 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
                     <form
                         onSubmit={(e) => {
                             e.preventDefault();
-                            approveForm.post(
-                                `/approval/submissions/${submission.id}/approve`,
-                            );
+                            setConfirmApprove(true);
                         }}
                         className="space-y-3 rounded-md border p-4"
                     >
@@ -238,6 +246,32 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
                 }
             />
             <ReimbursementDetail detail={submission.reimbursement_detail} />
+            <Dialog open={confirmApprove} onOpenChange={setConfirmApprove}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Setujui pengajuan?</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground">
+                        Pengajuan akan diteruskan ke Finance Director. Pastikan
+                        nominal dan catatan sudah benar.
+                    </p>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Batal</Button>
+                        </DialogClose>
+                        <Button
+                            disabled={approveForm.processing}
+                            onClick={() =>
+                                approveForm.post(
+                                    `/approval/submissions/${submission.id}/approve`,
+                                )
+                            }
+                        >
+                            Ya, Setujui
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

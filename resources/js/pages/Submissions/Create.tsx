@@ -49,12 +49,12 @@ function dateValue(date?: Date): string {
 }
 
 export default function SubmissionsCreate({
-    cooperatives = [],
-    requestCategories = [],
-    requestTypes = [],
-    bankAccounts = [],
-    canSubmitInternal = false,
-    submission = {},
+    cooperatives,
+    requestCategories,
+    requestTypes,
+    bankAccounts,
+    canSubmitInternal,
+    submission = null,
     revisionMode = false,
 }: any) {
     const [step, setStep] = useState(1);
