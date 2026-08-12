@@ -14,6 +14,7 @@ class RolePermissionSeeder extends Seeder
     public const PERMISSIONS = [
         'dashboard.view',
         'users.view', 'users.create', 'users.update', 'users.delete', 'users.assign-role',
+        'pics.view', 'pics.assign-cooperatives',
         'regions.view', 'regions.import',
         'cooperatives.view', 'cooperatives.create', 'cooperatives.update', 'cooperatives.delete', 'cooperatives.assign-pic', 'koperasi.assign-pic',
         'profile.view', 'profile.update',
@@ -78,6 +79,7 @@ class RolePermissionSeeder extends Seeder
                 ],
                 'finance_staff' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
+                    'pics.view', 'pics.assign-cooperatives',
                     'finance-submissions.view', 'finance-submissions.review', 'finance-submissions.update',
                     'finance-submissions.request-revision', 'finance-submissions.validate', 'finance-submissions.forward-approval',
                     'submissions.view', 'submissions.create', 'submissions.update', 'submissions.delete', 'submissions.submit',
@@ -101,6 +103,7 @@ class RolePermissionSeeder extends Seeder
                 ],
                 'finance_approver' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
+                    'pics.view', 'pics.assign-cooperatives',
                     'approval-submissions.view', 'approval-submissions.review', 'approval-submissions.approve',
                     'approval-submissions.reject', 'approval-submissions.request-revision',
                     'approval-submissions.view-director-revision', 'approval-submissions.update-director-revision', 'approval-submissions.resubmit-director',

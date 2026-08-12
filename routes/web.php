@@ -26,6 +26,7 @@ use App\Http\Controllers\FundReceiptConfirmationController;
 use App\Http\Controllers\FundReturnController;
 use App\Http\Controllers\MonitoringDashboardController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PicUserController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\ReimbursementController;
 use App\Http\Controllers\SubmissionAttachmentController;
@@ -39,9 +40,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 
-Route::middleware(['auth', 'verified', 'active'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::resource('users', UserController::class)->except(['show']);
+    Route::get('pics', [PicUserController::class, 'index'])->name('pics.index');
+    Route::get('pics/{pic}/assignments', [PicUserController::class, 'assignments'])->name('pics.assignments');
+    Route::put('pics/{pic}/assignments', [PicUserController::class, 'syncAssignments'])->name('pics.assignments.sync');
     Route::post('bank-accounts/quick-store', [UserBankAccountController::class, 'quickStore'])->name('bank-accounts.quick-store');
     Route::resource('bank-accounts', UserBankAccountController::class)->except(['show']);
     Route::post('company-bank-accounts/quick-store', [CompanyBankAccountController::class, 'quickStore'])->name('company-bank-accounts.quick-store');

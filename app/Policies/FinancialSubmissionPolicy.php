@@ -15,7 +15,7 @@ class FinancialSubmissionPolicy
 
     public function createReimbursement(User $user): bool
     {
-        return $user->can('reimbursements.create') && ($user->hasRole('finance_staff') || $user->assignedCooperatives()->exists());
+        return $user->can('reimbursements.create');
     }
 
     public function updateReimbursement(User $user, FinancialSubmission $submission): bool
@@ -90,7 +90,7 @@ class FinancialSubmissionPolicy
 
     public function create(User $user): bool
     {
-        return $user->can('submissions.create') && ($user->hasRole('finance_staff') || $user->assignedCooperatives()->exists());
+        return $user->can('submissions.create');
     }
 
     public function update(User $user, FinancialSubmission $submission): bool

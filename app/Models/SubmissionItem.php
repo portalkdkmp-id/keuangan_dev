@@ -10,7 +10,7 @@ class SubmissionItem extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $fillable = ['financial_submission_id', 'category_id', 'category_name', 'description', 'quantity', 'unit', 'unit_price', 'subtotal', 'notes', 'sort_order'];
+    protected $fillable = ['financial_submission_id', 'category_id', 'request_type_id', 'category_name', 'request_type_name', 'other_type_name', 'description', 'quantity', 'unit', 'unit_price', 'subtotal', 'notes', 'sort_order'];
 
     protected function casts(): array
     {
@@ -25,5 +25,10 @@ class SubmissionItem extends Model
     public function category()
     {
         return $this->belongsTo(SubmissionCategory::class);
+    }
+
+    public function requestType()
+    {
+        return $this->belongsTo(SubmissionRequestType::class, 'request_type_id');
     }
 }

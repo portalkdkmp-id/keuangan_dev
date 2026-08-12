@@ -189,6 +189,11 @@ export function AppSidebar() {
                     href: '/users',
                     icon: Users,
                 },
+                can('pics.view') && {
+                    title: 'PIC KDKMP',
+                    href: '/pics',
+                    icon: Users,
+                },
                 can('cooperatives.view') && {
                     title: 'Koperasi',
                     href: '/cooperatives',

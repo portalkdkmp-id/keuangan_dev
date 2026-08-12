@@ -55,7 +55,13 @@ test('pic can create draft only for assigned cooperative and backend calculates 
     [$pic, $cooperative] = picWithCooperative();
     $other = Cooperative::factory()->create();
 
-    $this->actingAs($pic)->get(route('submissions.create'))->assertOk();
+    $this->actingAs($pic)->get(route('submissions.create'))->assertOk()->assertInertia(fn ($page) => $page
+        ->component('Submissions/Create')
+        ->where('canSubmitInternal', false)
+        ->has('cooperatives')
+        ->has('requestCategories')
+        ->has('requestTypes')
+        ->has('bankAccounts'));
 
     $this->actingAs($pic)->post(route('submissions.store'), submissionPayload($other))->assertSessionHasErrors('cooperative_id');
 
@@ -68,6 +74,17 @@ test('pic can create draft only for assigned cooperative and backend calculates 
         ->and($submission->status)->toBe(SubmissionStatus::DRAFT)
         ->and((float) $submission->total_amount)->toBe(300000.0)
         ->and((float) $submission->items()->first()->subtotal)->toBe(300000.0);
+});
+
+test('pic without cooperative assignment can open create form but cannot use an unassigned cooperative', function () {
+    $pic = User::factory()->create();
+    $pic->assignRole('pic_kdkmp');
+    $cooperative = Cooperative::factory()->create();
+
+    $this->actingAs($pic)->get(route('submissions.create'))->assertOk();
+    $this->actingAs($pic)->post(route('submissions.store'), [
+        'cooperative_id' => $cooperative->id,
+    ])->assertRedirect()->assertSessionHasErrors('cooperative_id');
 });
 
 test('pic can submit draft and active finance staff receive database notification', function () {
