@@ -1,4 +1,5 @@
 import { createInertiaApp } from '@inertiajs/react';
+import { createRoot, type Root } from 'react-dom/client';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -13,6 +14,12 @@ function AppToasts() {
     useFlashToast();
 
     return <Toaster position="top-center" richColors closeButton />;
+}
+
+declare global {
+    interface Window {
+        __inertiaReactRoot?: Root;
+    }
 }
 
 createInertiaApp({
@@ -30,13 +37,23 @@ createInertiaApp({
         }
     },
     strictMode: true,
-    withApp(app) {
-        return (
+    setup({ el, App, props }) {
+        if (!el) {
+            throw new Error('Inertia root element was not found.');
+        }
+
+        const app = (
             <TooltipProvider delayDuration={0}>
-                {app}
+                <App {...props} />
                 <AppToasts />
             </TooltipProvider>
         );
+
+        if (!window.__inertiaReactRoot) {
+            window.__inertiaReactRoot = createRoot(el);
+        }
+
+        window.__inertiaReactRoot.render(app);
     },
     progress: {
         color: '#4B5563',
