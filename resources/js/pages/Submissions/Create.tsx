@@ -49,14 +49,15 @@ function dateValue(date?: Date): string {
 }
 
 export default function SubmissionsCreate({
-    cooperatives,
-    requestCategories,
-    requestTypes,
-    bankAccounts,
-    canSubmitInternal,
-    submission = null,
+    cooperatives = [],
+    requestCategories = [],
+    requestTypes = [],
+    bankAccounts = [],
+    canSubmitInternal = false,
+    submission: submissionProp = null,
     revisionMode = false,
 }: any) {
+    const submission = submissionProp ?? {};
     const [step, setStep] = useState(1);
     const [accountOpen, setAccountOpen] = useState(false);
     const [dateOpen, setDateOpen] = useState(false);
