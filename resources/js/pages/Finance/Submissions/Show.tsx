@@ -12,6 +12,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttachments';
+import { ExportSingleSubmissionButton } from '@/components/Submissions/ExportSingleSubmissionButton';
 import { MoneyInput } from '@/components/Submissions/MoneyInput';
 import { SubmissionStatusBadge } from '@/components/Submissions/SubmissionStatusBadge';
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
@@ -78,6 +79,9 @@ export default function FinanceSubmissionsShow({
         <div className="space-y-4 p-4">
             <Head title={submission.submission_number} />
             <BackButton fallback="/finance/submissions" />
+            <div className="flex justify-end">
+                <ExportSingleSubmissionButton id={submission.id} />
+            </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-semibold">

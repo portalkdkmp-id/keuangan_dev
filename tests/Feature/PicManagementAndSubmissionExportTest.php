@@ -72,11 +72,11 @@ test('submission export produces xlsx sheets with submission and attachment data
     $submission = FinancialSubmission::factory()->create(['submission_number' => 'FR/2026/08/000001', 'title' => 'Pengajuan Export', 'total_amount' => 750000]);
     SubmissionAttachment::factory()->create(['financial_submission_id' => $submission->id, 'uploaded_by' => $submission->submitted_by, 'original_name' => 'rincian-biaya.pdf']);
 
-    $path = app(SubmissionExcelExportService::class)->generate();
+    $path = app(SubmissionExcelExportService::class)->generate($admin);
     $zip = new ZipArchive;
     expect($zip->open($path))->toBeTrue();
     $submissionXml = $zip->getFromName('xl/worksheets/sheet1.xml');
-    $attachmentXml = $zip->getFromName('xl/worksheets/sheet2.xml');
+    $attachmentXml = $zip->getFromName('xl/worksheets/sheet3.xml');
     $zip->close();
 
     expect($submissionXml)->toContain('FR/2026/08/000001')->toContain('Pengajuan Export')

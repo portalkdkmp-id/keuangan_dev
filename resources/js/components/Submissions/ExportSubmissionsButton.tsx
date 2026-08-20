@@ -9,8 +9,8 @@ export function ExportSubmissionsButton() {
 
     return (
         <Button asChild variant="outline">
-            <a href="/submission-exports/all">
-                <Download className="size-4" /> Export Semua Pengajuan
+            <a href="/export-laporan">
+                <Download className="size-4" /> Export Laporan
             </a>
         </Button>
     );

@@ -73,7 +73,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('regions/villages', [RegionController::class, 'villages'])->name('regions.villages');
     Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::get('/submissions', [SubmissionController::class, 'index'])->name('submissions.index');
-    Route::get('/submission-exports/all', SubmissionExportController::class)->name('submissions.export');
+    Route::get('/export-laporan', [SubmissionExportController::class, 'index'])->name('submission-reports.index');
+    Route::get('/export-laporan/download', [SubmissionExportController::class, 'download'])->name('submission-reports.download');
+    Route::get('/export-laporan/{financialSubmission}/download', [SubmissionExportController::class, 'single'])->name('submission-reports.single');
+    Route::get('/submission-exports/all', [SubmissionExportController::class, 'download'])->name('submissions.export');
     Route::get('/submissions/create', [SubmissionController::class, 'create'])->name('submissions.create');
     Route::post('/submissions', [SubmissionController::class, 'store'])->name('submissions.store');
     Route::get('/submissions/{financialSubmission}', [SubmissionController::class, 'show'])->name('submissions.show');

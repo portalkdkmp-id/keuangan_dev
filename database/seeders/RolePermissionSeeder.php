@@ -69,7 +69,7 @@ class RolePermissionSeeder extends Seeder
                 'pic_kdkmp' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
                     'submissions.view', 'submissions.create', 'submissions.update', 'submissions.delete', 'submissions.submit',
-                    'submissions.revise', 'submissions.resubmit',
+                    'submissions.export', 'submissions.revise', 'submissions.resubmit',
                     'bank-accounts.view', 'bank-accounts.create', 'bank-accounts.update', 'bank-accounts.delete',
                     'fund-distributions.view', 'fund-distributions.download-proof',
                     'fund-receipts.view', 'fund-receipts.confirm',
@@ -124,6 +124,7 @@ class RolePermissionSeeder extends Seeder
                 ],
                 'finance_director' => [
                     'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
+                    'submissions.export',
                     'director-submissions.view', 'director-submissions.review', 'director-submissions.approve',
                     'director-submissions.disburse', 'director-submissions.reject', 'director-submissions.request-revision',
                     'director-submissions.view-all',

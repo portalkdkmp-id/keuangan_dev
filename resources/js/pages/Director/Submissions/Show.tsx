@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { BackButton } from '@/components/back-button';
 import { MoneyInput } from '@/components/Submissions/MoneyInput';
 import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttachments';
+import { ExportSingleSubmissionButton } from '@/components/Submissions/ExportSingleSubmissionButton';
 import { SubmissionStatusBadge } from '@/components/Submissions/SubmissionStatusBadge';
 import { SubmissionTimeline } from '@/components/Submissions/SubmissionTimeline';
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
@@ -108,6 +109,9 @@ export default function DirectorSubmissionsShow({
         <div className="space-y-4 p-4">
             <Head title={submission.submission_number} />
             <BackButton fallback="/director/submissions" />
+            <div className="flex justify-end">
+                <ExportSingleSubmissionButton id={submission.id} />
+            </div>
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h1 className="text-2xl font-semibold">

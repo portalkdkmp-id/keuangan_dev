@@ -10,7 +10,11 @@ class SubmissionAttachmentPolicy
 {
     public function view(User $user, SubmissionAttachment $attachment): bool
     {
-        return $user->can('submissions.export') || $user->can('view', $attachment->submission);
+        if ($user->can('submissions.export')) {
+            return ! $user->hasRole('pic_kdkmp') || $attachment->submission->submitted_by === $user->id;
+        }
+
+        return $user->can('view', $attachment->submission);
     }
 
     public function delete(User $user, SubmissionAttachment $attachment): bool

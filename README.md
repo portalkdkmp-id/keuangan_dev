@@ -93,16 +93,13 @@ Saat assign PIC ke koperasi, daftar PIC difilter berdasarkan kota/kabupaten kope
 
 Menu `PIC KDKMP` dapat diakses Super Admin, Finance Staff, dan Finance Approver. Halaman assignment menampilkan koperasi pada kota/kabupaten PIC dan mendukung checklist serta check-all per halaman. Penyimpanan hanya menyinkronkan koperasi pada halaman aktif agar pilihan di halaman pagination lain tidak terhapus.
 
-## Export Pengajuan
+## Export Laporan Pengajuan
 
-Super Admin, Finance Staff, dan Finance Approver dapat mengunduh seluruh pengajuan melalui tombol `Export Semua Pengajuan` pada halaman Pengajuan Dana, Pengajuan Masuk, atau Finance Approval.
+Menu `Export Laporan` tersedia untuk seluruh role. PIC KDKMP hanya dapat melihat dan mengekspor pengajuan yang dibuat oleh dirinya sendiri, sedangkan role manajemen dapat mengekspor seluruh pengajuan.
 
-Workbook memiliki dua sheet:
+Laporan dapat difilter berdasarkan status akhir, koperasi, tanggal dibuat, dan tanggal perubahan status terakhir. Role selain PIC juga dapat memfilter berdasarkan PIC. Setiap halaman detail pengajuan menyediakan export khusus untuk satu nomor pengajuan.
 
-1. `Pengajuan`: data utama dan status workflow seluruh pengajuan.
-2. `Attachments`: daftar attachment, metadata file, dan URL download terautentikasi.
-
-Export ditulis secara streaming dan data dibaca per chunk untuk menjaga penggunaan memori ketika jumlah pengajuan besar.
+Workbook berisi sheet `Pengajuan`, `Items`, `Attachments`, dan `Riwayat Status`. Proses export membaca data per chunk agar penggunaan memori tetap terjaga.
 
 ### Rekening User
 

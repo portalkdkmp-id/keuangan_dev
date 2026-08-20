@@ -46,6 +46,7 @@ class AppServiceProvider extends ServiceProvider
             $rolePermissions = [
                 'finance_approver' => [
                     'pics.view', 'pics.assign-cooperatives',
+                    'submissions.export',
                     'approval-submissions.view',
                     'approval-submissions.review',
                     'approval-submissions.approve',
@@ -63,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
                 ],
                 'finance_staff' => [
                     'pics.view', 'pics.assign-cooperatives',
+                    'submissions.export',
                     'finance-submissions.view',
                     'finance-submissions.review',
                     'finance-submissions.update',
@@ -81,6 +83,7 @@ class AppServiceProvider extends ServiceProvider
                     'accountability-reports.download-attachment', 'fund-monitoring.view',
                 ],
                 'finance_director' => [
+                    'submissions.export',
                     'director-submissions.view',
                     'director-submissions.review',
                     'director-submissions.approve',
@@ -104,6 +107,7 @@ class AppServiceProvider extends ServiceProvider
                     'fund-monitoring.view',
                 ],
                 'pic_kdkmp' => [
+                    'submissions.export',
                     'submissions.view', 'submissions.create', 'submissions.update', 'submissions.delete',
                     'submissions.submit', 'submissions.revise', 'submissions.resubmit',
                     'reimbursements.view', 'reimbursements.create', 'reimbursements.update',

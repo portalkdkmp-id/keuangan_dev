@@ -14,6 +14,7 @@ import { SubmissionStatusBadge } from '@/components/Submissions/SubmissionStatus
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
 import { SubmissionTimeline } from '@/components/Submissions/SubmissionTimeline';
 import { SubmissionItemsTable } from '@/components/Submissions/SubmissionItemsTable';
+import { ExportSingleSubmissionButton } from '@/components/Submissions/ExportSingleSubmissionButton';
 import { formatDate } from '@/lib/format';
 
 export default function SubmissionsShow({ submission }: any) {
@@ -37,14 +38,17 @@ export default function SubmissionsShow({ submission }: any) {
         <div className="space-y-4 p-4">
             <Head title={submission.submission_number} />
             <BackButton fallback="/submissions" />
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-semibold">
                         {submission.submission_number}
                     </h1>
                     <p>{submission.title}</p>
                 </div>
-                <SubmissionStatusBadge status={submission.status} />
+                <div className="flex items-center gap-2">
+                    <ExportSingleSubmissionButton id={submission.id} />
+                    <SubmissionStatusBadge status={submission.status} />
+                </div>
             </div>
             <div className="grid gap-3 rounded-md border p-4 text-sm md:grid-cols-2">
                 <div>Koperasi: {submission.cooperative?.name}</div>

@@ -5,6 +5,7 @@ import { BackButton } from '@/components/back-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttachments';
+import { ExportSingleSubmissionButton } from '@/components/Submissions/ExportSingleSubmissionButton';
 import { MoneyInput } from '@/components/Submissions/MoneyInput';
 import { SubmissionStatusBadge } from '@/components/Submissions/SubmissionStatusBadge';
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
@@ -40,6 +41,9 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
         <div className="space-y-4 p-4">
             <Head title={submission.submission_number} />
             <BackButton fallback="/approval/submissions" />
+            <div className="flex justify-end">
+                <ExportSingleSubmissionButton id={submission.id} />
+            </div>
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-semibold">
