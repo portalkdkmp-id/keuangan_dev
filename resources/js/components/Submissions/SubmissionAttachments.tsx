@@ -2,7 +2,7 @@ import { router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { FileText, ZoomIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { MultipleFileInput } from '@/components/multiple-file-input';
 import { Card, CardContent, CardTitle } from '../ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 
@@ -13,7 +13,7 @@ export function SubmissionAttachments({
     submission: any;
     editable?: boolean;
 }) {
-    const form = useForm({ file: null as File | null });
+    const form = useForm({ files: [] as File[] });
     const [preview, setPreview] = useState<any>(null);
     return (
         <div className="space-y-3">
@@ -25,15 +25,22 @@ export function SubmissionAttachments({
                             forceFormData: true,
                         });
                     }}
-                    className="flex gap-2"
+                    className="space-y-3"
                 >
-                    <Input
-                        type="file"
-                        onChange={(e) =>
-                            form.setData('file', e.target.files?.[0] ?? null)
-                        }
+                    <MultipleFileInput
+                        label="Tambah attachment pengajuan"
+                        files={form.data.files}
+                        onFiles={(files) => form.setData('files', files)}
+                        accept=".pdf,.jpg,.jpeg,.png,.webp,.xlsx,.xls,.doc,.docx"
                     />
-                    <Button type="submit">Upload</Button>
+                    <Button
+                        type="submit"
+                        disabled={
+                            form.processing || form.data.files.length === 0
+                        }
+                    >
+                        Upload {form.data.files.length || ''} File
+                    </Button>
                 </form>
             )}
             <div className="space-y-2">

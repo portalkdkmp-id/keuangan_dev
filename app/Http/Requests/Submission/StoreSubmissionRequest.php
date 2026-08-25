@@ -61,7 +61,12 @@ class StoreSubmissionRequest extends FormRequest
             }
 
             foreach ($this->input('items', []) as $index => $item) {
-                $isOther = SubmissionRequestType::query()->whereKey($item['request_type_id'] ?? null)->whereIn('slug', ['lainnya', 'other'])->exists();
+                $requestType = SubmissionRequestType::query()->find($item['request_type_id'] ?? null);
+                if ($requestType?->submission_request_category_id && $requestType->submission_request_category_id !== $this->input('submission_request_category_id')) {
+                    $validator->errors()->add("items.$index.request_type_id", 'Jenis pengajuan tidak sesuai dengan kategori yang dipilih.');
+                }
+
+                $isOther = $requestType && in_array($requestType->slug, ['lainnya', 'other'], true);
                 if ($isOther && blank($item['other_type_name'] ?? null)) {
                     $validator->errors()->add("items.$index.other_type_name", 'Jenis item lainnya wajib diisi.');
                 }

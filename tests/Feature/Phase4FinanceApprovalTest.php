@@ -33,7 +33,10 @@ test('finance staff can forward approval revision to pic and manage attachments'
     ]);
 
     $this->actingAs($staff)->post(route('submissions.attachments.store', $submission), [
-        'file' => UploadedFile::fake()->image('revisi.jpg'),
+        'files' => [
+            UploadedFile::fake()->image('revisi-1.jpg'),
+            UploadedFile::fake()->image('revisi-2.jpg'),
+        ],
     ])->assertRedirect()->assertSessionHasNoErrors();
     $this->actingAs($staff)->post(route('finance.approval-revisions.request-pic-revision', $submission), [
         'message' => 'Mohon PIC melengkapi dokumen sumber.',
@@ -41,7 +44,7 @@ test('finance staff can forward approval revision to pic and manage attachments'
 
     $submission->refresh();
     expect($submission->status)->toBe(SubmissionStatus::REVISION_REQUESTED)
-        ->and($submission->attachments()->count())->toBe(1)
+        ->and($submission->attachments()->count())->toBe(2)
         ->and($submission->openRevisionRequest?->message)->toBe('Mohon PIC melengkapi dokumen sumber.');
     $this->actingAs($pic)->get(route('submissions.revision.edit', $submission))->assertOk();
 });

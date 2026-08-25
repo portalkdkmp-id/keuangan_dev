@@ -66,7 +66,7 @@ test('bulk assignment only accepts cooperatives in pic city', function () {
     expect($pic->assignedCooperatives()->whereKey($outside->id)->exists())->toBeFalse();
 });
 
-test('submission export produces xlsx sheets with submission and attachment data', function () {
+test('submission export follows the financial report recap template', function () {
     $admin = User::factory()->create();
     $admin->assignRole('super_admin');
     $submission = FinancialSubmission::factory()->create(['submission_number' => 'FR/2026/08/000001', 'title' => 'Pengajuan Export', 'total_amount' => 750000]);
@@ -76,11 +76,19 @@ test('submission export produces xlsx sheets with submission and attachment data
     $zip = new ZipArchive;
     expect($zip->open($path))->toBeTrue();
     $submissionXml = $zip->getFromName('xl/worksheets/sheet1.xml');
-    $attachmentXml = $zip->getFromName('xl/worksheets/sheet3.xml');
+    $workbookXml = $zip->getFromName('xl/workbook.xml');
+    $secondSheet = $zip->getFromName('xl/worksheets/sheet2.xml');
     $zip->close();
 
-    expect($submissionXml)->toContain('FR/2026/08/000001')->toContain('Pengajuan Export')
-        ->and($attachmentXml)->toContain('rincian-biaya.pdf')->toContain('/submission-attachments/');
+    expect($submissionXml)->toContain('LAPORAN REKAP PENGAJUAN DANA PERIODIK')
+        ->toContain('FR/2026/08/000001')
+        ->toContain('Nama Item')
+        ->toContain('Nominal per Item')
+        ->toContain('Total Nominal Diajukan (Rp)')
+        ->toContain('RINGKASAN TOTAL')
+        ->toContain('<c r="O6" s="5" t="n"><v>1</v></c>')
+        ->and($workbookXml)->toContain('1. Rekap Pengajuan Dana')
+        ->and($secondSheet)->toBeFalse();
     @unlink($path);
 
     $this->actingAs($admin)->get(route('submissions.export'))->assertOk()->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

@@ -265,11 +265,12 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
                         </DialogClose>
                         <Button
                             disabled={approveForm.processing}
-                            onClick={() =>
+                            onClick={() => {
+                                setConfirmApprove(false);
                                 approveForm.post(
                                     `/approval/submissions/${submission.id}/approve`,
-                                )
-                            }
+                                );
+                            }}
                         >
                             Ya, Setujui
                         </Button>

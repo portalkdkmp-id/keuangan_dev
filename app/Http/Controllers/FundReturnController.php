@@ -37,7 +37,7 @@ class FundReturnController extends Controller
     public function store(SaveFundReturnRequest $r, FundAccountabilityReport $fundAccountabilityReport): RedirectResponse
     {
         Gate::authorize('createFundReturn', $fundAccountabilityReport);
-        $return = $this->service->createDraft($r->user(), $fundAccountabilityReport, $r->validated(), $r->file('proof'));
+        $return = $this->service->createDraft($r->user(), $fundAccountabilityReport, $r->validated(), $r->file('proofs', []));
 
         return to_route('fund-returns.show', $return)->with('success', 'Draft pengembalian dana dibuat.');
     }
@@ -59,7 +59,7 @@ class FundReturnController extends Controller
     public function update(SaveFundReturnRequest $r, FundReturn $fundReturn): RedirectResponse
     {
         Gate::authorize('update', $fundReturn);
-        $this->service->updateDraft($r->user(), $fundReturn, $r->validated(), $r->file('proof'));
+        $this->service->updateDraft($r->user(), $fundReturn, $r->validated(), $r->file('proofs', []));
 
         return to_route('fund-returns.show', $fundReturn)->with('success', 'Pengembalian dana diperbarui.');
     }

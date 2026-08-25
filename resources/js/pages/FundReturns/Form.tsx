@@ -12,6 +12,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { MultipleFileInput } from '@/components/multiple-file-input';
 export default function Form({
     report,
     fundReturn,
@@ -28,7 +29,7 @@ export default function Form({
         payment_method: fundReturn?.payment_method ?? 'bank_transfer',
         transaction_reference: fundReturn?.transaction_reference ?? '',
         notes: fundReturn?.notes ?? '',
-        proof: null,
+        proofs: [] as File[],
     });
     const save = () =>
         fundReturn
@@ -158,17 +159,16 @@ export default function Form({
                 />
             </div>
             <div>
-                <Label>
-                    {f.data.payment_method === 'cash'
-                        ? 'Bukti serah terima'
-                        : 'Bukti transfer'}
-                </Label>
-                <Input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    onChange={(e) =>
-                        f.setData('proof', e.target.files?.[0] ?? null)
+                <MultipleFileInput
+                    label={
+                        f.data.payment_method === 'cash'
+                            ? 'Bukti serah terima'
+                            : 'Bukti transfer'
                     }
+                    files={f.data.proofs}
+                    onFiles={(files) => f.setData('proofs', files)}
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    description="Pilih beberapa bukti pengembalian sekaligus jika diperlukan."
                 />
             </div>
             <Button disabled={f.processing} onClick={save}>

@@ -16,6 +16,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { MultipleFileInput } from '@/components/multiple-file-input';
 export default function Form({
     submission,
     cooperatives,
@@ -245,21 +246,12 @@ export default function Form({
             )}
             {step === 3 && (
                 <div className="space-y-3 rounded-md border p-4">
-                    <Label>Dokumen pendukung</Label>
-                    <p className="text-xs text-muted-foreground">
-                        Quotation, estimasi harga, proposal, daftar kebutuhan,
-                        atau screenshot harga.
-                    </p>
-                    <Input
-                        type="file"
-                        multiple
+                    <MultipleFileInput
+                        label="Dokumen pendukung"
+                        files={f.data.attachments}
                         accept=".pdf,.jpg,.jpeg,.png,.webp,.xlsx,.xls,.doc,.docx"
-                        onChange={(e) =>
-                            f.setData(
-                                'attachments',
-                                Array.from(e.target.files ?? []),
-                            )
-                        }
+                        description="Quotation, estimasi harga, proposal, daftar kebutuhan, atau screenshot harga."
+                        onFiles={(files) => f.setData('attachments', files)}
                     />
                 </div>
             )}

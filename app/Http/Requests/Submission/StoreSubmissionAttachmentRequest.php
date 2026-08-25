@@ -21,7 +21,8 @@ class StoreSubmissionAttachmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,webp,xlsx,xls,doc,docx'],
+            'files' => ['required', 'array', 'min:1', 'max:10'],
+            'files.*' => ['required', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,webp,xlsx,xls,doc,docx'],
             'attachment_type' => ['nullable', Rule::enum(SubmissionAttachmentType::class)],
             'description' => ['nullable', 'string', 'max:255'],
         ];

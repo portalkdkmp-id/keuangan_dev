@@ -16,6 +16,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { MultipleFileInput } from '@/components/multiple-file-input';
 const emptyExpense = () => ({
     expense_date: '',
     expense_type_id: '',
@@ -395,40 +396,24 @@ export default function Form({
                                 {e.vendor_name || `Transaksi ${i + 1}`}
                             </h2>
                             <div>
-                                <Label>Bukti pembelian atau sewa</Label>
-                                <p className="mb-2 text-xs text-muted-foreground">
-                                    Invoice, nota, kuitansi, kontrak sewa, atau
-                                    tagihan.
-                                </p>
-                                <Input
-                                    type="file"
+                                <MultipleFileInput
+                                    label="Bukti pembelian atau sewa"
+                                    files={form.data.purchase_proofs[i] ?? []}
                                     accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                    multiple
-                                    onChange={(x) =>
-                                        setProof(
-                                            'purchase_proofs',
-                                            i,
-                                            Array.from(x.target.files ?? []),
-                                        )
+                                    description="Invoice, nota, kuitansi, kontrak sewa, atau tagihan."
+                                    onFiles={(files) =>
+                                        setProof('purchase_proofs', i, files)
                                     }
                                 />
                             </div>
                             <div>
-                                <Label>Bukti pembayaran</Label>
-                                <p className="mb-2 text-xs text-muted-foreground">
-                                    Bukti transfer, mutasi rekening, atau struk
-                                    pembayaran.
-                                </p>
-                                <Input
-                                    type="file"
+                                <MultipleFileInput
+                                    label="Bukti pembayaran"
+                                    files={form.data.payment_proofs[i] ?? []}
                                     accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                    multiple
-                                    onChange={(x) =>
-                                        setProof(
-                                            'payment_proofs',
-                                            i,
-                                            Array.from(x.target.files ?? []),
-                                        )
+                                    description="Bukti transfer, mutasi rekening, atau struk pembayaran."
+                                    onFiles={(files) =>
+                                        setProof('payment_proofs', i, files)
                                     }
                                 />
                             </div>

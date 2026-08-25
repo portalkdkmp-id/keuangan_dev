@@ -38,9 +38,9 @@ Aplikasi ini digunakan untuk mengelola data wilayah, koperasi, PIC KDKMP, rekeni
 - Import data koperasi dari Excel.
 - Manajemen rekening user.
 - Master kategori pengajuan.
-- Master jenis pengajuan.
+- Master jenis pengajuan dengan relasi opsional ke kategori pengajuan.
 - Pengajuan dana mobile-first.
-- Upload attachment bukti/rincian penggunaan dana.
+- Upload multiple attachment bukti/rincian penggunaan dana melalui tombol tambah, daftar file terpilih, dan aksi hapus per file sebelum disimpan.
 - Preview attachment gambar di detail pengajuan.
 - Review pengajuan oleh finance staff.
 - Request revisi ke PIC.
@@ -99,7 +99,7 @@ Menu `Export Laporan` tersedia untuk seluruh role. PIC KDKMP hanya dapat melihat
 
 Laporan dapat difilter berdasarkan status akhir, koperasi, tanggal dibuat, dan tanggal perubahan status terakhir. Role selain PIC juga dapat memfilter berdasarkan PIC. Setiap halaman detail pengajuan menyediakan export khusus untuk satu nomor pengajuan.
 
-Workbook berisi sheet `Pengajuan`, `Items`, `Attachments`, dan `Riwayat Status`. Proses export membaca data per chunk agar penggunaan memori tetap terjaga.
+Workbook mengikuti format sheet `1. Rekap Pengajuan Dana` pada template laporan keuangan. Sheet berisi rekap pengajuan, nama item, nominal per item, total nominal pengajuan, dan ringkasan total berdasarkan dataset yang sudah difilter. Proses export membaca data per chunk agar penggunaan memori tetap terjaga.
 
 ### Rekening User
 
@@ -148,6 +148,8 @@ Jenis default:
 - Biaya Ongkir
 - ATK dan Fotocopy
 - Sarana Prasarana
+
+Satu kategori pengajuan dapat memiliki banyak jenis pengajuan. Relasi kategori pada jenis bersifat opsional: jenis tanpa kategori tersedia untuk seluruh kategori, sedangkan jenis yang memiliki kategori hanya tampil ketika kategori tersebut dipilih.
 
 ## Alur Status Pengajuan
 
@@ -213,8 +215,8 @@ Finance approver dapat mulai review, menyetujui ke Finance Director, menolak, at
 ## Alur Finance Director
 
 1. Finance Director membuka Queue Director.
-2. Untuk pengajuan `director_review`, Director klik Mulai Review.
-3. Status menjadi `director_in_review`.
+2. Untuk pengajuan `director_review`, Director klik Mulai Review langsung dari tabel daftar pengajuan.
+3. Status menjadi `director_in_review`, kemudian Director membuka halaman detail untuk memberikan keputusan.
 4. Director dapat:
    - Setujui - Bayar Nanti: status menjadi `pending_disbursement`.
    - Setujui dan Kirim Dana: upload bukti transfer dan status menjadi `fund_disbursed`.

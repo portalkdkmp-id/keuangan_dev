@@ -15,6 +15,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { MultipleFileInput } from '@/components/multiple-file-input';
 
 const emptyItem = () => ({
     expense_date: '',
@@ -354,20 +355,21 @@ export default function Form({ advance, report, categories }: any) {
                                     {item.description || 'Transaksi'}
                                 </h2>
                                 <div>
-                                    <Label>Bukti pembelian / sewa</Label>
-                                    <Input
-                                        type="file"
-                                        multiple
+                                    <MultipleFileInput
+                                        label="Bukti pembelian / sewa"
+                                        files={
+                                            form.data.purchase_proofs[index] ??
+                                            []
+                                        }
                                         accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                        onChange={(event) =>
+                                        onFiles={(files) =>
                                             setFiles(
                                                 'purchase_proofs',
                                                 index,
-                                                Array.from(
-                                                    event.target.files ?? [],
-                                                ),
+                                                files,
                                             )
                                         }
+                                        required
                                     />
                                     <p className="mt-1 text-xs text-muted-foreground">
                                         {report?.items?.[
@@ -382,20 +384,21 @@ export default function Form({ advance, report, categories }: any) {
                                     </p>
                                 </div>
                                 <div>
-                                    <Label>Bukti pembayaran</Label>
-                                    <Input
-                                        type="file"
-                                        multiple
+                                    <MultipleFileInput
+                                        label="Bukti pembayaran"
+                                        files={
+                                            form.data.payment_proofs[index] ??
+                                            []
+                                        }
                                         accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                        onChange={(event) =>
+                                        onFiles={(files) =>
                                             setFiles(
                                                 'payment_proofs',
                                                 index,
-                                                Array.from(
-                                                    event.target.files ?? [],
-                                                ),
+                                                files,
                                             )
                                         }
+                                        required
                                     />
                                     <p className="mt-1 text-xs text-muted-foreground">
                                         {report?.items?.[

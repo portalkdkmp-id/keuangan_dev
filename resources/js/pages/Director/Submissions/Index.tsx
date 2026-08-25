@@ -13,6 +13,7 @@ import { rupiah } from '@/components/Submissions/SubmissionSummary';
 import { formatDate } from '@/lib/format';
 import { Input } from '@/components/ui/input';
 import { SimplePagination } from '@/components/simple-pagination';
+import { useState } from 'react';
 
 const tabs = [
     ['director_review', 'Menunggu Review'],
@@ -27,6 +28,7 @@ export default function DirectorSubmissionsIndex({
     submissions,
     filters,
 }: any) {
+    const [startingId, setStartingId] = useState<string | null>(null);
     return (
         <div className="space-y-4 p-4">
             <Head title="Director Review" />
@@ -123,13 +125,43 @@ export default function DirectorSubmissionsIndex({
                                     <SubmissionStatusBadge status={s.status} />
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button size="sm" variant="outline" asChild>
-                                        <Link
-                                            href={`/director/submissions/${s.id}`}
+                                    <div className="flex justify-end gap-2">
+                                        {s.status === 'director_review' && (
+                                            <Button
+                                                size="sm"
+                                                disabled={startingId === s.id}
+                                                onClick={() => {
+                                                    setStartingId(s.id);
+                                                    router.post(
+                                                        `/director/submissions/${s.id}/start-review`,
+                                                        {},
+                                                        {
+                                                            preserveScroll: true,
+                                                            onFinish: () =>
+                                                                setStartingId(
+                                                                    null,
+                                                                ),
+                                                        },
+                                                    );
+                                                }}
+                                            >
+                                                {startingId === s.id
+                                                    ? 'Memulai...'
+                                                    : 'Mulai Review'}
+                                            </Button>
+                                        )}
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            asChild
                                         >
-                                            Detail
-                                        </Link>
-                                    </Button>
+                                            <Link
+                                                href={`/director/submissions/${s.id}`}
+                                            >
+                                                Detail
+                                            </Link>
+                                        </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}

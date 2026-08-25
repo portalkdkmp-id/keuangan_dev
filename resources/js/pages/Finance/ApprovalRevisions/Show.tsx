@@ -21,6 +21,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttachments';
 import { SubmissionItemsEditor } from '@/components/Submissions/SubmissionItemsEditor';
+import { MultipleFileInput } from '@/components/multiple-file-input';
 
 export default function FinanceApprovalRevisionShow({
     submission,
@@ -52,6 +53,12 @@ export default function FinanceApprovalRevisionShow({
     });
     const resubmitForm = useForm({ change_summary: '', notes: '' });
     const picForm = useForm({ message: '' });
+    const availableRequestTypes = requestTypes.filter(
+        (type: any) =>
+            !type.submission_request_category_id ||
+            type.submission_request_category_id ===
+                form.data.submission_request_category_id,
+    );
     const save = (onSuccess?: () => void) =>
         form.post(`/finance/approval-revisions/${submission.id}`, {
             forceFormData: true,
@@ -101,10 +108,26 @@ export default function FinanceApprovalRevisionShow({
                                 undefined
                             }
                             onValueChange={(value) =>
-                                form.setData(
-                                    'submission_request_category_id',
-                                    value,
-                                )
+                                form.setData((data: any) => ({
+                                    ...data,
+                                    submission_request_category_id: value,
+                                    items: data.items.map((item: any) => {
+                                        const type = requestTypes.find(
+                                            (candidate: any) =>
+                                                candidate.id ===
+                                                item.request_type_id,
+                                        );
+                                        return type?.submission_request_category_id &&
+                                            type.submission_request_category_id !==
+                                                value
+                                            ? {
+                                                  ...item,
+                                                  request_type_id: '',
+                                                  other_type_name: '',
+                                              }
+                                            : item;
+                                    }),
+                                }))
                             }
                         >
                             <SelectTrigger className="w-full">
@@ -135,7 +158,7 @@ export default function FinanceApprovalRevisionShow({
                 </div>
                 <SubmissionItemsEditor
                     form={form}
-                    requestTypes={requestTypes}
+                    requestTypes={availableRequestTypes}
                 />
                 <div className="grid gap-3 md:grid-cols-2">
                     <div>
@@ -162,15 +185,11 @@ export default function FinanceApprovalRevisionShow({
                         />
                     </div>
                     <div className="md:col-span-2">
-                        <Label>Attachment baru</Label>
-                        <Input
-                            type="file"
-                            multiple
-                            onChange={(event) =>
-                                form.setData(
-                                    'attachments',
-                                    Array.from(event.target.files ?? []),
-                                )
+                        <MultipleFileInput
+                            label="Attachment baru"
+                            files={form.data.attachments}
+                            onFiles={(files) =>
+                                form.setData('attachments', files)
                             }
                         />
                     </div>

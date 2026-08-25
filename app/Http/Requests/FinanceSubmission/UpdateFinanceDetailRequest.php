@@ -3,8 +3,10 @@
 namespace App\Http\Requests\FinanceSubmission;
 
 use App\Enums\SubmissionStatus;
+use App\Models\SubmissionRequestType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateFinanceDetailRequest extends FormRequest
 {
@@ -35,5 +37,20 @@ class UpdateFinanceDetailRequest extends FormRequest
             'attachments' => ['nullable', 'array', 'max:10'],
             'attachments.*' => ['file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,webp,xlsx,xls,doc,docx'],
         ];
+    }
+
+    public function after(): array
+    {
+        return [function (Validator $validator) {
+            $categoryId = $this->input('submission_request_category_id');
+            $typeIds = collect($this->input('items', []))->pluck('request_type_id')->push($this->input('submission_request_type_id'))->filter()->unique();
+
+            SubmissionRequestType::query()
+                ->whereKey($typeIds)
+                ->whereNotNull('submission_request_category_id')
+                ->where('submission_request_category_id', '!=', $categoryId)
+                ->get()
+                ->each(fn (SubmissionRequestType $type) => $validator->errors()->add('submission_request_type_id', "Jenis {$type->name} tidak sesuai dengan kategori yang dipilih."));
+        }];
     }
 }

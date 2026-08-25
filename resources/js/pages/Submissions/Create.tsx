@@ -33,6 +33,7 @@ import {
 } from '@/components/Submissions/SubmissionItemsEditor';
 import { formatDate } from '@/lib/format';
 import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttachments';
+import { MultipleFileInput } from '@/components/multiple-file-input';
 
 function localDate(value?: string | null): Date | undefined {
     if (!value) return undefined;
@@ -101,6 +102,16 @@ export default function SubmissionsCreate({
         (category: any) =>
             category.id === form.data.submission_request_category_id,
     );
+    const availableRequestTypes = useMemo(
+        () =>
+            requestTypes.filter(
+                (type: any) =>
+                    !type.submission_request_category_id ||
+                    type.submission_request_category_id ===
+                        form.data.submission_request_category_id,
+            ),
+        [requestTypes, form.data.submission_request_category_id],
+    );
     const selectedCooperative = cooperatives.find(
         (cooperative: any) => cooperative.id === form.data.cooperative_id,
     );
@@ -114,7 +125,7 @@ export default function SubmissionsCreate({
     const itemsComplete =
         form.data.items.length > 0 &&
         form.data.items.every((item: any) => {
-            const type = requestTypes.find(
+            const type = availableRequestTypes.find(
                 (requestType: any) => requestType.id === item.request_type_id,
             );
             return (
@@ -194,10 +205,26 @@ export default function SubmissionsCreate({
                                     undefined
                                 }
                                 onValueChange={(value) =>
-                                    form.setData(
-                                        'submission_request_category_id',
-                                        value,
-                                    )
+                                    form.setData((data) => ({
+                                        ...data,
+                                        submission_request_category_id: value,
+                                        items: data.items.map((item: any) => {
+                                            const type = requestTypes.find(
+                                                (candidate: any) =>
+                                                    candidate.id ===
+                                                    item.request_type_id,
+                                            );
+                                            return type?.submission_request_category_id &&
+                                                type.submission_request_category_id !==
+                                                    value
+                                                ? {
+                                                      ...item,
+                                                      request_type_id: '',
+                                                      other_type_name: '',
+                                                  }
+                                                : item;
+                                        }),
+                                    }))
                                 }
                             >
                                 <SelectTrigger className="w-full">
@@ -277,7 +304,7 @@ export default function SubmissionsCreate({
                     <h2 className="font-semibold">Item, Rekening, dan Bukti</h2>
                     <SubmissionItemsEditor
                         form={form}
-                        requestTypes={requestTypes}
+                        requestTypes={availableRequestTypes}
                     />
                     <div className="grid gap-4 md:grid-cols-2">
                         <div>
@@ -377,16 +404,13 @@ export default function SubmissionsCreate({
                             />
                         </div>
                         <div className="md:col-span-2">
-                            <Label>Attachment</Label>
-                            <Input
-                                type="file"
-                                multiple
-                                onChange={(event) =>
-                                    form.setData(
-                                        'attachments',
-                                        Array.from(event.target.files ?? []),
-                                    )
+                            <MultipleFileInput
+                                label="Attachment"
+                                files={form.data.attachments}
+                                onFiles={(files) =>
+                                    form.setData('attachments', files)
                                 }
+                                accept=".pdf,.jpg,.jpeg,.png,.webp,.xlsx,.xls,.doc,.docx"
                             />
                         </div>
                     </div>

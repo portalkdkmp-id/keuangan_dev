@@ -1,5 +1,4 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import type { ChangeEvent } from 'react';
 import { useState } from 'react';
 import { BackButton } from '@/components/back-button';
 import { MoneyInput } from '@/components/Submissions/MoneyInput';
@@ -30,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate } from '@/lib/format';
+import { MultipleFileInput } from '@/components/multiple-file-input';
 
 const normalizeDateTime = (value: string) =>
     value
@@ -61,7 +61,6 @@ export default function DirectorSubmissionsShow({
     const directorReview = submission.director_reviews?.[0];
     const approvalReview = submission.approval_reviews?.[0];
     const [accountDialogOpen, setAccountDialogOpen] = useState(false);
-    const startForm = useForm({});
     const pendingForm = useForm({
         approved_amount: submission.approval_approved_amount ?? '',
         notes: '',
@@ -85,8 +84,6 @@ export default function DirectorSubmissionsShow({
         is_active: true,
         is_primary: false,
     });
-    const files = (event: ChangeEvent<HTMLInputElement>) =>
-        Array.from(event.target.files ?? []);
     const send = (form: any, url: string) => {
         form.transform((data: any) => ({
             ...data,
@@ -153,20 +150,6 @@ export default function DirectorSubmissionsShow({
                 <div>Catatan approval: {approvalReview?.notes ?? '-'}</div>
             </div>
             <SubmissionAttachments submission={submission} />
-            {submission.status === 'director_review' && (
-                <form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        startForm.post(
-                            `/director/submissions/${submission.id}/start-review`,
-                        );
-                    }}
-                >
-                    <Button disabled={startForm.processing}>
-                        {startForm.processing ? 'Memulai...' : 'Mulai Review'}
-                    </Button>
-                </form>
-            )}
             {submission.status === 'director_in_review' && (
                 <div className="grid gap-4 lg:grid-cols-2">
                     <form
@@ -609,12 +592,12 @@ function PaymentFields({
                 value={form.data.notes}
                 onChange={(e) => form.setData('notes', e.target.value)}
             />
-            <Label>Bukti transfer</Label>
-            <Input
-                type="file"
-                multiple
+            <MultipleFileInput
+                label="Bukti transfer"
+                files={form.data.attachments}
                 accept=".pdf,.jpg,.jpeg,.png,.webp"
-                onChange={(e) => onFiles(files(e))}
+                onFiles={onFiles}
+                required
             />
         </>
     );

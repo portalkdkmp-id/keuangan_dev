@@ -18,9 +18,11 @@ class SubmissionAttachmentController extends Controller
 
     public function store(StoreSubmissionAttachmentRequest $request, FinancialSubmission $financialSubmission): RedirectResponse
     {
-        $this->attachments->upload($request->user(), $financialSubmission, $request->file('file'), $request->validated());
+        foreach ($request->file('files', []) as $file) {
+            $this->attachments->upload($request->user(), $financialSubmission, $file, $request->validated());
+        }
 
-        return back()->with('success', 'Attachment berhasil diunggah.');
+        return back()->with('success', count($request->file('files', [])).' attachment berhasil diunggah.');
     }
 
     public function destroy(SubmissionAttachment $submissionAttachment): RedirectResponse
