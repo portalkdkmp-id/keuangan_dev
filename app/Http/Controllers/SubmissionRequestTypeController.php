@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SubmissionRequestCategory;
 use App\Models\SubmissionRequestType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ class SubmissionRequestTypeController extends Controller
         Gate::authorize('submission-types.view');
 
         return Inertia::render('SubmissionMasters/Types/Index', [
-            'types' => SubmissionRequestType::orderBy('sort_order')->orderBy('name')->paginate(10),
+            'types' => SubmissionRequestType::with('requestCategory:id,name')->orderBy('sort_order')->orderBy('name')->paginate(10),
         ]);
     }
 
@@ -26,7 +27,7 @@ class SubmissionRequestTypeController extends Controller
     {
         Gate::authorize('submission-types.create');
 
-        return Inertia::render('SubmissionMasters/Types/Form', ['type' => null]);
+        return Inertia::render('SubmissionMasters/Types/Form', $this->formData());
     }
 
     public function store(Request $request): RedirectResponse
@@ -41,7 +42,7 @@ class SubmissionRequestTypeController extends Controller
     {
         Gate::authorize('submission-types.update');
 
-        return Inertia::render('SubmissionMasters/Types/Form', ['type' => $submissionType]);
+        return Inertia::render('SubmissionMasters/Types/Form', [...$this->formData(), 'type' => $submissionType]);
     }
 
     public function update(Request $request, SubmissionRequestType $submissionType): RedirectResponse
@@ -64,6 +65,7 @@ class SubmissionRequestTypeController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('submission_request_types', 'name')->ignore($type)],
+            'submission_request_category_id' => ['nullable', 'uuid', 'exists:submission_request_categories,id'],
             'is_active' => ['required', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ]);
@@ -71,5 +73,13 @@ class SubmissionRequestTypeController extends Controller
         $data['sort_order'] = $data['sort_order'] ?? 0;
 
         return $data;
+    }
+
+    private function formData(): array
+    {
+        return [
+            'type' => null,
+            'requestCategories' => SubmissionRequestCategory::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+        ];
     }
 }

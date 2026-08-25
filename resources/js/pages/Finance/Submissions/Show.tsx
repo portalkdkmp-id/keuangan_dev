@@ -67,6 +67,7 @@ export default function FinanceSubmissionsShow({
     const saveReview = () =>
         reviewForm.put(`/finance/submissions/${submission.id}/finance-detail`);
     const submitToApproval = () => {
+        setConfirmForward(false);
         reviewForm.put(`/finance/submissions/${submission.id}/finance-detail`, {
             onSuccess: () =>
                 router.post(

@@ -26,6 +26,12 @@ export function SubmissionForm({
         (category: any) =>
             category.id === form.data.submission_request_category_id,
     );
+    const availableRequestTypes = requestTypes.filter(
+        (type: any) =>
+            !type.submission_request_category_id ||
+            type.submission_request_category_id ===
+                form.data.submission_request_category_id,
+    );
     const selectedAccount = bankAccounts.find(
         (account: any) => account.id === form.data.recipient_bank_account_id,
     );
@@ -88,10 +94,26 @@ export function SubmissionForm({
                         key={category.id}
                         type="button"
                         onClick={() => {
-                            form.setData(
-                                'submission_request_category_id',
-                                category.id,
-                            );
+                            form.setData((data: any) => ({
+                                ...data,
+                                submission_request_category_id: category.id,
+                                items: data.items.map((item: any) => {
+                                    const type = requestTypes.find(
+                                        (candidate: any) =>
+                                            candidate.id ===
+                                            item.request_type_id,
+                                    );
+                                    return type?.submission_request_category_id &&
+                                        type.submission_request_category_id !==
+                                            category.id
+                                        ? {
+                                              ...item,
+                                              request_type_id: '',
+                                              other_type_name: '',
+                                          }
+                                        : item;
+                                }),
+                            }));
                             setStep(1);
                         }}
                         className={`min-h-24 rounded-md border p-4 text-left text-lg font-semibold transition ${form.data.submission_request_category_id === category.id ? 'border-primary bg-primary/10' : 'hover:bg-muted/60'}`}
@@ -174,7 +196,7 @@ export function SubmissionForm({
                     <div className="space-y-4">
                         <SubmissionItemsEditor
                             form={form}
-                            requestTypes={requestTypes}
+                            requestTypes={availableRequestTypes}
                         />
                         <div className="grid gap-4 md:grid-cols-2">
                             <div>

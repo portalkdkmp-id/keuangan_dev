@@ -38,7 +38,7 @@ Aplikasi ini digunakan untuk mengelola data wilayah, koperasi, PIC KDKMP, rekeni
 - Import data koperasi dari Excel.
 - Manajemen rekening user.
 - Master kategori pengajuan.
-- Master jenis pengajuan.
+- Master jenis pengajuan dengan relasi opsional ke kategori pengajuan.
 - Pengajuan dana mobile-first.
 - Upload attachment bukti/rincian penggunaan dana.
 - Preview attachment gambar di detail pengajuan.
@@ -99,7 +99,7 @@ Menu `Export Laporan` tersedia untuk seluruh role. PIC KDKMP hanya dapat melihat
 
 Laporan dapat difilter berdasarkan status akhir, koperasi, tanggal dibuat, dan tanggal perubahan status terakhir. Role selain PIC juga dapat memfilter berdasarkan PIC. Setiap halaman detail pengajuan menyediakan export khusus untuk satu nomor pengajuan.
 
-Workbook berisi sheet `Pengajuan`, `Items`, `Attachments`, dan `Riwayat Status`. Proses export membaca data per chunk agar penggunaan memori tetap terjaga.
+Workbook mengikuti format sheet `1. Rekap Pengajuan Dana` pada template laporan keuangan. Sheet berisi rekap pengajuan dan ringkasan total berdasarkan dataset yang sudah difilter. Proses export membaca data per chunk agar penggunaan memori tetap terjaga.
 
 ### Rekening User
 
@@ -148,6 +148,8 @@ Jenis default:
 - Biaya Ongkir
 - ATK dan Fotocopy
 - Sarana Prasarana
+
+Satu kategori pengajuan dapat memiliki banyak jenis pengajuan. Relasi kategori pada jenis bersifat opsional: jenis tanpa kategori tersedia untuk seluruh kategori, sedangkan jenis yang memiliki kategori hanya tampil ketika kategori tersebut dipilih.
 
 ## Alur Status Pengajuan
 

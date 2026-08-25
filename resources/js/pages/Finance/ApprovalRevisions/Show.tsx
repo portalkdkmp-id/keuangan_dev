@@ -52,6 +52,12 @@ export default function FinanceApprovalRevisionShow({
     });
     const resubmitForm = useForm({ change_summary: '', notes: '' });
     const picForm = useForm({ message: '' });
+    const availableRequestTypes = requestTypes.filter(
+        (type: any) =>
+            !type.submission_request_category_id ||
+            type.submission_request_category_id ===
+                form.data.submission_request_category_id,
+    );
     const save = (onSuccess?: () => void) =>
         form.post(`/finance/approval-revisions/${submission.id}`, {
             forceFormData: true,
@@ -101,10 +107,26 @@ export default function FinanceApprovalRevisionShow({
                                 undefined
                             }
                             onValueChange={(value) =>
-                                form.setData(
-                                    'submission_request_category_id',
-                                    value,
-                                )
+                                form.setData((data: any) => ({
+                                    ...data,
+                                    submission_request_category_id: value,
+                                    items: data.items.map((item: any) => {
+                                        const type = requestTypes.find(
+                                            (candidate: any) =>
+                                                candidate.id ===
+                                                item.request_type_id,
+                                        );
+                                        return type?.submission_request_category_id &&
+                                            type.submission_request_category_id !==
+                                                value
+                                            ? {
+                                                  ...item,
+                                                  request_type_id: '',
+                                                  other_type_name: '',
+                                              }
+                                            : item;
+                                    }),
+                                }))
                             }
                         >
                             <SelectTrigger className="w-full">
@@ -135,7 +157,7 @@ export default function FinanceApprovalRevisionShow({
                 </div>
                 <SubmissionItemsEditor
                     form={form}
-                    requestTypes={requestTypes}
+                    requestTypes={availableRequestTypes}
                 />
                 <div className="grid gap-3 md:grid-cols-2">
                     <div>

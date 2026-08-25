@@ -18,4 +18,9 @@ class SubmissionRequestCategory extends Model
     {
         return ['is_active' => 'boolean'];
     }
+
+    public function requestTypes()
+    {
+        return $this->hasMany(SubmissionRequestType::class);
+    }
 }
