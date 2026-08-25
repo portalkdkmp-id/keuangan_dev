@@ -40,7 +40,7 @@ Aplikasi ini digunakan untuk mengelola data wilayah, koperasi, PIC KDKMP, rekeni
 - Master kategori pengajuan.
 - Master jenis pengajuan dengan relasi opsional ke kategori pengajuan.
 - Pengajuan dana mobile-first.
-- Upload multiple attachment bukti/rincian penggunaan dana dengan daftar file terpilih.
+- Upload multiple attachment bukti/rincian penggunaan dana melalui tombol tambah, daftar file terpilih, dan aksi hapus per file sebelum disimpan.
 - Preview attachment gambar di detail pengajuan.
 - Review pengajuan oleh finance staff.
 - Request revisi ke PIC.
