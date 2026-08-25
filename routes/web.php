@@ -184,6 +184,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/approval/fund-returns/{fundReturn}/approve', [ApprovalFundReturnController::class, 'approve'])->name('approval.fund-returns.approve');
     Route::post('/approval/fund-returns/{fundReturn}/reject', [ApprovalFundReturnController::class, 'reject'])->name('approval.fund-returns.reject');
     Route::get('/accountability-attachments/{attachment}/download', [FundAccountabilityReportController::class, 'download'])->name('accountability-attachments.download');
+    Route::get('/accountability-attachments/{attachment}/preview', [FundAccountabilityReportController::class, 'preview'])->name('accountability-attachments.preview');
     Route::get('/finance/accountability-reports', [FinanceAccountabilityController::class, 'index'])->name('finance.accountability-reports.index');
     Route::get('/finance/accountability-reports/{fundAccountabilityReport}', [FinanceAccountabilityController::class, 'show'])->name('finance.accountability-reports.show');
     Route::post('/finance/accountability-reports/{fundAccountabilityReport}/start-review', [FinanceAccountabilityController::class, 'startReview'])->name('finance.accountability-reports.start-review');

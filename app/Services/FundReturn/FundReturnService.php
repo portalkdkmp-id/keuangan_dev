@@ -21,7 +21,7 @@ class FundReturnService
 {
     public function __construct(private DocumentNumberService $numbers, private AccountabilityClosingService $closing, private AuditLogService $audit) {}
 
-    public function createDraft(User $actor, FundAccountabilityReport $report, array $data, ?UploadedFile $proof): FundReturn
+    public function createDraft(User $actor, FundAccountabilityReport $report, array $data, UploadedFile|array|null $proof): FundReturn
     {
         return DB::transaction(function () use ($actor, $report, $data, $proof) {
             $locked = FundAccountabilityReport::whereKey($report->id)->lockForUpdate()->firstOrFail();
@@ -36,7 +36,7 @@ class FundReturnService
         });
     }
 
-    public function updateDraft(User $actor, FundReturn $return, array $data, ?UploadedFile $proof): FundReturn
+    public function updateDraft(User $actor, FundReturn $return, array $data, UploadedFile|array|null $proof): FundReturn
     {
         return DB::transaction(function () use ($actor, $return, $data, $proof) {
             $locked = FundReturn::whereKey($return->id)->lockForUpdate()->firstOrFail();
@@ -98,7 +98,7 @@ class FundReturnService
         });
     }
 
-    private function persist(User $actor, FundAccountabilityReport $report, ?FundReturn $return, array $data, ?UploadedFile $proof): FundReturn
+    private function persist(User $actor, FundAccountabilityReport $report, ?FundReturn $return, array $data, UploadedFile|array|null $proof): FundReturn
     {
         $destination = CompanyBankAccount::where('is_active', true)->findOrFail($data['destination_company_bank_account_id']);
         $source = null;
@@ -112,10 +112,11 @@ class FundReturnService
         $values['source_type'] = $report->source_type === 'advance' ? 'advance_settlement' : 'accountability';
         $values['source_advance_detail_id'] = $report->advance_detail_id;
         $return ? $return->update($values) : $return = FundReturn::create($values);
-        if ($proof) {
+        $proofs = $proof instanceof UploadedFile ? [$proof] : ($proof ?? []);
+        foreach ($proofs as $file) {
             $kind = $data['payment_method'] === 'cash' ? FundReturnAttachmentType::HANDOVER_RECEIPT : FundReturnAttachmentType::TRANSFER_PROOF;
-            $path = $proof->store('fund-returns/'.$return->id, 'local');
-            $return->attachments()->create(['uploaded_by' => $actor->id, 'attachment_type' => $kind, 'original_name' => $proof->getClientOriginalName(), 'stored_name' => basename($path), 'disk' => 'local', 'path' => $path, 'mime_type' => $proof->getMimeType() ?: 'application/octet-stream', 'extension' => $proof->getClientOriginalExtension(), 'size' => $proof->getSize()]);
+            $path = $file->store('fund-returns/'.$return->id, 'local');
+            $return->attachments()->create(['uploaded_by' => $actor->id, 'attachment_type' => $kind, 'original_name' => $file->getClientOriginalName(), 'stored_name' => basename($path), 'disk' => 'local', 'path' => $path, 'mime_type' => $file->getMimeType() ?: 'application/octet-stream', 'extension' => $file->getClientOriginalExtension(), 'size' => $file->getSize()]);
         }
 
         return $return->refresh();

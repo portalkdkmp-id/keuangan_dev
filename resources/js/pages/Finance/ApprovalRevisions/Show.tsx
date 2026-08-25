@@ -21,6 +21,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttachments';
 import { SubmissionItemsEditor } from '@/components/Submissions/SubmissionItemsEditor';
+import { MultipleFileInput } from '@/components/multiple-file-input';
 
 export default function FinanceApprovalRevisionShow({
     submission,
@@ -184,15 +185,11 @@ export default function FinanceApprovalRevisionShow({
                         />
                     </div>
                     <div className="md:col-span-2">
-                        <Label>Attachment baru</Label>
-                        <Input
-                            type="file"
-                            multiple
-                            onChange={(event) =>
-                                form.setData(
-                                    'attachments',
-                                    Array.from(event.target.files ?? []),
-                                )
+                        <MultipleFileInput
+                            label="Attachment baru"
+                            files={form.data.attachments}
+                            onFiles={(files) =>
+                                form.setData('attachments', files)
                             }
                         />
                     </div>

@@ -82,9 +82,11 @@ test('submission export follows the financial report recap template', function (
 
     expect($submissionXml)->toContain('LAPORAN REKAP PENGAJUAN DANA PERIODIK')
         ->toContain('FR/2026/08/000001')
-        ->toContain('Nominal Diajukan (Rp)')
+        ->toContain('Nama Item')
+        ->toContain('Nominal per Item')
+        ->toContain('Total Nominal Diajukan (Rp)')
         ->toContain('RINGKASAN TOTAL')
-        ->toContain('<c r="M6" s="5" t="n"><v>1</v></c>')
+        ->toContain('<c r="O6" s="5" t="n"><v>1</v></c>')
         ->and($workbookXml)->toContain('1. Rekap Pengajuan Dana')
         ->and($secondSheet)->toBeFalse();
     @unlink($path);

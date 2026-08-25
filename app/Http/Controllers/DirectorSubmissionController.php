@@ -65,9 +65,9 @@ class DirectorSubmissionController extends Controller
     public function startReview(StartDirectorReviewRequest $request, FinancialSubmission $financialSubmission): RedirectResponse
     {
         Gate::authorize('startDirectorReview', $financialSubmission);
-        $submission = $this->directors->startReview($request->user(), $financialSubmission);
+        $this->directors->startReview($request->user(), $financialSubmission);
 
-        return to_route('director.submissions.show', $submission)->with('success', 'Director review dimulai.');
+        return to_route('director.submissions.index')->with('success', 'Director review dimulai.');
     }
 
     public function approvePendingDisbursement(ApprovePendingDisbursementRequest $request, FinancialSubmission $financialSubmission): RedirectResponse

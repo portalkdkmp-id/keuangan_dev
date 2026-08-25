@@ -13,7 +13,7 @@ use ZipArchive;
 
 class SubmissionExcelExportService
 {
-    private const HEADERS = ['No', 'No. Pengajuan', 'Tanggal Pengajuan', 'Jenis Pengajuan', 'KDKMP / Outlet', 'PIC Pengaju', 'Sub-Kategori', 'Ringkasan Item', 'Nominal Diajukan (Rp)', 'Tingkat Urgensi', 'Status Pengajuan', 'Layer Approval / Saat Ini', 'Jumlah Attachment'];
+    private const HEADERS = ['No', 'No. Pengajuan', 'Tanggal Pengajuan', 'Jenis Pengajuan', 'KDKMP / Outlet', 'PIC Pengaju', 'Sub-Kategori', 'Ringkasan Item', 'Nama Item', 'Nominal per Item', 'Total Nominal Diajukan (Rp)', 'Tingkat Urgensi', 'Status Pengajuan', 'Layer Approval / Saat Ini', 'Jumlah Attachment'];
 
     public function __construct(private readonly SubmissionExportRepository $submissions) {}
 
@@ -39,7 +39,7 @@ class SubmissionExcelExportService
 
         $this->submissions->eachChunk($user, $filters, function ($submissions) use ($writer, &$row, &$number, &$summary, &$approvedCount, &$totalCount, &$totalSubmitted) {
             foreach ($submissions as $submission) {
-                $this->writeRow($writer, $row++, $this->submissionRow($submission, $number++), [5, 5, 6, 5, 5, 7, 5, 7, 8, 5, 5, 5, 5]);
+                $this->writeRow($writer, $row++, $this->submissionRow($submission, $number++), [5, 5, 6, 5, 5, 7, 5, 7, 7, 7, 8, 5, 5, 5, 5]);
                 $this->accumulateSummary($summary, $submission);
                 $totalCount++;
                 $totalSubmitted += (float) $submission->total_amount;
@@ -75,6 +75,10 @@ class SubmissionExcelExportService
         $subCategories = $submission->items
             ->map(fn ($item) => $item->other_type_name ?: ($item->requestType?->name ?? $item->request_type_name))
             ->filter()->unique()->implode(', ');
+        $itemNames = $submission->items->pluck('description')->filter()->implode(', ');
+        $itemAmounts = $submission->items
+            ->map(fn ($item) => ($item->description ?: 'Item').' - Rp'.number_format((float) $item->subtotal, 0, ',', '.'))
+            ->implode(', ');
 
         return [
             $number,
@@ -85,6 +89,8 @@ class SubmissionExcelExportService
             $submission->submitter?->name ?? '-',
             $subCategories ?: ($submission->requestType?->name ?? '-'),
             $submission->items->count().' item',
+            $itemNames ?: '-',
+            $itemAmounts ?: '-',
             (float) $submission->total_amount,
             '-',
             $this->statusLabel($submission->status),
@@ -143,7 +149,7 @@ class SubmissionExcelExportService
         $writer->endElement();
         $writer->endElement();
         $writer->startElement('cols');
-        foreach ([16, 20, 16, 23, 25, 21, 23, 17, 21, 18, 19, 18, 16] as $index => $width) {
+        foreach ([16, 20, 16, 23, 25, 21, 23, 17, 28, 34, 22, 18, 19, 18, 16] as $index => $width) {
             $writer->startElement('col');
             $writer->writeAttribute('min', (string) ($index + 1));
             $writer->writeAttribute('max', (string) ($index + 1));
@@ -162,7 +168,7 @@ class SubmissionExcelExportService
         $writer->endElement();
         $writer->startElement('mergeCells');
         $writer->writeAttribute('count', '3');
-        foreach (['A1:M1', 'A2:M2', 'A3:M3'] as $range) {
+        foreach (['A1:O1', 'A2:O2', 'A3:O3'] as $range) {
             $writer->startElement('mergeCell');
             $writer->writeAttribute('ref', $range);
             $writer->endElement();

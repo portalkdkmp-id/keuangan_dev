@@ -172,7 +172,9 @@ test('another user cannot view private fund return', function () {
     $submission = FinancialSubmission::factory()->create(['submitted_by' => $pic->id, 'cooperative_id' => $cooperative->id]);
     $report = FundAccountabilityReport::create(['financial_submission_id' => $submission->id, 'submitted_by' => $pic->id, 'report_number' => 'ACC/2026/08/888888', 'status' => AccountabilityStatus::RETURN_PENDING, 'received_amount' => 100, 'realized_amount' => 50, 'remaining_amount' => 50, 'additional_amount' => 0, 'summary' => 'Sisa']);
     $company = CompanyBankAccount::create(['bank_name' => 'Bank Company', 'account_number' => '9999', 'account_holder_name' => 'Company', 'is_active' => true]);
-    $return = app(FundReturnService::class)->createDraft($pic, $report, ['source_user_bank_account_id' => $pic->bankAccounts()->first()->id, 'destination_company_bank_account_id' => $company->id, 'transfer_date' => now()->toDateString(), 'transferred_at' => now(), 'payment_method' => 'bank_transfer'], UploadedFile::fake()->image('proof.jpg'));
+    $return = app(FundReturnService::class)->createDraft($pic, $report, ['source_user_bank_account_id' => $pic->bankAccounts()->first()->id, 'destination_company_bank_account_id' => $company->id, 'transfer_date' => now()->toDateString(), 'transferred_at' => now(), 'payment_method' => 'bank_transfer'], [UploadedFile::fake()->image('proof-1.jpg'), UploadedFile::fake()->image('proof-2.jpg')]);
+
+    expect($return->attachments)->toHaveCount(2);
 
     $this->actingAs($other)->get(route('fund-returns.show', $return))->assertForbidden();
 });

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FundAccountabilityReportController extends Controller
@@ -79,6 +80,17 @@ class FundAccountabilityReportController extends Controller
         Gate::authorize('downloadAttachment', $attachment->report);
 
         return Storage::disk($attachment->disk)->download($attachment->path, $attachment->original_name);
+    }
+
+    public function preview(FundAccountabilityAttachment $attachment): SymfonyResponse
+    {
+        Gate::authorize('downloadAttachment', $attachment->report);
+        abort_unless(str_starts_with($attachment->mime_type, 'image/'), 404);
+
+        return response(Storage::disk($attachment->disk)->get($attachment->path), 200, [
+            'Content-Type' => $attachment->mime_type,
+            'Content-Disposition' => 'inline; filename="'.$attachment->original_name.'"',
+        ]);
     }
 
     private function form(FinancialSubmission $submission, ?FundAccountabilityReport $report): Response

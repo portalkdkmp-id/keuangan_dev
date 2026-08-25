@@ -33,6 +33,7 @@ import {
 } from '@/components/Submissions/SubmissionItemsEditor';
 import { formatDate } from '@/lib/format';
 import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttachments';
+import { MultipleFileInput } from '@/components/multiple-file-input';
 
 function localDate(value?: string | null): Date | undefined {
     if (!value) return undefined;
@@ -403,16 +404,13 @@ export default function SubmissionsCreate({
                             />
                         </div>
                         <div className="md:col-span-2">
-                            <Label>Attachment</Label>
-                            <Input
-                                type="file"
-                                multiple
-                                onChange={(event) =>
-                                    form.setData(
-                                        'attachments',
-                                        Array.from(event.target.files ?? []),
-                                    )
+                            <MultipleFileInput
+                                label="Attachment"
+                                files={form.data.attachments}
+                                onFiles={(files) =>
+                                    form.setData('attachments', files)
                                 }
+                                accept=".pdf,.jpg,.jpeg,.png,.webp,.xlsx,.xls,.doc,.docx"
                             />
                         </div>
                     </div>
