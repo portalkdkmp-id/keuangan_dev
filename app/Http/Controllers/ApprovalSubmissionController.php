@@ -37,7 +37,7 @@ class ApprovalSubmissionController extends Controller
                     SubmissionStatus::FUND_DISBURSED,
                 ])
                 ->when($status, fn ($query) => $query->where('status', $status))
-                ->when($search, fn ($query) => $query->where(fn ($q) => $q->where('submission_number', 'like', "%{$search}%")->orWhere('title', 'like', "%{$search}%")->orWhereHas('cooperative', fn ($cooperative) => $cooperative->where('name', 'like', "%{$search}%"))))
+                ->when($search, fn ($query) => $query->where(fn ($q) => $q->where('submission_number', 'like', "%{$search}%")->orWhere('title', 'like', "%{$search}%")->orWhereHas('items', fn ($items) => $items->where('description', 'like', "%{$search}%"))->orWhereHas('cooperative', fn ($cooperative) => $cooperative->where('name', 'like', "%{$search}%"))))
                 ->with(['cooperative.city.province', 'submitter', 'financeValidator:id,name', 'approvalReviewer:id,name', 'approvalReviews.approver'])
                 ->latest('created_at')
                 ->paginate(10)
@@ -73,6 +73,15 @@ class ApprovalSubmissionController extends Controller
         $this->approvals->approve($request->user(), $financialSubmission, $request->validated());
 
         return back()->with('success', 'Pengajuan disetujui dan diteruskan ke Finance Director.');
+    }
+
+    public function updateUrgency(Request $request, FinancialSubmission $financialSubmission): RedirectResponse
+    {
+        Gate::authorize('approve', $financialSubmission);
+        $data = $request->validate(['is_urgent' => ['required', 'boolean']]);
+        $financialSubmission->update(['is_urgent' => $data['is_urgent']]);
+
+        return back()->with('success', 'Urgensi pengajuan berhasil diperbarui.');
     }
 
     public function reject(RejectSubmissionRequest $request, FinancialSubmission $financialSubmission): RedirectResponse

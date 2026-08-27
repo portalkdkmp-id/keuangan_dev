@@ -19,6 +19,10 @@ class SubmissionExportRepository
         return FinancialSubmission::query()
             ->when($user->hasRole('pic_kdkmp'), fn (Builder $query) => $query->where('submitted_by', $user->id))
             ->when($submission, fn (Builder $query) => $query->whereKey($submission->id))
+            ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query->where(fn (Builder $query) => $query
+                ->where('title', 'like', "%{$search}%")
+                ->orWhere('submission_number', 'like', "%{$search}%")
+                ->orWhereHas('items', fn (Builder $items) => $items->where('description', 'like', "%{$search}%"))))
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
             ->when($filters['cooperative_id'] ?? null, fn (Builder $query, string $id) => $query->where('cooperative_id', $id))
             ->when(! $user->hasRole('pic_kdkmp') && ($filters['pic_id'] ?? null), fn (Builder $query) => $query->where('submitted_by', $filters['pic_id']))

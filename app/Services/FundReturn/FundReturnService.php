@@ -70,7 +70,7 @@ class FundReturnService
 
     public function verify(User $actor, FundReturn $return, ?string $notes): FundReturn
     {
-        return $this->transition($actor, $return, [FundReturnStatus::FINANCE_REVIEW], FundReturnStatus::FINANCE_VERIFIED, 'fund_return.verified', function ($r) use ($actor, $notes) {
+        return $this->transition($actor, $return, [FundReturnStatus::SUBMITTED, FundReturnStatus::FINANCE_REVIEW], FundReturnStatus::FINANCE_VERIFIED, 'fund_return.verified', function ($r) use ($actor, $notes) {
             $r->verified_by = $actor->id;
             $r->verified_at = now();
             $r->verification_notes = $notes;

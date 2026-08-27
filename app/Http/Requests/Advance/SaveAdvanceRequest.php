@@ -15,7 +15,7 @@ class SaveAdvanceRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['title' => ['required', 'string', 'max:200'], 'cooperative_id' => [Rule::requiredIf(! $this->canSubmitInternal()), 'nullable', 'uuid', 'exists:cooperatives,id'], 'purpose' => ['required', 'string', 'max:5000'], 'estimated_amount' => ['required', 'numeric', 'min:0.01'], 'expected_transaction_date' => ['nullable', 'date', 'after_or_equal:today'], 'expected_settlement_date' => ['required', 'date', 'after_or_equal:today'], 'recipient_bank_account_id' => ['required', 'uuid', 'exists:user_bank_accounts,id'], 'notes' => ['nullable', 'string', 'max:5000'], 'attachments' => ['nullable', 'array', 'max:10'], 'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp,xlsx,xls,doc,docx', 'max:10240']];
+        return ['title' => ['required', 'string', 'max:200'], 'cooperative_id' => [Rule::requiredIf(! $this->canSubmitInternal()), 'nullable', 'uuid', 'exists:cooperatives,id'], 'is_urgent' => ['sometimes', 'boolean'], 'purpose' => ['required', 'string', 'max:5000'], 'estimated_amount' => ['required', 'numeric', 'min:0.01'], 'expected_transaction_date' => ['nullable', 'date', 'after_or_equal:today'], 'expected_settlement_date' => ['required', 'date', 'after_or_equal:today'], 'recipient_bank_account_id' => ['required', 'uuid', 'exists:user_bank_accounts,id'], 'notes' => ['nullable', 'string', 'max:5000'], 'attachments' => ['nullable', 'array', 'max:10'], 'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp,xlsx,xls,doc,docx', 'max:10240']];
     }
 
     public function after(): array

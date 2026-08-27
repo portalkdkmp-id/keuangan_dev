@@ -41,7 +41,7 @@ class FundReturnPolicy
 
     public function verify(User $u, FundReturn $r): bool
     {
-        return $u->can('fund-returns.verify') && $r->status === FundReturnStatus::FINANCE_REVIEW;
+        return $u->can('fund-returns.verify') && in_array($r->status, [FundReturnStatus::SUBMITTED, FundReturnStatus::FINANCE_REVIEW], true);
     }
 
     public function approve(User $u, FundReturn $r): bool

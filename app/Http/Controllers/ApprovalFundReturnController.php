@@ -18,7 +18,10 @@ class ApprovalFundReturnController extends Controller
     {
         Gate::authorize('fund-returns.approve');
 
-        return Inertia::render('Approval/FundReturns/Index', ['returns' => FundReturn::with(['submission:id,submission_number,title', 'returner:id,name'])->whereIn('status', ['finance_verified', 'closed'])->latest()->paginate(10)]);
+        return Inertia::render('Approval/FundReturns/Index', [
+            'returns' => FundReturn::with(['submission:id,submission_number,title', 'returner:id,name'])->whereIn('status', ['finance_verified', 'closed'])->latest()->paginate(10),
+            'detailBasePath' => '/approval/fund-returns',
+        ]);
     }
 
     public function show(FundReturn $fundReturn): Response

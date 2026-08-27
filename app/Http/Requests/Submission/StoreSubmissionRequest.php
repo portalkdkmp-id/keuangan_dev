@@ -33,6 +33,7 @@ class StoreSubmissionRequest extends FormRequest
             'purpose' => ['nullable', 'string', 'max:5000'],
             'needed_date' => ['nullable', 'date', 'after_or_equal:today'],
             'notes' => ['nullable', 'string', 'max:5000'],
+            'is_urgent' => ['sometimes', 'boolean'],
             'action' => ['nullable', Rule::in(['draft', 'submit'])],
             'attachments' => ['nullable', 'array', 'max:10'],
             'attachments.*' => ['file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,webp,xlsx,xls,doc,docx'],

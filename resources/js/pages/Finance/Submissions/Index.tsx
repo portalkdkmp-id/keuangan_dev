@@ -69,7 +69,7 @@ export default function FinanceSubmissionsIndex({ submissions, filters }: any) {
                 <Input
                     name="search"
                     defaultValue={filters.search ?? ''}
-                    placeholder="Cari"
+                    placeholder="Cari nomor, judul, item, atau koperasi"
                 />
                 <Select
                     value={String(filters.per_page ?? 10)}

@@ -17,7 +17,7 @@ class FinancialSubmission extends Model
     protected $fillable = [
         'submission_number', 'type', 'status', 'cooperative_id', 'submitted_by', 'current_assignee_role',
         'submitter_city_id', 'submission_request_category_id', 'submission_request_type_id', 'recipient_bank_account_id',
-        'title', 'purpose', 'needed_date', 'notes', 'total_amount', 'submitted_at',
+        'title', 'purpose', 'needed_date', 'notes', 'total_amount', 'is_urgent', 'submitted_at',
         'finance_review_started_at', 'finance_reviewed_by', 'finance_validated_by', 'finance_validated_at',
         'forwarded_to_approval_by', 'forwarded_to_approval_at', 'revision_count',
         'last_revision_requested_at', 'last_resubmitted_at', 'cancelled_at',
@@ -46,6 +46,7 @@ class FinancialSubmission extends Model
             'last_resubmitted_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'total_amount' => 'decimal:2',
+            'is_urgent' => 'boolean',
             'approval_review_started_at' => 'datetime',
             'approval_decided_at' => 'datetime',
             'approval_approved_amount' => 'decimal:2',

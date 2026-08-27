@@ -1,5 +1,7 @@
 import { Head, router } from '@inertiajs/react';
-import { Download, Filter, RotateCcw } from 'lucide-react';
+import { Download, FileArchive, Filter, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
+import { CooperativeCombobox } from '@/components/cooperative-combobox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +26,7 @@ import { rupiah } from '@/components/Submissions/SubmissionSummary';
 import { formatDate } from '@/lib/format';
 
 const fields = [
+    'search',
     'status',
     'cooperative_id',
     'pic_id',
@@ -40,7 +43,11 @@ export default function SubmissionExportIndex({
     cooperatives,
     pics,
     isPic,
+    canExportFinancialReports,
 }: any) {
+    const [cooperativeId, setCooperativeId] = useState(
+        filters.cooperative_id ?? '',
+    );
     const downloadQuery = new URLSearchParams(
         Object.fromEntries(
             fields
@@ -78,21 +85,31 @@ export default function SubmissionExportIndex({
                     });
                 }}
             >
+                <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="search">Pencarian</Label>
+                    <Input
+                        id="search"
+                        name="search"
+                        defaultValue={filters.search ?? ''}
+                        placeholder="Cari judul atau nama item pengajuan"
+                    />
+                </div>
                 <FilterSelect
                     label="Status akhir"
                     name="status"
                     value={filters.status}
                     options={statuses}
                 />
-                <FilterSelect
-                    label="Koperasi"
-                    name="cooperative_id"
-                    value={filters.cooperative_id}
-                    options={cooperatives.map((item: any) => ({
-                        value: item.id,
-                        label: item.name,
-                    }))}
-                />
+                <div className="space-y-2">
+                    <Label>Koperasi</Label>
+                    <CooperativeCombobox
+                        name="cooperative_id"
+                        cooperatives={cooperatives}
+                        value={cooperativeId}
+                        onValueChange={setCooperativeId}
+                        placeholder="Cari koperasi"
+                    />
+                </div>
                 {!isPic && (
                     <FilterSelect
                         label="PIC"
@@ -140,17 +157,39 @@ export default function SubmissionExportIndex({
                 </div>
             </form>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                 <p className="text-sm text-muted-foreground">
                     {submissions.total} pengajuan ditemukan
                 </p>
-                <Button asChild disabled={submissions.total === 0}>
-                    <a
-                        href={`/export-laporan/download${downloadQuery ? `?${downloadQuery}` : ''}`}
-                    >
-                        <Download className="size-4" /> Download Excel
-                    </a>
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <ExportButton
+                        href="/export-laporan/download"
+                        query={downloadQuery}
+                        label="Export Pengajuan"
+                    />
+                    {canExportFinancialReports && (
+                        <>
+                            <ExportButton
+                                href="/export-laporan/download/lpj"
+                                query={downloadQuery}
+                                label="Export Penanggungjawaban"
+                            />
+                            <ExportButton
+                                href="/export-laporan/download/aging"
+                                query={downloadQuery}
+                                label="Aging-Outstanding"
+                            />
+                            <Button asChild disabled={submissions.total === 0}>
+                                <a
+                                    href={`/export-laporan/download/complete${downloadQuery ? `?${downloadQuery}` : ''}`}
+                                >
+                                    <FileArchive className="size-4" /> Export
+                                    Laporan Lengkap
+                                </a>
+                            </Button>
+                        </>
+                    )}
+                </div>
             </div>
 
             <div className="overflow-x-auto rounded-md border">
@@ -230,6 +269,16 @@ export default function SubmissionExportIndex({
             </div>
             <SimplePagination meta={submissions} />
         </div>
+    );
+}
+
+function ExportButton({ href, query, label }: any) {
+    return (
+        <Button asChild variant="outline">
+            <a href={`${href}${query ? `?${query}` : ''}`}>
+                <Download className="size-4" /> {label}
+            </a>
+        </Button>
     );
 }
 

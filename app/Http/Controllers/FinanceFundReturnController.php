@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\FundReturn;
+use App\Services\Export\FundReturnExcelExportService;
 use App\Services\FundReturn\FundReturnService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FinanceFundReturnController extends Controller
 {
@@ -18,7 +20,21 @@ class FinanceFundReturnController extends Controller
     {
         Gate::authorize('fund-returns.review');
 
-        return Inertia::render('Finance/FundReturns/Index', ['returns' => FundReturn::with(['submission:id,submission_number,title', 'returner:id,name'])->whereIn('status', ['submitted', 'finance_review', 'revision_requested', 'finance_verified'])->latest()->paginate(10)]);
+        return Inertia::render('Finance/FundReturns/Index', [
+            'returns' => FundReturn::with(['submission:id,submission_number,title', 'returner:id,name'])->whereIn('status', ['submitted', 'finance_review', 'revision_requested', 'finance_verified'])->latest()->paginate(10),
+            'detailBasePath' => '/finance/fund-returns',
+            'exportUrl' => route('finance.fund-returns.export'),
+        ]);
+    }
+
+    public function export(FundReturnExcelExportService $export): BinaryFileResponse
+    {
+        Gate::authorize('fund-returns.review');
+
+        return response()->download(
+            $export->generate(),
+            'pengembalian-dana-'.now()->format('Ymd-His').'.xlsx',
+        )->deleteFileAfterSend(true);
     }
 
     public function show(FundReturn $fundReturn): Response
@@ -51,7 +67,7 @@ class FinanceFundReturnController extends Controller
         $d = $r->validate(['notes' => ['nullable', 'string', 'max:5000']]);
         $this->service->verify($r->user(), $fundReturn, $d['notes'] ?? null);
 
-        return back()->with('success', 'Pengembalian diverifikasi.');
+        return back()->with('success', 'Pengembalian disetujui staff dan diajukan ke Finance Approval.');
     }
 
     public function reject(Request $r, FundReturn $fundReturn): RedirectResponse

@@ -28,6 +28,7 @@ class UpdateFinanceDetailRequest extends FormRequest
             'needed_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:5000'],
             'finance_notes' => ['nullable', 'string', 'max:5000'],
+            'is_urgent' => ['sometimes', 'boolean'],
             'rejection_reason' => ['nullable', 'string', 'max:5000'],
             'items' => ['sometimes', 'array', 'min:1', 'max:50'],
             'items.*.name' => ['required_with:items', 'string', 'max:500'],

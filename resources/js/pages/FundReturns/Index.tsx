@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -10,17 +11,32 @@ import {
 } from '@/components/ui/table';
 import { FundReturnStatusBadge } from '@/components/FundReturns/FundReturnStatusBadge';
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
-export default function Index({ returns, eligible = [] }: any) {
+export default function Index({
+    returns,
+    eligible = [],
+    detailBasePath = '/fund-returns',
+    exportUrl,
+}: any) {
     return (
         <div className="space-y-5 p-4">
             <Head title="Pengembalian Sisa Dana" />
-            <div>
-                <h1 className="text-2xl font-semibold">
-                    Pengembalian Sisa Dana
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                    Selesaikan sisa dana dari laporan pertanggungjawaban.
-                </p>
+            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <div>
+                    <h1 className="text-2xl font-semibold">
+                        Pengembalian Sisa Dana
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                        Selesaikan sisa dana dari laporan pertanggungjawaban.
+                    </p>
+                </div>
+                {exportUrl && (
+                    <Button asChild variant="outline">
+                        <a href={exportUrl}>
+                            <Download />
+                            Export Excel
+                        </a>
+                    </Button>
+                )}
             </div>
             {eligible.map((r: any) => (
                 <div
@@ -52,6 +68,7 @@ export default function Index({ returns, eligible = [] }: any) {
                             <TableHead>Pengajuan</TableHead>
                             <TableHead>Nominal</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead>Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -60,7 +77,7 @@ export default function Index({ returns, eligible = [] }: any) {
                                 <TableCell>
                                     <Link
                                         className="underline"
-                                        href={`/fund-returns/${r.id}`}
+                                        href={`${detailBasePath}/${r.id}`}
                                     >
                                         {r.return_number}
                                     </Link>
@@ -73,6 +90,16 @@ export default function Index({ returns, eligible = [] }: any) {
                                 </TableCell>
                                 <TableCell>
                                     <FundReturnStatusBadge status={r.status} />
+                                </TableCell>
+                                <TableCell>
+                                    <Button variant="outline" size="sm">
+                                        <Link
+                                            className="w-full"
+                                            href={`${detailBasePath}/${r.id}`}
+                                        >
+                                            Detail
+                                        </Link>
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                         ))}

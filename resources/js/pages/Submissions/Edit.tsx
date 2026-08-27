@@ -30,6 +30,7 @@ export default function SubmissionsEdit({
             submission.recipient_bank_account_id ?? bankAccounts[0]?.id ?? '',
         needed_date: submission.needed_date ?? '',
         notes: submission.notes ?? '',
+        is_urgent: submission.is_urgent ?? false,
     });
     return (
         <div className="space-y-4 p-4">

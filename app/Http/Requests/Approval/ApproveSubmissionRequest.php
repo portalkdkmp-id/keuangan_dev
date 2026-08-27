@@ -18,6 +18,7 @@ class ApproveSubmissionRequest extends FormRequest
         return [
             'approved_amount' => ['required', 'numeric', 'min:0.01'],
             'notes' => ['nullable', 'string', 'max:5000'],
+            'is_urgent' => ['sometimes', 'boolean'],
         ];
     }
 

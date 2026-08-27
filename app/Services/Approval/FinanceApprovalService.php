@@ -75,6 +75,7 @@ class FinanceApprovalService
                 'approval_approved_amount' => $data['approved_amount'],
                 'forwarded_to_director_by' => $actor->id,
                 'forwarded_to_director_at' => now(),
+                'is_urgent' => $data['is_urgent'] ?? $locked->is_urgent,
             ])->save();
             if ($locked->isReimbursement()) {
                 $locked->reimbursementDetail()->update(['approval_approved_amount' => $data['approved_amount'], 'approval_notes' => $data['notes'] ?? null]);
