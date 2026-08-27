@@ -178,6 +178,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/fund-returns/{fundReturn}/submit', [FundReturnController::class, 'submit'])->name('fund-returns.submit');
     Route::get('/fund-return-attachments/{attachment}/download', [FundReturnController::class, 'download'])->name('fund-returns.attachments.download');
     Route::get('/finance/fund-returns', [FinanceFundReturnController::class, 'index'])->name('finance.fund-returns.index');
+    Route::get('/finance/fund-returns/export', [FinanceFundReturnController::class, 'export'])->name('finance.fund-returns.export');
     Route::get('/finance/fund-returns/{fundReturn}', [FinanceFundReturnController::class, 'show'])->name('finance.fund-returns.show');
     Route::post('/finance/fund-returns/{fundReturn}/start-review', [FinanceFundReturnController::class, 'startReview'])->name('finance.fund-returns.start-review');
     Route::post('/finance/fund-returns/{fundReturn}/request-revision', [FinanceFundReturnController::class, 'revision'])->name('finance.fund-returns.revision');

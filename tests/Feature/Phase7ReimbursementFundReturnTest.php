@@ -159,8 +159,19 @@ test('fund return expected amount is immutable and approval closes accountabilit
 
     expect($return->expected_amount)->toBe('250000.00')->and($return->returned_amount)->toBe('250000.00');
     $service->submit($pic, $return);
-    $service->startReview($staff, $return);
-    $service->verify($staff, $return, 'Valid');
+    $this->actingAs($staff)
+        ->post(route('finance.fund-returns.verify', $return), ['notes' => 'Valid'])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+    expect($return->refresh()->status)->toBe(FundReturnStatus::FINANCE_VERIFIED)
+        ->and($return->verified_by)->toBe($staff->id)
+        ->and($return->verified_at)->not->toBeNull();
+
+    $this->actingAs($staff)
+        ->get(route('finance.fund-returns.export'))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
     $service->approve($approver, $return, 'Diterima');
     expect($return->refresh()->status)->toBe(FundReturnStatus::CLOSED)->and($report->refresh()->status)->toBe(AccountabilityStatus::CLOSED)->and($report->closed_at)->not->toBeNull();
 });
