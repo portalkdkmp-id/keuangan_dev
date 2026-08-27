@@ -36,6 +36,7 @@ class SubmissionRevisionService
                 'purpose' => $data['purpose'] ?? $this->generatedPurpose($data),
                 'needed_date' => $data['needed_date'] ?? null,
                 'notes' => $data['notes'] ?? null,
+                'is_urgent' => $data['is_urgent'] ?? false,
             ]);
             $total = $this->items->replaceItems($locked, $this->submissionItems($data));
             $locked->update(['total_amount' => $total]);

@@ -36,6 +36,7 @@ class FinanceSubmissionService
                 'submission_request_type_id' => $data['submission_request_type_id'],
                 'needed_date' => $data['needed_date'] ?? null,
                 'notes' => $data['notes'] ?? null,
+                'is_urgent' => $data['is_urgent'] ?? $locked->is_urgent,
             ]);
             if (isset($data['items'])) {
                 $items = collect($data['items'])->map(fn (array $item) => ['request_type_id' => $item['request_type_id'], 'other_type_name' => $item['other_type_name'] ?? null, 'description' => $item['name'], 'quantity' => 1, 'unit' => 'item', 'unit_price' => $item['amount'], 'notes' => $data['notes'] ?? null])->all();

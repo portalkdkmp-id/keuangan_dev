@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { CooperativeCombobox } from '@/components/cooperative-combobox';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -155,39 +157,26 @@ export function SubmissionForm({
                             <Label>
                                 Koperasi{canSubmitInternal ? ' (opsional)' : ''}
                             </Label>
-                            <Select
-                                value={
-                                    form.data.cooperative_id ||
-                                    (canSubmitInternal
-                                        ? '__internal__'
-                                        : undefined)
-                                }
+                            <CooperativeCombobox
+                                cooperatives={cooperatives}
+                                value={form.data.cooperative_id}
+                                allowInternal={canSubmitInternal}
                                 onValueChange={(value) =>
-                                    form.setData(
-                                        'cooperative_id',
-                                        value === '__internal__' ? '' : value,
-                                    )
+                                    form.setData('cooperative_id', value)
                                 }
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Pilih koperasi" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {canSubmitInternal && (
-                                        <SelectItem value="__internal__">
-                                            Internal / Tanpa Koperasi
-                                        </SelectItem>
-                                    )}
-                                    {cooperatives.map((cooperative: any) => (
-                                        <SelectItem
-                                            key={cooperative.id}
-                                            value={cooperative.id}
-                                        >
-                                            {cooperative.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            />
+                        </div>
+                        <div className="flex items-center gap-3 rounded-md border p-3">
+                            <Checkbox
+                                id="submission-form-is-urgent"
+                                checked={form.data.is_urgent ?? false}
+                                onCheckedChange={(value) =>
+                                    form.setData('is_urgent', value === true)
+                                }
+                            />
+                            <Label htmlFor="submission-form-is-urgent">
+                                Pengajuan Urgent
+                            </Label>
                         </div>
                     </div>
                 )}

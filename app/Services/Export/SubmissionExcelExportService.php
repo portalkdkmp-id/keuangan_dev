@@ -92,7 +92,7 @@ class SubmissionExcelExportService
             $itemNames ?: '-',
             $itemAmounts ?: '-',
             (float) $submission->total_amount,
-            '-',
+            $submission->is_urgent ? 'URGENT' : 'NORMAL',
             $this->statusLabel($submission->status),
             $this->approvalLayer($submission->status),
             $submission->attachments->count(),

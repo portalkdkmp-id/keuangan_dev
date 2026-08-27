@@ -75,6 +75,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/submissions', [SubmissionController::class, 'index'])->name('submissions.index');
     Route::get('/export-laporan', [SubmissionExportController::class, 'index'])->name('submission-reports.index');
     Route::get('/export-laporan/download', [SubmissionExportController::class, 'download'])->name('submission-reports.download');
+    Route::get('/export-laporan/download/lpj', [SubmissionExportController::class, 'downloadAccountability'])->name('submission-reports.accountability');
+    Route::get('/export-laporan/download/aging', [SubmissionExportController::class, 'downloadAging'])->name('submission-reports.aging');
+    Route::get('/export-laporan/download/complete', [SubmissionExportController::class, 'downloadComplete'])->name('submission-reports.complete');
     Route::get('/export-laporan/{financialSubmission}/download', [SubmissionExportController::class, 'single'])->name('submission-reports.single');
     Route::get('/submission-exports/all', [SubmissionExportController::class, 'download'])->name('submissions.export');
     Route::get('/submissions/create', [SubmissionController::class, 'create'])->name('submissions.create');
@@ -109,6 +112,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/approval/submissions', [ApprovalSubmissionController::class, 'index'])->name('approval.submissions.index');
     Route::get('/approval/submissions/{financialSubmission}', [ApprovalSubmissionController::class, 'show'])->name('approval.submissions.show');
     Route::match(['get', 'post'], '/approval/submissions/{financialSubmission}/start-review', [ApprovalSubmissionController::class, 'startReview'])->name('approval.submissions.start-review');
+    Route::patch('/approval/submissions/{financialSubmission}/urgency', [ApprovalSubmissionController::class, 'updateUrgency'])->name('approval.submissions.urgency.update');
     Route::post('/approval/submissions/{financialSubmission}/approve', [ApprovalSubmissionController::class, 'approve'])->name('approval.submissions.approve');
     Route::post('/approval/submissions/{financialSubmission}/reject', [ApprovalSubmissionController::class, 'reject'])->name('approval.submissions.reject');
     Route::post('/approval/submissions/{financialSubmission}/request-revision', [ApprovalSubmissionController::class, 'requestRevision'])->name('approval.submissions.request-revision');

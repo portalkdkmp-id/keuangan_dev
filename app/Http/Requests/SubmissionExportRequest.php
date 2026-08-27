@@ -16,6 +16,7 @@ class SubmissionExportRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'search' => ['nullable', 'string', 'max:200'],
             'status' => ['nullable', Rule::enum(SubmissionStatus::class)],
             'cooperative_id' => ['nullable', 'uuid', 'exists:cooperatives,id'],
             'pic_id' => ['nullable', 'uuid', 'exists:users,id'],

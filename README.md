@@ -70,7 +70,7 @@ Aplikasi ini digunakan untuk mengelola data wilayah, koperasi, PIC KDKMP, rekeni
 - Reimbursement otomatis dari kekurangan pertanggungjawaban.
 - Pengembalian sisa dana ke rekening perusahaan dengan review Finance dan Approval.
 - Penutupan accountability berbasis penyelesaian sisa atau kekurangan dana.
-- Export seluruh pengajuan ke XLSX dengan sheet attachment dan URL download private.
+- Export pengajuan, pertanggungjawaban, Aging-Outstanding, dan laporan lengkap multi-sheet ke XLSX.
 
 ## Alur Data Master
 
@@ -98,6 +98,10 @@ Menu `PIC KDKMP` dapat diakses Super Admin, Finance Staff, dan Finance Approver.
 Menu `Export Laporan` tersedia untuk seluruh role. PIC KDKMP hanya dapat melihat dan mengekspor pengajuan yang dibuat oleh dirinya sendiri, sedangkan role manajemen dapat mengekspor seluruh pengajuan.
 
 Laporan dapat difilter berdasarkan status akhir, koperasi, tanggal dibuat, dan tanggal perubahan status terakhir. Role selain PIC juga dapat memfilter berdasarkan PIC. Setiap halaman detail pengajuan menyediakan export khusus untuk satu nomor pengajuan.
+
+Pencarian laporan mencakup judul dan nama item pengajuan. Dropdown koperasi bersifat searchable. PIC hanya memperoleh data miliknya sendiri pada seluruh format export.
+
+Tombol `Export Laporan Lengkap` menghasilkan tiga sheet sesuai template: `1. Rekap Pengajuan Dana`, `2. LPJ`, dan `3. Aging-Outstanding`. Export LPJ dan Aging juga tersedia secara terpisah untuk PIC KDKMP, Finance Staff, Finance Approver, dan Super Admin.
 
 Workbook mengikuti format sheet `1. Rekap Pengajuan Dana` pada template laporan keuangan. Sheet berisi rekap pengajuan, nama item, nominal per item, total nominal pengajuan, dan ringkasan total berdasarkan dataset yang sudah difilter. Proses export membaca data per chunk agar penggunaan memori tetap terjaga.
 
@@ -133,6 +137,7 @@ Data yang dicatat pada pengajuan:
 - Catatan opsional
 - Rekening penerima
 - Attachment bukti/rincian penggunaan dana
+- Flag urgensi dengan nilai default normal; dapat diperbarui oleh pengaju, Finance Staff, dan Finance Approver
 
 Kategori default:
 

@@ -46,7 +46,7 @@ export default function SubmissionsIndex({ submissions, filters }: any) {
                 <Input
                     name="search"
                     defaultValue={filters.search ?? ''}
-                    placeholder="Cari nomor, judul, koperasi"
+                    placeholder="Cari nomor, judul, item, atau koperasi"
                 />
                 <Button type="submit">Filter</Button>
             </form>

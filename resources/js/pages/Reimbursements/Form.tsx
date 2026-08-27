@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { MultipleFileInput } from '@/components/multiple-file-input';
+import { CooperativeCombobox } from '@/components/cooperative-combobox';
+import { Checkbox } from '@/components/ui/checkbox';
 const emptyExpense = () => ({
     expense_date: '',
     expense_type_id: '',
@@ -39,6 +41,7 @@ export default function Form({
     const form = useForm<any>({
         title: submission?.title ?? '',
         cooperative_id: submission?.cooperative_id ?? '',
+        is_urgent: submission?.is_urgent ?? false,
         claimant_bank_account_id: detail?.claimant_bank_account_id ?? '',
         summary: detail?.summary ?? '',
         expenses: detail?.expenses?.map((e: any) => ({
@@ -159,34 +162,26 @@ export default function Form({
                         <Label>
                             Koperasi{canSubmitInternal ? ' (opsional)' : ''}
                         </Label>
-                        <Select
-                            value={
-                                form.data.cooperative_id ||
-                                (canSubmitInternal ? '__internal__' : undefined)
+                        <CooperativeCombobox
+                            cooperatives={cooperatives}
+                            value={form.data.cooperative_id}
+                            allowInternal={canSubmitInternal}
+                            onValueChange={(value) =>
+                                form.setData('cooperative_id', value)
                             }
-                            onValueChange={(v) =>
-                                form.setData(
-                                    'cooperative_id',
-                                    v === '__internal__' ? '' : v,
-                                )
+                        />
+                    </div>
+                    <div className="flex items-center gap-3 rounded-md border p-3">
+                        <Checkbox
+                            id="reimbursement-is-urgent"
+                            checked={form.data.is_urgent}
+                            onCheckedChange={(value) =>
+                                form.setData('is_urgent', value === true)
                             }
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Pilih koperasi" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {canSubmitInternal && (
-                                    <SelectItem value="__internal__">
-                                        Internal / Tanpa Koperasi
-                                    </SelectItem>
-                                )}
-                                {cooperatives.map((x: any) => (
-                                    <SelectItem key={x.id} value={x.id}>
-                                        {x.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        />
+                        <Label htmlFor="reimbursement-is-urgent">
+                            Pengajuan Urgent
+                        </Label>
                     </div>
                     <div>
                         <Label>Rekening tujuan</Label>

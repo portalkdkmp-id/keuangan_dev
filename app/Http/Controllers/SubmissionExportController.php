@@ -8,6 +8,7 @@ use App\Models\Cooperative;
 use App\Models\FinancialSubmission;
 use App\Models\User;
 use App\Repositories\SubmissionExportRepository;
+use App\Services\Export\FinancialReportExcelExportService;
 use App\Services\Export\SubmissionExcelExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -21,7 +22,7 @@ class SubmissionExportController extends Controller
     {
         Gate::authorize('submissions.export');
         $user = $request->user();
-        $filters = $request->only(['status', 'cooperative_id', 'pic_id', 'created_from', 'created_to', 'status_updated_from', 'status_updated_to']);
+        $filters = $request->only(['search', 'status', 'cooperative_id', 'pic_id', 'created_from', 'created_to', 'status_updated_from', 'status_updated_to']);
         $isPic = $user->hasRole('pic_kdkmp');
         $scoped = $repository->query($user, $filters);
 
@@ -29,6 +30,7 @@ class SubmissionExportController extends Controller
             'submissions' => (clone $scoped)->with(['submitter:id,name', 'cooperative:id,name'])->latest('created_at')->paginate(20)->withQueryString(),
             'filters' => $filters,
             'isPic' => $isPic,
+            'canExportFinancialReports' => $user->hasAnyRole(['pic_kdkmp', 'finance_staff', 'finance_approver', 'super_admin']),
             'statuses' => collect(SubmissionStatus::cases())->map(fn (SubmissionStatus $status) => ['value' => $status->value, 'label' => str($status->value)->replace('_', ' ')->title()->toString()]),
             'cooperatives' => Cooperative::query()
                 ->select(['id', 'name'])
@@ -43,6 +45,27 @@ class SubmissionExportController extends Controller
         $path = $export->generate($request->user(), $request->validated());
 
         return $this->fileResponse($path, 'export-laporan-pengajuan');
+    }
+
+    public function downloadAccountability(SubmissionExportRequest $request, FinancialReportExcelExportService $export): BinaryFileResponse
+    {
+        $this->authorizeFinancialReport($request->user());
+
+        return $this->fileResponse($export->generate($request->user(), $request->validated(), 'accountability'), 'export-laporan-pertanggungjawaban');
+    }
+
+    public function downloadAging(SubmissionExportRequest $request, FinancialReportExcelExportService $export): BinaryFileResponse
+    {
+        $this->authorizeFinancialReport($request->user());
+
+        return $this->fileResponse($export->generate($request->user(), $request->validated(), 'aging'), 'export-aging-outstanding');
+    }
+
+    public function downloadComplete(SubmissionExportRequest $request, FinancialReportExcelExportService $export): BinaryFileResponse
+    {
+        $this->authorizeFinancialReport($request->user());
+
+        return $this->fileResponse($export->generate($request->user(), $request->validated(), 'complete'), 'export-laporan-lengkap');
     }
 
     public function single(Request $request, FinancialSubmission $financialSubmission, SubmissionExcelExportService $export): BinaryFileResponse
@@ -60,5 +83,10 @@ class SubmissionExportController extends Controller
         $safeName = str($name)->replaceMatches('/[^A-Za-z0-9_-]+/', '-')->trim('-');
 
         return response()->download($path, $safeName.'-'.now()->format('Ymd-His').'.xlsx')->deleteFileAfterSend(true);
+    }
+
+    private function authorizeFinancialReport(User $user): void
+    {
+        abort_unless($user->hasAnyRole(['pic_kdkmp', 'finance_staff', 'finance_approver', 'super_admin']), 403);
     }
 }

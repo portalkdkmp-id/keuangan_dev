@@ -33,6 +33,7 @@ class SubmissionService
             ->when($filters['search'] ?? null, fn ($query, $search) => $query->where(fn ($q) => $q
                 ->where('submission_number', 'like', "%{$search}%")
                 ->orWhere('title', 'like', "%{$search}%")
+                ->orWhereHas('items', fn ($items) => $items->where('description', 'like', "%{$search}%"))
                 ->orWhereHas('cooperative', fn ($cooperative) => $cooperative->where('name', 'like', "%{$search}%"))))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->when($filters['cooperative_id'] ?? null, fn ($query, $id) => $query->where('cooperative_id', $id))
@@ -62,6 +63,7 @@ class SubmissionService
             ->when($filters['search'] ?? null, fn ($query, $search) => $query->where(fn ($q) => $q
                 ->where('submission_number', 'like', "%{$search}%")
                 ->orWhere('title', 'like', "%{$search}%")
+                ->orWhereHas('items', fn ($items) => $items->where('description', 'like', "%{$search}%"))
                 ->orWhereHas('cooperative', fn ($cooperative) => $cooperative->where('name', 'like', "%{$search}%"))))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->when($sort, fn ($query) => $query->orderBy($sort, $direction), fn ($query) => $query->latest('created_at'))
@@ -92,6 +94,7 @@ class SubmissionService
                 'purpose' => $data['purpose'] ?? $this->generatedPurpose($data),
                 'needed_date' => $data['needed_date'] ?? null,
                 'notes' => $data['notes'] ?? null,
+                'is_urgent' => $data['is_urgent'] ?? false,
                 'total_amount' => 0,
             ]);
 
@@ -122,6 +125,7 @@ class SubmissionService
                 'purpose' => $data['purpose'] ?? $this->generatedPurpose($data),
                 'needed_date' => $data['needed_date'] ?? null,
                 'notes' => $data['notes'] ?? null,
+                'is_urgent' => $data['is_urgent'] ?? false,
             ]);
             $total = $this->items->replaceItems($locked, $this->submissionItems($data));
             $locked->update(['total_amount' => $total]);

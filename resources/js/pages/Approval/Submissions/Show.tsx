@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate } from '@/lib/format';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function ApprovalSubmissionsShow({ submission }: any) {
     const [confirmApprove, setConfirmApprove] = useState(false);
@@ -33,9 +34,11 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
     const approveForm = useForm({
         approved_amount: review?.submitted_amount ?? submission.total_amount,
         notes: '',
+        is_urgent: submission.is_urgent ?? false,
     });
     const rejectForm = useForm({ rejection_reason: '', notes: '' });
     const revisionForm = useForm({ revision_message: '' });
+    const urgencyForm = useForm({ is_urgent: submission.is_urgent ?? false });
 
     return (
         <div className="space-y-4 p-4">
@@ -72,6 +75,7 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
                     Catatan finance:{' '}
                     {submission.finance_detail?.finance_notes ?? '-'}
                 </div>
+                <div>Urgensi: {submission.is_urgent ? 'Urgent' : 'Normal'}</div>
                 <div>
                     Rekening snapshot:{' '}
                     {submission.bank_name_snapshot ??
@@ -134,6 +138,34 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
                                 approveForm.setData('notes', e.target.value)
                             }
                         />
+                        <div className="flex items-center gap-3 rounded-md border p-3">
+                            <Checkbox
+                                id="approval-is-urgent"
+                                checked={approveForm.data.is_urgent}
+                                onCheckedChange={(value) => {
+                                    const urgent = value === true;
+                                    approveForm.setData('is_urgent', urgent);
+                                    urgencyForm.setData('is_urgent', urgent);
+                                }}
+                            />
+                            <Label htmlFor="approval-is-urgent">
+                                Pengajuan Urgent
+                            </Label>
+                        </div>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={urgencyForm.processing}
+                            onClick={() =>
+                                urgencyForm.patch(
+                                    `/approval/submissions/${submission.id}/urgency`,
+                                    { preserveScroll: true },
+                                )
+                            }
+                        >
+                            Simpan Urgensi
+                        </Button>
                         <Button>Setujui dan Kirim ke Director</Button>
                     </form>
                     <form

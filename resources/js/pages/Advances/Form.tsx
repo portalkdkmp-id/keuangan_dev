@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { MultipleFileInput } from '@/components/multiple-file-input';
+import { CooperativeCombobox } from '@/components/cooperative-combobox';
+import { Checkbox } from '@/components/ui/checkbox';
 export default function Form({
     submission,
     cooperatives,
@@ -34,6 +36,7 @@ export default function Form({
     const f = useForm<any>({
         title: submission?.title ?? '',
         cooperative_id: submission?.cooperative_id ?? '',
+        is_urgent: submission?.is_urgent ?? false,
         purpose: d?.purpose ?? '',
         estimated_amount: d?.estimated_amount
             ? String(Math.trunc(Number(d.estimated_amount)))
@@ -134,34 +137,26 @@ export default function Form({
                         <Label>
                             Koperasi{canSubmitInternal ? ' (opsional)' : ''}
                         </Label>
-                        <Select
-                            value={
-                                f.data.cooperative_id ||
-                                (canSubmitInternal ? '__internal__' : undefined)
+                        <CooperativeCombobox
+                            cooperatives={cooperatives}
+                            value={f.data.cooperative_id}
+                            allowInternal={canSubmitInternal}
+                            onValueChange={(value) =>
+                                f.setData('cooperative_id', value)
                             }
-                            onValueChange={(v) =>
-                                f.setData(
-                                    'cooperative_id',
-                                    v === '__internal__' ? '' : v,
-                                )
+                        />
+                    </div>
+                    <div className="flex items-center gap-3 rounded-md border p-3">
+                        <Checkbox
+                            id="advance-is-urgent"
+                            checked={f.data.is_urgent}
+                            onCheckedChange={(value) =>
+                                f.setData('is_urgent', value === true)
                             }
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Pilih koperasi" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {canSubmitInternal && (
-                                    <SelectItem value="__internal__">
-                                        Internal / Tanpa Koperasi
-                                    </SelectItem>
-                                )}
-                                {cooperatives.map((x: any) => (
-                                    <SelectItem key={x.id} value={x.id}>
-                                        {x.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        />
+                        <Label htmlFor="advance-is-urgent">
+                            Pengajuan Urgent
+                        </Label>
                     </div>
                     <div>
                         <Label>Tujuan penggunaan</Label>

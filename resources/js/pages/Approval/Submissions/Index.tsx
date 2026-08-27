@@ -57,7 +57,7 @@ export default function ApprovalSubmissionsIndex({
                 <Input
                     name="search"
                     defaultValue={filters.search ?? ''}
-                    placeholder="Cari nomor, judul, koperasi"
+                    placeholder="Cari nomor, judul, item, atau koperasi"
                 />
                 <Button>Filter</Button>
             </form>

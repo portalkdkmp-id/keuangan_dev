@@ -34,6 +34,8 @@ import {
 import { formatDate } from '@/lib/format';
 import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttachments';
 import { MultipleFileInput } from '@/components/multiple-file-input';
+import { CooperativeCombobox } from '@/components/cooperative-combobox';
+import { Checkbox } from '@/components/ui/checkbox';
 
 function localDate(value?: string | null): Date | undefined {
     if (!value) return undefined;
@@ -87,6 +89,7 @@ export default function SubmissionsCreate({
             submission?.recipient_bank_account_id ?? bankAccounts[0]?.id ?? '',
         needed_date: submission?.needed_date?.slice(0, 10) ?? '',
         notes: submission?.notes ?? '',
+        is_urgent: submission?.is_urgent ?? false,
         attachments: [] as File[],
         action: 'draft',
     });
@@ -256,39 +259,32 @@ export default function SubmissionsCreate({
                             <Label>
                                 Koperasi{canSubmitInternal ? ' (opsional)' : ''}
                             </Label>
-                            <Select
-                                value={
-                                    form.data.cooperative_id ||
-                                    (canSubmitInternal
-                                        ? '__internal__'
-                                        : undefined)
-                                }
+                            <CooperativeCombobox
+                                cooperatives={cooperatives}
+                                value={form.data.cooperative_id}
+                                allowInternal={canSubmitInternal}
                                 onValueChange={(value) =>
-                                    form.setData(
-                                        'cooperative_id',
-                                        value === '__internal__' ? '' : value,
-                                    )
+                                    form.setData('cooperative_id', value)
                                 }
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Pilih koperasi" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {canSubmitInternal && (
-                                        <SelectItem value="__internal__">
-                                            Internal / Tanpa Koperasi
-                                        </SelectItem>
-                                    )}
-                                    {cooperatives.map((cooperative: any) => (
-                                        <SelectItem
-                                            key={cooperative.id}
-                                            value={cooperative.id}
-                                        >
-                                            {cooperative.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            />
+                        </div>
+                        <div className="flex items-center gap-3 rounded-md border p-3 md:col-span-2">
+                            <Checkbox
+                                id="is-urgent"
+                                checked={form.data.is_urgent}
+                                onCheckedChange={(value) =>
+                                    form.setData('is_urgent', value === true)
+                                }
+                            />
+                            <div>
+                                <Label htmlFor="is-urgent">
+                                    Pengajuan Urgent
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Tandai jika pengajuan membutuhkan prioritas
+                                    review.
+                                </p>
+                            </div>
                         </div>
                     </div>
                     <div className="flex justify-end">

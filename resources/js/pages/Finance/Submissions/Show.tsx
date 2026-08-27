@@ -30,6 +30,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { SubmissionItemsTable } from '@/components/Submissions/SubmissionItemsTable';
+import { Checkbox } from '@/components/ui/checkbox';
 
 function dateInputValue(value?: string | null): string {
     return value ? value.slice(0, 10) : '';
@@ -53,6 +54,7 @@ export default function FinanceSubmissionsShow({
         notes: submission.notes ?? '',
         finance_notes: detail.finance_notes ?? '',
         rejection_reason: detail.rejection_reason ?? '',
+        is_urgent: submission.is_urgent ?? false,
     });
     const revisionForm = useForm({
         subject: 'Permintaan revisi pengajuan',
@@ -123,6 +125,9 @@ export default function FinanceSubmissionsShow({
                 </div>
                 <div className="font-semibold md:col-span-2">
                     Nominal saat ini: {rupiah(submission.total_amount)}
+                </div>
+                <div className="font-semibold md:col-span-2">
+                    Urgensi: {submission.is_urgent ? 'Urgent' : 'Normal'}
                 </div>
             </div>
 
@@ -246,6 +251,24 @@ export default function FinanceSubmissionsShow({
                             }
                             disabled={!isReview}
                         />
+                    </div>
+                    <div className="md:col-span-2">
+                        <div className="flex items-center gap-3 rounded-md border p-3">
+                            <Checkbox
+                                id="finance-is-urgent"
+                                checked={reviewForm.data.is_urgent}
+                                onCheckedChange={(value) =>
+                                    reviewForm.setData(
+                                        'is_urgent',
+                                        value === true,
+                                    )
+                                }
+                                disabled={!isReview}
+                            />
+                            <Label htmlFor="finance-is-urgent">
+                                Pengajuan Urgent
+                            </Label>
+                        </div>
                     </div>
                     <div className="md:col-span-2">
                         <Label>Catatan PIC</Label>
