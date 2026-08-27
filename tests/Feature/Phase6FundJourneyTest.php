@@ -7,6 +7,8 @@ use App\Models\FinancialSubmission;
 use App\Models\FundAccountabilityReport;
 use App\Models\SubmissionDirectorReview;
 use App\Models\SubmissionDisbursement;
+use App\Models\SubmissionItem;
+use App\Models\SubmissionRequestType;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Http\UploadedFile;
@@ -73,6 +75,46 @@ test('pic confirms receipt once and accountability totals are calculated by back
     $this->actingAs($pic)->post(route('accountability-reports.store', $submission), $payload)->assertRedirect();
     $report = FundAccountabilityReport::first();
     expect($report->received_amount)->toBe('500000.00')->and($report->realized_amount)->toBe('550000.00')->and($report->remaining_amount)->toBe('0.00')->and($report->additional_amount)->toBe('50000.00');
+});
+
+test('accountability create prefills realization items from submission items', function () {
+    [$pic, , $submission, $disbursement] = p6Disbursement(false);
+    $category = SubmissionRequestType::factory()->create([
+        'name' => 'Operasional Lapangan',
+        'slug' => 'operasional-lapangan',
+        'is_active' => true,
+        'sort_order' => 1,
+    ]);
+    SubmissionItem::factory()->create([
+        'financial_submission_id' => $submission->id,
+        'request_type_id' => $category->id,
+        'description' => 'Sewa kendaraan lapangan',
+        'unit_price' => 200000,
+        'quantity' => 2,
+        'subtotal' => 400000,
+    ]);
+    SubmissionItem::factory()->create([
+        'financial_submission_id' => $submission->id,
+        'request_type_id' => $category->id,
+        'description' => 'Biaya pengiriman dokumen',
+        'unit_price' => 100000,
+        'quantity' => 1,
+        'subtotal' => 100000,
+        'sort_order' => 1,
+    ]);
+    $this->actingAs($pic)->post(route('fund-receipts.disbursement.confirm', $disbursement), ['received_at' => now()]);
+
+    $this->actingAs($pic)
+        ->get(route('accountability-reports.create', $submission))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Pic/AccountabilityReports/Form')
+            ->has('submission.items', 2)
+            ->where('submission.items.0.description', 'Sewa kendaraan lapangan')
+            ->where('submission.items.0.request_type_id', $category->id)
+            ->where('submission.items.0.subtotal', '400000.00')
+            ->where('submission.items.1.description', 'Biaya pengiriman dokumen')
+            ->where('submission.items.1.subtotal', '100000.00'));
 });
 
 test('accountability moves from submit through finance verification to closed', function () {

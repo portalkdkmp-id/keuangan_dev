@@ -212,7 +212,7 @@ export default function DirectorSubmissionsShow({
                             onFiles={(value: File[]) =>
                                 disburseNowForm.setData('attachments', value)
                             }
-                            files={files}
+                            files={disburseNowForm.data.attachments}
                         />
                         <Button disabled={disburseNowForm.processing}>
                             Setujui dan Kirim Dana
@@ -289,7 +289,7 @@ export default function DirectorSubmissionsShow({
                         onFiles={(value: File[]) =>
                             disburseForm.setData('attachments', value)
                         }
-                        files={files}
+                        files={disburseForm.data.attachments}
                     />
                     <Button disabled={disburseForm.processing}>
                         Kirim Dana

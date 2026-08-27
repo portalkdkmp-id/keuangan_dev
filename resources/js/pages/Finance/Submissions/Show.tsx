@@ -43,13 +43,12 @@ export default function FinanceSubmissionsShow({
 }: any) {
     const [confirmForward, setConfirmForward] = useState(false);
     const detail = submission.finance_detail ?? submission.financeDetail ?? {};
-    const firstItem = submission.items?.[0];
     const reviewForm = useForm({
         title: submission.title ?? '',
         submission_request_category_id:
             submission.submission_request_category_id ?? '',
         submission_request_type_id: submission.submission_request_type_id ?? '',
-        amount: firstItem?.unit_price ?? submission.total_amount ?? '',
+        amount: submission.total_amount ?? '',
         needed_date: dateInputValue(submission.needed_date),
         notes: submission.notes ?? '',
         finance_notes: detail.finance_notes ?? '',

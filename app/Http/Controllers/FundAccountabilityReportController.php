@@ -95,7 +95,7 @@ class FundAccountabilityReportController extends Controller
 
     private function form(FinancialSubmission $submission, ?FundAccountabilityReport $report): Response
     {
-        return Inertia::render('Pic/AccountabilityReports/Form', ['submission' => $submission->load('cooperative:id,name'), 'report' => $report?->load(['items', 'attachments']), 'receivedAmount' => $submission->receiptConfirmations()->sum('amount'), 'categories' => SubmissionRequestType::where('is_active', true)->orderBy('name')->get(['id', 'name'])]);
+        return Inertia::render('Pic/AccountabilityReports/Form', ['submission' => $submission->load(['cooperative:id,name', 'items:id,financial_submission_id,request_type_id,description,subtotal,sort_order']), 'report' => $report?->load(['items', 'attachments']), 'receivedAmount' => $submission->receiptConfirmations()->sum('amount'), 'categories' => SubmissionRequestType::where('is_active', true)->orderBy('name')->get(['id', 'name'])]);
     }
 
     private function load(FundAccountabilityReport $report): FundAccountabilityReport

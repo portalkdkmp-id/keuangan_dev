@@ -23,6 +23,19 @@ const emptyItem = () => ({
     invoice_number: '',
     notes: '',
 });
+
+const submissionItems = (submission: any) => {
+    const items = submission?.items ?? [];
+
+    if (items.length === 0) return [emptyItem()];
+
+    return items.map((item: any) => ({
+        ...emptyItem(),
+        description: item.description ?? '',
+        category_id: item.request_type_id ?? '',
+        amount: String(Math.trunc(Number(item.subtotal ?? 0))),
+    }));
+};
 export default function Form({
     submission,
     report,
@@ -33,10 +46,11 @@ export default function Form({
         summary: report?.summary ?? '',
         usage_date_from: report?.usage_date_from?.slice(0, 10) ?? '',
         usage_date_to: report?.usage_date_to?.slice(0, 10) ?? '',
-        items: report?.items?.map((item: any) => ({
-            ...item,
-            expense_date: item.expense_date?.slice(0, 10),
-        })) ?? [emptyItem()],
+        items:
+            report?.items?.map((item: any) => ({
+                ...item,
+                expense_date: item.expense_date?.slice(0, 10),
+            })) ?? submissionItems(submission),
         attachment_type: 'receipt',
         attachments: [] as File[],
     });
