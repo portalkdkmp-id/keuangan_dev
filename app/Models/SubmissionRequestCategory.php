@@ -12,11 +12,11 @@ class SubmissionRequestCategory extends Model
     /** @use HasFactory<SubmissionRequestCategoryFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['name', 'slug', 'code', 'is_active', 'sort_order'];
+    protected $fillable = ['name', 'slug', 'code', 'is_active', 'is_internal', 'sort_order'];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['is_active' => 'boolean', 'is_internal' => 'boolean'];
     }
 
     public function requestTypes()

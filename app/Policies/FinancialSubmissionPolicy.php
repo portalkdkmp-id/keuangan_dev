@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Enums\SubmissionStatus;
 use App\Models\FinancialSubmission;
+use App\Models\SubmissionRequestCategory;
 use App\Models\User;
 
 class FinancialSubmissionPolicy
@@ -41,6 +42,7 @@ class FinancialSubmissionPolicy
 
         if ($submission->isOwnedBy($user) && $user->can('submissions.view')) {
             return $user->hasRole('finance_staff')
+                || $this->isInternal($submission)
                 || ($submission->cooperative_id && $user->assignedCooperatives()->whereKey($submission->cooperative_id)->exists());
         }
 
@@ -90,12 +92,16 @@ class FinancialSubmissionPolicy
 
         return $user->can('submissions.view')
             && $submission->isOwnedBy($user)
-            && $user->assignedCooperatives()->whereKey($submission->cooperative_id)->exists();
+            && ($this->isInternal($submission) || $user->assignedCooperatives()->whereKey($submission->cooperative_id)->exists());
     }
 
     public function create(User $user): bool
     {
-        return $user->can('submissions.create') && ($user->hasAnyRole(['super_admin', 'finance_staff']) || $user->assignedCooperatives()->exists());
+        return $user->can('submissions.create') && (
+            $user->hasAnyRole(['super_admin', 'finance_staff'])
+            || $user->assignedCooperatives()->exists()
+            || SubmissionRequestCategory::query()->where('is_active', true)->where('is_internal', true)->exists()
+        );
     }
 
     public function update(User $user, FinancialSubmission $submission): bool
@@ -148,6 +154,11 @@ class FinancialSubmissionPolicy
     public function resubmit(User $user, FinancialSubmission $submission): bool
     {
         return $user->can('submissions.resubmit') && $submission->status === SubmissionStatus::REVISION_REQUESTED && $submission->isOwnedBy($user);
+    }
+
+    private function isInternal(FinancialSubmission $submission): bool
+    {
+        return $submission->requestCategory()->where('is_internal', true)->exists();
     }
 
     public function startApprovalReview(User $user, FinancialSubmission $submission): bool

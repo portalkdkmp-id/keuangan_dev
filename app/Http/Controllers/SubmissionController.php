@@ -124,6 +124,7 @@ class SubmissionController extends Controller
     {
         return [
             'canSubmitInternal' => $request->user()->hasAnyRole(['super_admin', 'finance_staff']),
+            'submitter' => $request->user()->load('city:id,name')->only(['id', 'name', 'email', 'city']),
             'cooperatives' => $request->user()->hasAnyRole(['super_admin', 'finance_staff'])
                 ? Cooperative::query()->where('is_active', true)->orderBy('name')->get(['id', 'name'])
                 : $request->user()->assignedCooperatives()->orderBy('name')->get(['cooperatives.id', 'name']),
@@ -133,7 +134,7 @@ class SubmissionController extends Controller
                 ->when($request->user()->hasRole('pic_kdkmp'), fn (Builder $query) => $query->whereNot('slug', 'operasional-tim-sales'))
                 ->orderBy('sort_order')
                 ->orderBy('name')
-                ->get(['id', 'name']),
+                ->get(['id', 'name', 'is_internal']),
             'requestTypes' => SubmissionRequestType::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(['id', 'submission_request_category_id', 'name', 'slug']),
             'bankAccounts' => $request->user()->bankAccounts()->where('is_active', true)->orderByDesc('is_primary')->orderBy('bank_name')->get(['id', 'bank_name', 'account_number', 'account_holder_name']),
         ];

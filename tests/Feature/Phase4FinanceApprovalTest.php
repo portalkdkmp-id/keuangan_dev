@@ -71,7 +71,7 @@ function p4SetupApprovalSubmission(): array
         'submission_request_type_id' => SubmissionRequestType::first()->id,
         'recipient_bank_account_id' => $account->id,
         'amount' => 500000,
-        'needed_date' => now()->addDays(5)->toDateString(),
+        'needed_date' => now()->addDays(7)->toDateString(),
         'notes' => 'Catatan PIC',
     ];
 

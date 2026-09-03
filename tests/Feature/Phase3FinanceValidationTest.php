@@ -42,7 +42,7 @@ function p3SubmissionPayload(Cooperative $cooperative): array
         'amount' => 300000,
         'title' => 'Dana validasi finance',
         'purpose' => 'Pembayaran kebutuhan operasional',
-        'needed_date' => now()->addDays(3)->toDateString(),
+        'needed_date' => now()->addDays(7)->toDateString(),
         'notes' => null,
         'items' => [
             ['category_id' => SubmissionCategory::first()->id, 'description' => 'ATK kantor', 'quantity' => 2, 'unit' => 'paket', 'unit_price' => 150000, 'notes' => null],
@@ -71,7 +71,7 @@ function p3FinanceDetailPayload(array $overrides = []): array
         'submission_request_category_id' => SubmissionRequestCategory::first()->id,
         'submission_request_type_id' => SubmissionRequestType::first()->id,
         'amount' => 300000,
-        'needed_date' => now()->addDays(3)->toDateString(),
+        'needed_date' => now()->addDays(7)->toDateString(),
         'notes' => null,
         'finance_notes' => 'Review staff keuangan.',
     ], $overrides);

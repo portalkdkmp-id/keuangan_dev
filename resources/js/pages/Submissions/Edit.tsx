@@ -10,6 +10,7 @@ export default function SubmissionsEdit({
     requestTypes,
     bankAccounts,
     canSubmitInternal,
+    submitter,
 }: any) {
     const form = useForm({
         title: submission.title ?? '',
@@ -43,6 +44,7 @@ export default function SubmissionsEdit({
                 requestTypes={requestTypes}
                 bankAccounts={bankAccounts}
                 canSubmitInternal={canSubmitInternal}
+                submitter={submitter}
                 onSubmit={() => form.put(`/submissions/${submission.id}`)}
             />
             <SubmissionAttachments submission={submission} editable />

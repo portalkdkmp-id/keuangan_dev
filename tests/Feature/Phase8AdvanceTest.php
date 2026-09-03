@@ -31,7 +31,7 @@ function p8Advance(float $amount = 1000000): array
         'cooperative_id' => $cooperative->id,
         'purpose' => 'Pembelian kebutuhan dengan harga belum pasti',
         'estimated_amount' => $amount,
-        'expected_transaction_date' => now()->addDay()->toDateString(),
+        'expected_transaction_date' => now()->addDays(7)->toDateString(),
         'expected_settlement_date' => now()->addDays(7)->toDateString(),
         'recipient_bank_account_id' => $account->id,
         'notes' => null,
@@ -82,7 +82,7 @@ test('finance staff can save advance draft through multipart form endpoint', fun
         'cooperative_id' => $cooperative->id,
         'purpose' => 'Kebutuhan operasional kegiatan lapangan',
         'estimated_amount' => '750000',
-        'expected_transaction_date' => now()->addDay()->toDateString(),
+        'expected_transaction_date' => now()->addDays(7)->toDateString(),
         'expected_settlement_date' => now()->addDays(7)->toDateString(),
         'recipient_bank_account_id' => $account->id,
         'notes' => 'Draft dari form Finance Staff',
@@ -92,6 +92,7 @@ test('finance staff can save advance draft through multipart form endpoint', fun
     $submission = FinancialSubmission::where('submitted_by', $staff->id)->where('type', SubmissionType::ADVANCE)->firstOrFail();
     $response->assertRedirect(route('advances.show', $submission))->assertSessionHasNoErrors();
     expect($submission->total_amount)->toBe('750000.00')
+        ->and($submission->is_urgent)->toBeTrue()
         ->and($submission->advanceDetail->recipient_bank_account_id)->toBe($account->id)
         ->and($submission->attachments()->count())->toBe(1);
 });
@@ -106,7 +107,7 @@ test('finance staff can save internal advance without cooperative', function () 
         'cooperative_id' => null,
         'purpose' => 'Kebutuhan kegiatan internal kantor',
         'estimated_amount' => '500000',
-        'expected_transaction_date' => now()->addDay()->toDateString(),
+        'expected_transaction_date' => now()->addDays(7)->toDateString(),
         'expected_settlement_date' => now()->addDays(7)->toDateString(),
         'recipient_bank_account_id' => $account->id,
     ])->assertRedirect()->assertSessionHasNoErrors();
