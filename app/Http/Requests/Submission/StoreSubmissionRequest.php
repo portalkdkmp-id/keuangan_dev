@@ -6,6 +6,7 @@ use App\Models\FinancialSubmission;
 use App\Models\SubmissionRequestCategory;
 use App\Models\SubmissionRequestType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -19,7 +20,7 @@ class StoreSubmissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cooperative_id' => [Rule::requiredIf(! $this->canSubmitInternal()), 'nullable', 'uuid', 'exists:cooperatives,id'],
+            'cooperative_id' => [Rule::requiredIf(fn () => $this->requiresCooperative()), 'nullable', 'uuid', 'exists:cooperatives,id'],
             'submission_request_category_id' => ['required', 'uuid', Rule::exists('submission_request_categories', 'id')->where('is_active', true)],
             'submission_request_type_id' => ['nullable', 'uuid', Rule::exists('submission_request_types', 'id')->where('is_active', true)],
             'recipient_bank_account_id' => ['required', 'uuid', 'exists:user_bank_accounts,id'],
@@ -31,7 +32,11 @@ class StoreSubmissionRequest extends FormRequest
             'items.*.amount' => ['required', 'numeric', 'min:0.01'],
             'title' => ['required', 'string', 'max:200'],
             'purpose' => ['nullable', 'string', 'max:5000'],
-            'needed_date' => ['nullable', 'date', 'after_or_equal:today'],
+            'needed_date' => [
+                'nullable',
+                'date',
+                Rule::when($this->isCreating(), ['after_or_equal:'.today()->addDays(7)->toDateString()]),
+            ],
             'notes' => ['nullable', 'string', 'max:5000'],
             'is_urgent' => ['sometimes', 'boolean'],
             'action' => ['nullable', Rule::in(['draft', 'submit'])],
@@ -43,7 +48,7 @@ class StoreSubmissionRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator) {
-            if (! $this->canSubmitInternal() && ! $this->user()?->assignedCooperatives()->whereKey($this->input('cooperative_id'))->exists()) {
+            if ($this->requiresCooperative() && ! $this->user()?->assignedCooperatives()->whereKey($this->input('cooperative_id'))->exists()) {
                 $validator->errors()->add('cooperative_id', 'Koperasi tidak termasuk assignment Anda.');
             }
 
@@ -77,6 +82,21 @@ class StoreSubmissionRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        if ($this->isInternalCategory()) {
+            $this->merge(['cooperative_id' => null]);
+        }
+
+        if ($this->isCreating()) {
+            $neededDate = $this->input('needed_date');
+            if (is_string($neededDate) && Carbon::canBeCreatedFromFormat($neededDate, 'Y-m-d')) {
+                $this->merge([
+                    'is_urgent' => Carbon::createFromFormat('Y-m-d', $neededDate)->isSameDay(today()->addDays(7)),
+                ]);
+            } else {
+                $this->merge(['is_urgent' => false]);
+            }
+        }
+
         $items = $this->input('items');
         if (is_array($items) && isset($items[0]) && ! array_key_exists('name', $items[0])) {
             $this->merge(['items' => collect($items)->map(fn (array $item) => [
@@ -102,5 +122,23 @@ class StoreSubmissionRequest extends FormRequest
     private function canSubmitInternal(): bool
     {
         return $this->user()?->hasAnyRole(['super_admin', 'finance_staff']) ?? false;
+    }
+
+    private function isInternalCategory(): bool
+    {
+        return SubmissionRequestCategory::query()
+            ->whereKey($this->input('submission_request_category_id'))
+            ->where('is_internal', true)
+            ->exists();
+    }
+
+    private function requiresCooperative(): bool
+    {
+        return ! $this->canSubmitInternal() && ! $this->isInternalCategory();
+    }
+
+    private function isCreating(): bool
+    {
+        return $this->route('financialSubmission') === null;
     }
 }

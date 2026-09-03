@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\City;
 use App\Models\FinancialSubmission;
 use App\Models\FundAccountabilityReport;
 use App\Models\SubmissionItem;
@@ -78,13 +79,15 @@ test('report search finds a submission by item name', function () {
 });
 
 test('complete financial report contains three template sheets and scopes pic data', function () {
-    $pic = User::factory()->create();
+    $city = City::factory()->create(['name' => 'Kabupaten Area Export']);
+    $pic = User::factory()->create(['city_id' => $city->id]);
     $pic->assignRole('pic_kdkmp');
     $otherPic = User::factory()->create();
     $otherPic->assignRole('pic_kdkmp');
 
     $own = FinancialSubmission::factory()->create([
         'submitted_by' => $pic->id,
+        'submitter_city_id' => $city->id,
         'is_urgent' => true,
         'disbursed_at' => now()->subDays(10),
         'disbursed_amount' => 500000,
@@ -122,12 +125,14 @@ test('complete financial report contains three template sheets and scopes pic da
     $zip = new ZipArchive;
     expect($zip->open($path))->toBeTrue();
     $workbook = $zip->getFromName('xl/workbook.xml');
+    $recap = $zip->getFromName('xl/worksheets/sheet1.xml');
     $lpj = $zip->getFromName('xl/worksheets/sheet2.xml');
 
     expect($workbook)
         ->toContain('1. Rekap Pengajuan Dana')
         ->toContain('2. LPJ')
         ->toContain('3. Aging-Outstanding');
+    expect($recap)->toContain('Wilayah Assignment PIC')->toContain('Kabupaten Area Export');
     expect($lpj)->toContain('LPJ/TEST/OWN')->not->toContain('LPJ/TEST/OTHER');
     $zip->close();
     @unlink($path);

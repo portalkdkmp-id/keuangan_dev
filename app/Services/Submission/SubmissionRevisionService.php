@@ -51,7 +51,8 @@ class SubmissionRevisionService
         return DB::transaction(function () use ($user, $submission, $message) {
             $locked = FinancialSubmission::query()->with(['items', 'cooperative', 'submitter'])->whereKey($submission->id)->lockForUpdate()->firstOrFail();
             $this->ensureRevisionOwner($user, $locked);
-            if (! $user->hasAnyRole(['super_admin', 'finance_staff']) && ! $user->assignedCooperatives()->whereKey($locked->cooperative_id)->exists()) {
+            $isInternal = SubmissionRequestCategory::query()->whereKey($locked->submission_request_category_id)->where('is_internal', true)->exists();
+            if (! $user->hasAnyRole(['super_admin', 'finance_staff']) && ! $isInternal && ! $user->assignedCooperatives()->whereKey($locked->cooperative_id)->exists()) {
                 throw ValidationException::withMessages(['cooperative_id' => 'Assignment koperasi sudah tidak aktif.']);
             }
             if ($locked->items->isEmpty() || (float) $locked->total_amount <= 0) {

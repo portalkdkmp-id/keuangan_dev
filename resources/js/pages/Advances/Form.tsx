@@ -1,5 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { BackButton } from '@/components/back-button';
@@ -18,7 +18,6 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { MultipleFileInput } from '@/components/multiple-file-input';
 import { CooperativeCombobox } from '@/components/cooperative-combobox';
-import { Checkbox } from '@/components/ui/checkbox';
 export default function Form({
     submission,
     cooperatives,
@@ -33,6 +32,16 @@ export default function Form({
         x.setDate(x.getDate() + defaultSettlementDays);
         return x.toISOString().slice(0, 10);
     }, [defaultSettlementDays]);
+    const minimumTransactionDate = useMemo(() => {
+        const date = new Date();
+        date.setHours(0, 0, 0, 0);
+        date.setDate(date.getDate() + 7);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+    }, []);
     const f = useForm<any>({
         title: submission?.title ?? '',
         cooperative_id: submission?.cooperative_id ?? '',
@@ -49,6 +58,14 @@ export default function Form({
         notes: d?.notes ?? '',
         attachments: [] as File[],
     });
+    useEffect(() => {
+        if (submission) return;
+
+        f.setData(
+            'is_urgent',
+            f.data.expected_transaction_date === minimumTransactionDate,
+        );
+    }, [f.data.expected_transaction_date, minimumTransactionDate]);
     const save = () => {
         const options: any = {
             forceFormData: true,
@@ -146,18 +163,6 @@ export default function Form({
                             }
                         />
                     </div>
-                    <div className="flex items-center gap-3 rounded-md border p-3">
-                        <Checkbox
-                            id="advance-is-urgent"
-                            checked={f.data.is_urgent}
-                            onCheckedChange={(value) =>
-                                f.setData('is_urgent', value === true)
-                            }
-                        />
-                        <Label htmlFor="advance-is-urgent">
-                            Pengajuan Urgent
-                        </Label>
-                    </div>
                     <div>
                         <Label>Tujuan penggunaan</Label>
                         <Textarea
@@ -187,6 +192,11 @@ export default function Form({
                             <Label>Tanggal estimasi transaksi</Label>
                             <Input
                                 type="date"
+                                min={
+                                    submission
+                                        ? undefined
+                                        : minimumTransactionDate
+                                }
                                 value={f.data.expected_transaction_date}
                                 onChange={(e) =>
                                     f.setData(
@@ -195,6 +205,12 @@ export default function Form({
                                     )
                                 }
                             />
+                            {!submission && (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Minimal 7 hari dari hari ini. H+7 otomatis
+                                    ditandai urgent.
+                                </p>
+                            )}
                         </div>
                         <div>
                             <Label>Deadline pertanggungjawaban</Label>
@@ -262,6 +278,9 @@ export default function Form({
                             Transaksi: {f.data.expected_transaction_date || '-'}
                         </span>
                         <span>Deadline: {f.data.expected_settlement_date}</span>
+                        <span>
+                            Urgensi: {f.data.is_urgent ? 'Urgent' : 'Normal'}
+                        </span>
                     </div>
                 </div>
             )}

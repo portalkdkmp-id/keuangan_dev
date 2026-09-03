@@ -66,8 +66,9 @@ test('finance staff distribution is locked to remaining amount and changes statu
 
 test('pic confirms receipt once and accountability totals are calculated by backend', function () {
     [$pic,,$submission,$disbursement] = p6Disbursement(false);
-    $this->actingAs($pic)->post(route('fund-receipts.disbursement.confirm', $disbursement), ['received_at' => now()->format('Y-m-d H:i:s')])->assertRedirect();
-    $this->actingAs($pic)->post(route('fund-receipts.disbursement.confirm', $disbursement), ['received_at' => now()->format('Y-m-d H:i:s')])->assertSessionHasErrors('receipt');
+    $this->actingAs($pic)->post(route('fund-receipts.disbursement.confirm', $disbursement), ['received_at' => now()->format('Y-m-d H:i:s')])->assertSessionHasErrors('notes');
+    $this->actingAs($pic)->post(route('fund-receipts.disbursement.confirm', $disbursement), ['received_at' => now()->format('Y-m-d H:i:s'), 'notes' => 'Dana diterima utuh'])->assertRedirect();
+    $this->actingAs($pic)->post(route('fund-receipts.disbursement.confirm', $disbursement), ['received_at' => now()->format('Y-m-d H:i:s'), 'notes' => 'Konfirmasi ulang'])->assertSessionHasErrors('receipt');
     $payload = ['summary' => 'Penggunaan dana operasional', 'items' => [
         ['expense_date' => now()->toDateString(), 'description' => 'Belanja ATK', 'amount' => 300000],
         ['expense_date' => now()->toDateString(), 'description' => 'Transport', 'amount' => 250000],
@@ -102,7 +103,7 @@ test('accountability create prefills realization items from submission items', f
         'subtotal' => 100000,
         'sort_order' => 1,
     ]);
-    $this->actingAs($pic)->post(route('fund-receipts.disbursement.confirm', $disbursement), ['received_at' => now()]);
+    $this->actingAs($pic)->post(route('fund-receipts.disbursement.confirm', $disbursement), ['received_at' => now(), 'notes' => 'Dana diterima']);
 
     $this->actingAs($pic)
         ->get(route('accountability-reports.create', $submission))
@@ -121,7 +122,7 @@ test('accountability moves from submit through finance verification to closed', 
     [$pic,$staff,$submission,$disbursement] = p6Disbursement(false);
     $approver = User::factory()->create();
     $approver->assignRole('finance_approver');
-    $this->actingAs($pic)->post(route('fund-receipts.disbursement.confirm', $disbursement), ['received_at' => now()]);
+    $this->actingAs($pic)->post(route('fund-receipts.disbursement.confirm', $disbursement), ['received_at' => now(), 'notes' => 'Dana diterima']);
     $this->actingAs($pic)->post(route('accountability-reports.store', $submission), ['summary' => 'Laporan final', 'items' => [['expense_date' => now()->toDateString(), 'description' => 'ATK', 'amount' => 500000]], 'attachments' => [UploadedFile::fake()->image('receipt.jpg')]]);
     $report = FundAccountabilityReport::first();
     $this->actingAs($pic)->post(route('accountability-reports.submit', $report))->assertRedirect();

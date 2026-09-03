@@ -42,7 +42,7 @@ function submissionPayload(Cooperative $cooperative): array
         'amount' => 300000,
         'title' => 'Dana operasional bulan ini',
         'purpose' => 'Kebutuhan operasional KDKMP',
-        'needed_date' => now()->addDay()->toDateString(),
+        'needed_date' => now()->addDays(7)->toDateString(),
         'notes' => null,
         'total_amount' => 999999999,
         'items' => [

@@ -56,11 +56,38 @@ test('submission rejects a request type from another category', function () {
         'submission_request_category_id' => $selectedCategory->id,
         'recipient_bank_account_id' => $account->id,
         'title' => 'Pengajuan dengan jenis tidak sesuai',
-        'needed_date' => now()->addDay()->toDateString(),
+        'needed_date' => now()->addDays(7)->toDateString(),
         'items' => [[
             'name' => 'Item pengajuan',
             'request_type_id' => $wrongType->id,
             'amount' => 100000,
         ]],
     ])->assertSessionHasErrors('items.0.request_type_id');
+});
+
+test('internal category clears cooperative and calculates urgency from needed date', function () {
+    $pic = User::factory()->create();
+    $pic->assignRole('pic_kdkmp');
+    $account = $pic->bankAccounts()->create(['bank_name' => 'Bank PIC', 'account_number' => '987654', 'account_holder_name' => $pic->name, 'is_active' => true]);
+    $category = SubmissionRequestCategory::create(['name' => 'Internal Kantor', 'slug' => 'internal-kantor', 'is_internal' => true, 'is_active' => true]);
+    $type = SubmissionRequestType::create(['name' => 'ATK Internal', 'slug' => 'atk-internal', 'submission_request_category_id' => $category->id, 'is_active' => true]);
+
+    $payload = [
+        'submission_request_category_id' => $category->id,
+        'cooperative_id' => '019ff535-b5f5-70cc-b882-38f44ff8bd7a',
+        'recipient_bank_account_id' => $account->id,
+        'title' => 'Kebutuhan internal kantor',
+        'needed_date' => today()->addDays(7)->toDateString(),
+        'items' => [['name' => 'Kertas A4', 'request_type_id' => $type->id, 'amount' => 100000]],
+    ];
+
+    $this->actingAs($pic)->post(route('submissions.store'), $payload)->assertRedirect()->assertSessionHasNoErrors();
+
+    $submission = $pic->submittedSubmissions()->firstOrFail();
+    expect($submission->cooperative_id)->toBeNull()
+        ->and($submission->is_urgent)->toBeTrue();
+
+    $payload['title'] = 'Tanggal terlalu dekat';
+    $payload['needed_date'] = today()->addDays(6)->toDateString();
+    $this->actingAs($pic)->post(route('submissions.store'), $payload)->assertSessionHasErrors('needed_date');
 });

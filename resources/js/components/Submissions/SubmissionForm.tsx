@@ -22,12 +22,14 @@ export function SubmissionForm({
     onSubmit,
     submitLabel = 'Simpan Draft',
     canSubmitInternal = false,
+    submitter,
 }: any) {
     const [step, setStep] = useState(0);
     const selectedCategory = requestCategories.find(
         (category: any) =>
             category.id === form.data.submission_request_category_id,
     );
+    const isInternalCategory = selectedCategory?.is_internal === true;
     const availableRequestTypes = requestTypes.filter(
         (type: any) =>
             !type.submission_request_category_id ||
@@ -54,7 +56,9 @@ export function SubmissionForm({
     const canContinue = [
         Boolean(form.data.submission_request_category_id),
         Boolean(form.data.title) &&
-            (canSubmitInternal || Boolean(form.data.cooperative_id)),
+            (canSubmitInternal ||
+                isInternalCategory ||
+                Boolean(form.data.cooperative_id)),
         itemsComplete &&
             Boolean(form.data.needed_date) &&
             Boolean(form.data.recipient_bank_account_id),
@@ -99,6 +103,9 @@ export function SubmissionForm({
                             form.setData((data: any) => ({
                                 ...data,
                                 submission_request_category_id: category.id,
+                                cooperative_id: category.is_internal
+                                    ? ''
+                                    : data.cooperative_id,
                                 items: data.items.map((item: any) => {
                                     const type = requestTypes.find(
                                         (candidate: any) =>
@@ -153,20 +160,35 @@ export function SubmissionForm({
                                 placeholder="Contoh: Pengajuan ATK bulan Juli"
                             />
                         </div>
-                        <div>
-                            <Label>
-                                Koperasi{canSubmitInternal ? ' (opsional)' : ''}
-                            </Label>
-                            <CooperativeCombobox
-                                cooperatives={cooperatives}
-                                value={form.data.cooperative_id}
-                                allowInternal={canSubmitInternal}
-                                onValueChange={(value) =>
-                                    form.setData('cooperative_id', value)
-                                }
-                            />
+                        {isInternalCategory ? (
+                            <div className="rounded-md border bg-muted/40 p-3 text-sm">
+                                Kategori internal tidak memerlukan koperasi.
+                            </div>
+                        ) : (
+                            <div>
+                                <Label>
+                                    Koperasi
+                                    {canSubmitInternal ? ' (opsional)' : ''}
+                                </Label>
+                                <CooperativeCombobox
+                                    cooperatives={cooperatives}
+                                    value={form.data.cooperative_id}
+                                    allowInternal={canSubmitInternal}
+                                    onValueChange={(value) =>
+                                        form.setData('cooperative_id', value)
+                                    }
+                                />
+                            </div>
+                        )}
+                        <div className="space-y-1 rounded-md border p-3 text-sm md:col-span-2">
+                            <div className="font-medium">Data Pengaju</div>
+                            <div>{submitter?.name ?? '-'}</div>
+                            <div className="text-muted-foreground">
+                                {submitter?.email ?? '-'} · Wilayah assignment:{' '}
+                                {submitter?.city?.name ?? '-'}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-3 rounded-md border p-3">
+                        <div className="flex items-center gap-3 rounded-md border p-3 md:col-span-2">
                             <Checkbox
                                 id="submission-form-is-urgent"
                                 checked={form.data.is_urgent ?? false}

@@ -65,6 +65,7 @@ class SubmissionRequestCategoryController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('submission_request_categories', 'name')->ignore($category)],
             'is_active' => ['required', 'boolean'],
+            'is_internal' => ['required', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ]);
         $data['slug'] = Str::slug($data['name']);

@@ -29,7 +29,7 @@ class FundReceiptConfirmationController extends Controller
     public function confirmDisbursement(Request $request, SubmissionDisbursement $submissionDisbursement): RedirectResponse
     {
         Gate::authorize('fund-receipts.confirm');
-        $data = $request->validate(['received_at' => ['required', 'date'], 'notes' => ['nullable', 'string', 'max:5000']]);
+        $data = $request->validate(['received_at' => ['required', 'date'], 'notes' => ['required', 'string', 'max:5000']]);
         $this->service->confirmDisbursement($request->user(), $submissionDisbursement, $data);
 
         return back()->with('success', 'Penerimaan dana berhasil dikonfirmasi.');
@@ -38,7 +38,7 @@ class FundReceiptConfirmationController extends Controller
     public function confirmDistribution(Request $request, FundDistribution $fundDistribution): RedirectResponse
     {
         Gate::authorize('fund-receipts.confirm');
-        $data = $request->validate(['received_at' => ['required', 'date'], 'notes' => ['nullable', 'string', 'max:5000']]);
+        $data = $request->validate(['received_at' => ['required', 'date'], 'notes' => ['required', 'string', 'max:5000']]);
         $this->service->confirmDistribution($request->user(), $fundDistribution, $data);
 
         return back()->with('success', 'Penerimaan dana berhasil dikonfirmasi.');

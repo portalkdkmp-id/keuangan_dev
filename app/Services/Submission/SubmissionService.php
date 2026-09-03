@@ -73,7 +73,7 @@ class SubmissionService
 
     public function createDraft(User $user, array $data): FinancialSubmission
     {
-        $this->ensureAssignedCooperative($user, $data['cooperative_id'] ?? null);
+        $this->ensureAssignedCooperative($user, $data['cooperative_id'] ?? null, $data['submission_request_category_id']);
 
         return DB::transaction(function () use ($user, $data) {
             $account = $user->bankAccounts()->whereKey($data['recipient_bank_account_id'])->first();
@@ -110,7 +110,7 @@ class SubmissionService
     public function updateDraft(User $user, FinancialSubmission $submission, array $data): FinancialSubmission
     {
         $this->ensureDraftOwner($user, $submission);
-        $this->ensureAssignedCooperative($user, $data['cooperative_id'] ?? null);
+        $this->ensureAssignedCooperative($user, $data['cooperative_id'] ?? null, $data['submission_request_category_id']);
 
         return DB::transaction(function () use ($user, $submission, $data) {
             $locked = FinancialSubmission::query()->whereKey($submission->id)->lockForUpdate()->firstOrFail();
@@ -152,7 +152,7 @@ class SubmissionService
         return DB::transaction(function () use ($user, $submission) {
             $locked = FinancialSubmission::query()->with(['items', 'cooperative'])->whereKey($submission->id)->lockForUpdate()->firstOrFail();
             $this->ensureDraftOwner($user, $locked);
-            $this->ensureAssignedCooperative($user, $locked->cooperative_id);
+            $this->ensureAssignedCooperative($user, $locked->cooperative_id, $locked->submission_request_category_id);
 
             if ($locked->items->isEmpty() || (float) $locked->total_amount <= 0) {
                 throw ValidationException::withMessages(['submission' => 'Pengajuan harus memiliki item dengan total lebih dari 0.']);
@@ -200,9 +200,11 @@ class SubmissionService
         }
     }
 
-    private function ensureAssignedCooperative(User $user, ?string $cooperativeId): void
+    private function ensureAssignedCooperative(User $user, ?string $cooperativeId, ?string $categoryId): void
     {
-        if ($user->hasAnyRole(['super_admin', 'finance_staff'])) {
+        $isInternal = SubmissionRequestCategory::query()->whereKey($categoryId)->where('is_internal', true)->exists();
+
+        if ($user->hasAnyRole(['super_admin', 'finance_staff']) || $isInternal) {
             return;
         }
 

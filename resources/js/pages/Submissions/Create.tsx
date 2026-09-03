@@ -35,7 +35,6 @@ import { formatDate } from '@/lib/format';
 import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttachments';
 import { MultipleFileInput } from '@/components/multiple-file-input';
 import { CooperativeCombobox } from '@/components/cooperative-combobox';
-import { Checkbox } from '@/components/ui/checkbox';
 
 function localDate(value?: string | null): Date | undefined {
     if (!value) return undefined;
@@ -51,12 +50,21 @@ function dateValue(date?: Date): string {
     return `${year}-${month}-${day}`;
 }
 
+function minimumNeededDate(): Date {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 7);
+
+    return date;
+}
+
 export default function SubmissionsCreate({
     cooperatives = [],
     requestCategories = [],
     requestTypes = [],
     bankAccounts = [],
     canSubmitInternal = false,
+    submitter,
     submission: submissionProp = null,
     revisionMode = false,
 }: any) {
@@ -105,6 +113,7 @@ export default function SubmissionsCreate({
         (category: any) =>
             category.id === form.data.submission_request_category_id,
     );
+    const isInternalCategory = selectedCategory?.is_internal === true;
     const availableRequestTypes = useMemo(
         () =>
             requestTypes.filter(
@@ -143,11 +152,27 @@ export default function SubmissionsCreate({
     const canStep1 =
         Boolean(form.data.submission_request_category_id) &&
         Boolean(form.data.title) &&
-        (canSubmitInternal || Boolean(form.data.cooperative_id));
+        (canSubmitInternal ||
+            isInternalCategory ||
+            Boolean(form.data.cooperative_id));
     const canStep2 =
         itemsComplete &&
         Boolean(form.data.needed_date) &&
         Boolean(form.data.recipient_bank_account_id);
+
+    useEffect(() => {
+        if (revisionMode) return;
+
+        if (!form.data.needed_date) {
+            form.setData('is_urgent', false);
+            return;
+        }
+
+        form.setData(
+            'is_urgent',
+            form.data.needed_date === dateValue(minimumNeededDate()),
+        );
+    }, [form.data.needed_date]);
 
     const submit = (action: 'draft' | 'submit') => {
         if (revisionMode) {
@@ -211,6 +236,13 @@ export default function SubmissionsCreate({
                                     form.setData((data) => ({
                                         ...data,
                                         submission_request_category_id: value,
+                                        cooperative_id:
+                                            requestCategories.find(
+                                                (category: any) =>
+                                                    category.id === value,
+                                            )?.is_internal === true
+                                                ? ''
+                                                : data.cooperative_id,
                                         items: data.items.map((item: any) => {
                                             const type = requestTypes.find(
                                                 (candidate: any) =>
@@ -255,35 +287,32 @@ export default function SubmissionsCreate({
                                 placeholder="Contoh: Pengajuan ATK bulan Juli"
                             />
                         </div>
-                        <div>
-                            <Label>
-                                Koperasi{canSubmitInternal ? ' (opsional)' : ''}
-                            </Label>
-                            <CooperativeCombobox
-                                cooperatives={cooperatives}
-                                value={form.data.cooperative_id}
-                                allowInternal={canSubmitInternal}
-                                onValueChange={(value) =>
-                                    form.setData('cooperative_id', value)
-                                }
-                            />
-                        </div>
-                        <div className="flex items-center gap-3 rounded-md border p-3 md:col-span-2">
-                            <Checkbox
-                                id="is-urgent"
-                                checked={form.data.is_urgent}
-                                onCheckedChange={(value) =>
-                                    form.setData('is_urgent', value === true)
-                                }
-                            />
+                        {isInternalCategory ? (
+                            <div className="rounded-md border bg-muted/40 p-3 text-sm">
+                                Kategori internal tidak memerlukan koperasi.
+                            </div>
+                        ) : (
                             <div>
-                                <Label htmlFor="is-urgent">
-                                    Pengajuan Urgent
+                                <Label>
+                                    Koperasi
+                                    {canSubmitInternal ? ' (opsional)' : ''}
                                 </Label>
-                                <p className="text-xs text-muted-foreground">
-                                    Tandai jika pengajuan membutuhkan prioritas
-                                    review.
-                                </p>
+                                <CooperativeCombobox
+                                    cooperatives={cooperatives}
+                                    value={form.data.cooperative_id}
+                                    allowInternal={canSubmitInternal}
+                                    onValueChange={(value) =>
+                                        form.setData('cooperative_id', value)
+                                    }
+                                />
+                            </div>
+                        )}
+                        <div className="space-y-1 rounded-md border p-3 text-sm md:col-span-2">
+                            <div className="font-medium">Data Pengaju</div>
+                            <div>{submitter?.name ?? '-'}</div>
+                            <div className="text-muted-foreground">
+                                {submitter?.email ?? '-'} · Wilayah assignment:{' '}
+                                {submitter?.city?.name ?? '-'}
                             </div>
                         </div>
                     </div>
@@ -331,14 +360,18 @@ export default function SubmissionsCreate({
                                             setDateOpen(false);
                                         }}
                                         disabled={(date) =>
-                                            date <
-                                            new Date(
-                                                new Date().setHours(0, 0, 0, 0),
-                                            )
+                                            !revisionMode &&
+                                            date < minimumNeededDate()
                                         }
                                     />
                                 </PopoverContent>
                             </Popover>
+                            {!revisionMode && (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Minimal 7 hari dari hari ini. Tanggal pada
+                                    hari ke-7 otomatis ditandai urgent.
+                                </p>
+                            )}
                         </div>
                         <div className="md:col-span-2">
                             <div className="mb-1 flex items-center justify-between">
@@ -430,7 +463,7 @@ export default function SubmissionsCreate({
                         <div>
                             Koperasi:{' '}
                             {selectedCooperative?.name ??
-                                (canSubmitInternal
+                                (canSubmitInternal || isInternalCategory
                                     ? 'Internal / Tanpa Koperasi'
                                     : '-')}
                         </div>
@@ -438,6 +471,12 @@ export default function SubmissionsCreate({
                         <div>
                             Tanggal Dibutuhkan:{' '}
                             {formatDate(form.data.needed_date)}
+                        </div>
+                        <div>
+                            Urgensi:{' '}
+                            {form.data.is_urgent
+                                ? 'Urgent (dibutuhkan H+7)'
+                                : 'Normal'}
                         </div>
                         <div className="md:col-span-2">
                             Rekening Penerima:{' '}
