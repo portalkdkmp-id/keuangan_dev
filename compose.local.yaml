@@ -1,0 +1,33 @@
+name: keuangan-local
+
+x-local-app: &local-app
+  image: keuangan-app-local:${IMAGE_TAG:-latest}
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: runtime
+  env_file:
+    - .env
+  working_dir: /var/www/keuangan
+  volumes:
+    - ./public:/var/www/keuangan/public
+    - ./storage:/var/www/keuangan/storage
+  init: true
+
+services:
+  app:
+    <<: *local-app
+    command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+    ports:
+      - "127.0.0.1:${LOCAL_APP_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:8000/up') === false ? 1 : 0);"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  queue:
+    <<: *local-app
+    profiles: ["queue"]
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--timeout=120"]
