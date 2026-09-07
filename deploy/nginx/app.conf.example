@@ -1,0 +1,41 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name finance.example.com;
+
+    # Keep this path identical to APP_PATH in scripts/deploy.sh and WORKDIR in Dockerfile.
+    root /var/www/keuangan/public;
+    index index.php;
+    client_max_body_size 60m;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        try_files $uri =404;
+        include fastcgi_params;
+        # Deliberately uses the identical absolute path inside the container.
+        fastcgi_param SCRIPT_FILENAME /var/www/keuangan/public$fastcgi_script_name;
+        fastcgi_param HTTP_PROXY "";
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_read_timeout 120s;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+
+    location ~* \.(?:css|js|mjs|jpg|jpeg|gif|png|svg|webp|ico|woff2?)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+        access_log off;
+    }
+}
+
+# Add a separate TLS server block (or let Certbot create it) for production HTTPS.
