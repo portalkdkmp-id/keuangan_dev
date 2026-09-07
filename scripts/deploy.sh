@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-APP_PATH="${APP_PATH:-/var/www/keuangan}"
+APP_PATH="${APP_PATH:-/var/www/html/keuangan_dev}"
 
 if [ "$(pwd -P)" != "$APP_PATH" ]; then
     echo "Error: checkout must be at $APP_PATH so host Nginx and PHP-FPM resolve identical paths." >&2
