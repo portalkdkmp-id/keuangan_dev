@@ -29,6 +29,10 @@ class FundReceiptService
 
     private function confirm(User $actor, ?SubmissionDisbursement $disbursement, ?FundDistribution $distribution, array $data): FundReceiptConfirmation
     {
+        if (blank($data['notes'] ?? null)) {
+            throw ValidationException::withMessages(['notes' => 'Catatan penerimaan wajib diisi.']);
+        }
+
         return DB::transaction(function () use ($actor, $disbursement, $distribution, $data) {
             if ($disbursement) {
                 $source = SubmissionDisbursement::whereKey($disbursement->id)->lockForUpdate()->firstOrFail();

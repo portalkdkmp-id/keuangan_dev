@@ -60,6 +60,11 @@ export function AppSidebar() {
                     href: '/submissions',
                     icon: FileText,
                 },
+                can('submissions.history') && {
+                    title: 'History Pengajuan',
+                    href: '/submission-history',
+                    icon: History,
+                },
                 can('finance-submissions.view') && {
                     title: 'Pengajuan Masuk',
                     href: '/finance/submissions',

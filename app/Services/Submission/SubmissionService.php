@@ -29,6 +29,7 @@ class SubmissionService
     {
         return FinancialSubmission::query()
             ->ownedBy($user)
+            ->whereNotIn('status', SubmissionStatus::finalValues())
             ->with(['cooperative:id,name'])
             ->when($filters['search'] ?? null, fn ($query, $search) => $query->where(fn ($q) => $q
                 ->where('submission_number', 'like', "%{$search}%")

@@ -10,6 +10,7 @@ import { MoneyInput } from '@/components/Submissions/MoneyInput';
 import { SubmissionStatusBadge } from '@/components/Submissions/SubmissionStatusBadge';
 import { rupiah } from '@/components/Submissions/SubmissionSummary';
 import { SubmissionTimeline } from '@/components/Submissions/SubmissionTimeline';
+import { SubmissionRevisionHistory } from '@/components/Submissions/SubmissionRevisionHistory';
 import { ReimbursementDetail } from '@/components/Reimbursements/ReimbursementDetail';
 import { AdvanceDetail } from '@/components/Advances/AdvanceDetail';
 import {
@@ -281,6 +282,7 @@ export default function ApprovalSubmissionsShow({ submission }: any) {
                     []
                 }
             />
+            <SubmissionRevisionHistory submission={submission} />
             <ReimbursementDetail detail={submission.reimbursement_detail} />
             <Dialog open={confirmApprove} onOpenChange={setConfirmApprove}>
                 <DialogContent>

@@ -30,11 +30,9 @@ class ApprovalSubmissionController extends Controller
                     SubmissionStatus::APPROVAL_REVIEW,
                     SubmissionStatus::APPROVAL_IN_REVIEW,
                     SubmissionStatus::APPROVAL_REVISION_REQUESTED,
-                    SubmissionStatus::APPROVAL_REJECTED,
                     SubmissionStatus::DIRECTOR_REVIEW,
                     SubmissionStatus::DIRECTOR_IN_REVIEW,
                     SubmissionStatus::PENDING_DISBURSEMENT,
-                    SubmissionStatus::FUND_DISBURSED,
                 ])
                 ->when($status, fn ($query) => $query->where('status', $status))
                 ->when($search, fn ($query) => $query->where(fn ($q) => $q->where('submission_number', 'like', "%{$search}%")->orWhere('title', 'like', "%{$search}%")->orWhereHas('items', fn ($items) => $items->where('description', 'like', "%{$search}%"))->orWhereHas('cooperative', fn ($cooperative) => $cooperative->where('name', 'like', "%{$search}%"))))
@@ -53,7 +51,7 @@ class ApprovalSubmissionController extends Controller
         $financialSubmission->loadMissing('advanceDetail.responsibleUser:id,name');
 
         return Inertia::render('Approval/Submissions/Show', [
-            'submission' => $financialSubmission->load(['cooperative.city.province', 'submitterCity', 'submitter', 'requestCategory', 'requestType', 'recipientBankAccount', 'items', 'attachments', 'reimbursementDetail.expenses.attachments', 'financeDetail', 'financeValidator', 'approvalForwarder', 'approvalReviewer', 'approvalDecisionMaker', 'approvalReviews.approver', 'revisionRequests.response', 'statusHistories.actor', 'disbursement.attachments', 'disbursement.distributions']),
+            'submission' => $financialSubmission->load(['cooperative.city.province', 'submitterCity', 'submitter', 'requestCategory', 'requestType', 'recipientBankAccount', 'items', 'attachments', 'reimbursementDetail.expenses.attachments', 'financeDetail', 'financeValidator', 'approvalForwarder', 'approvalReviewer', 'approvalDecisionMaker', 'approvalReviews.approver', 'directorReviews.director', 'revisionRequests.requester', 'revisionRequests.response.responder', 'statusHistories.actor', 'disbursement.attachments', 'disbursement.distributions']),
         ]);
     }
 

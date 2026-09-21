@@ -12,7 +12,7 @@ class RolePermissionSeeder extends Seeder
     public const ROLES = ['super_admin', 'pic_kdkmp', 'finance_staff', 'finance_approver', 'finance_director'];
 
     public const PERMISSIONS = [
-        'dashboard.view',
+        'dashboard.view', 'submissions.history',
         'users.view', 'users.create', 'users.update', 'users.delete', 'users.assign-role',
         'pics.view', 'pics.create', 'pics.update', 'pics.delete', 'pics.assign-cooperatives',
         'regions.view', 'regions.import',
@@ -67,7 +67,7 @@ class RolePermissionSeeder extends Seeder
             $role->syncPermissions(match ($roleName) {
                 'super_admin' => self::PERMISSIONS,
                 'pic_kdkmp' => [
-                    'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
+                    'dashboard.view', 'submissions.history', 'cooperatives.view', 'profile.view', 'profile.update',
                     'submissions.view', 'submissions.create', 'submissions.update', 'submissions.delete', 'submissions.submit',
                     'submissions.export', 'submissions.revise', 'submissions.resubmit',
                     'bank-accounts.view', 'bank-accounts.create', 'bank-accounts.update', 'bank-accounts.delete',
@@ -79,7 +79,7 @@ class RolePermissionSeeder extends Seeder
                     'fund-returns.view', 'fund-returns.create', 'fund-returns.update', 'fund-returns.submit', 'fund-returns.download-attachment',
                 ],
                 'finance_staff' => [
-                    'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
+                    'dashboard.view', 'submissions.history', 'cooperatives.view', 'profile.view', 'profile.update',
                     'pics.view', 'pics.create', 'pics.update', 'pics.delete', 'pics.assign-cooperatives', 'submissions.export',
                     'finance-submissions.view', 'finance-submissions.review', 'finance-submissions.update',
                     'finance-submissions.request-revision', 'finance-submissions.validate', 'finance-submissions.forward-approval',
@@ -103,7 +103,7 @@ class RolePermissionSeeder extends Seeder
                     'advance-settlements.view', 'advance-settlements.create', 'advance-settlements.update', 'advance-settlements.submit', 'advance-settlements.review', 'advance-settlements.request-revision', 'advance-settlements.verify', 'advance-settlements.download-attachment',
                 ],
                 'finance_approver' => [
-                    'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
+                    'dashboard.view', 'submissions.history', 'cooperatives.view', 'profile.view', 'profile.update',
                     'pics.view', 'pics.create', 'pics.update', 'pics.delete', 'pics.assign-cooperatives', 'submissions.export',
                     'approval-submissions.view', 'approval-submissions.review', 'approval-submissions.approve',
                     'approval-submissions.reject', 'approval-submissions.request-revision',
@@ -123,7 +123,7 @@ class RolePermissionSeeder extends Seeder
                     'advance-settlements.view', 'advance-settlements.approve', 'advance-settlements.reject', 'advance-settlements.request-revision', 'advance-settlements.download-attachment', 'advance-settlements.monitor',
                 ],
                 'finance_director' => [
-                    'dashboard.view', 'cooperatives.view', 'profile.view', 'profile.update',
+                    'dashboard.view', 'submissions.history', 'cooperatives.view', 'profile.view', 'profile.update',
                     'submissions.export',
                     'director-submissions.view', 'director-submissions.review', 'director-submissions.approve',
                     'director-submissions.disburse', 'director-submissions.reject', 'director-submissions.request-revision',

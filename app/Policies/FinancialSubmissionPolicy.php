@@ -40,6 +40,10 @@ class FinancialSubmissionPolicy
             return true;
         }
 
+        if ($user->can('submissions.history') && in_array($submission->status->value, SubmissionStatus::finalValues(), true)) {
+            return ! $user->hasRole('pic_kdkmp') || $submission->isOwnedBy($user);
+        }
+
         if ($submission->isOwnedBy($user) && $user->can('submissions.view')) {
             return $user->hasRole('finance_staff')
                 || $this->isInternal($submission)

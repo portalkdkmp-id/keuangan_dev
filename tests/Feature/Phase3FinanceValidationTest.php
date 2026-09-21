@@ -8,6 +8,7 @@ use App\Models\SubmissionRequestCategory;
 use App\Models\SubmissionRequestType;
 use App\Models\User;
 use App\Notifications\SubmissionForwardedToApprovalNotification;
+use App\Notifications\SubmissionRejectedNotification;
 use App\Notifications\SubmissionResubmittedNotification;
 use App\Notifications\SubmissionRevisionRequestedNotification;
 use Database\Seeders\RolePermissionSeeder;
@@ -125,13 +126,15 @@ test('finance can save review and forward to approval queue', function () {
 });
 
 test('finance can reject reviewed submission with reason', function () {
-    [, $staff, $submission] = p3ReviewedSubmission();
+    Notification::fake();
+    [$pic, $staff, $submission] = p3ReviewedSubmission();
 
     $this->actingAs($staff)->post(route('finance.submissions.reject', $submission), ['rejection_reason' => 'Dokumen tidak sesuai.'])->assertRedirect(route('finance.submissions.index', absolute: false));
 
     $submission->refresh();
     expect($submission->status)->toBe(SubmissionStatus::CANCELLED)
         ->and($submission->financeDetail->rejection_reason)->toBe('Dokumen tidak sesuai.');
+    Notification::assertSentTo($pic, SubmissionRejectedNotification::class);
 });
 
 test('pic can cancel a revision requested submission', function () {
