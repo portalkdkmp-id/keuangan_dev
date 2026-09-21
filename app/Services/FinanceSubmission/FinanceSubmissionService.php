@@ -10,6 +10,7 @@ use App\Models\FinancialSubmission;
 use App\Models\SubmissionRevisionRequest;
 use App\Models\User;
 use App\Notifications\SubmissionForwardedToApprovalNotification;
+use App\Notifications\SubmissionRejectedNotification;
 use App\Notifications\SubmissionRevisionRequestedNotification;
 use App\Services\Audit\AuditLogService;
 use App\Services\Submission\SubmissionItemService;
@@ -203,7 +204,13 @@ class FinanceSubmissionService
                 ]
             );
 
-            return $this->statuses->transition($locked, SubmissionStatus::CANCELLED, $user, 'finance_rejected', $reason);
+            $rejected = $this->statuses->transition($locked, SubmissionStatus::CANCELLED, $user, 'finance_rejected', $reason);
+
+            DB::afterCommit(fn () => $rejected->submitter?->notify(
+                new SubmissionRejectedNotification($rejected->fresh(), $user, $reason, 'Staff Keuangan')
+            ));
+
+            return $rejected;
         });
     }
 

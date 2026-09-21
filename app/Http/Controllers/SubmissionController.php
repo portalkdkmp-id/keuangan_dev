@@ -122,12 +122,16 @@ class SubmissionController extends Controller
 
     private function formData(Request $request): array
     {
+        $cooperatives = $request->user()->hasAnyRole(['super_admin', 'finance_staff'])
+            ? Cooperative::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'province_id', 'city_id', 'district_id', 'village_id'])
+            : $request->user()->assignedCooperatives()->orderBy('name')->get(['cooperatives.id', 'name', 'province_id', 'city_id', 'district_id', 'village_id']);
+
+        $cooperatives->load(['province:id,name', 'city:id,name', 'district:id,name', 'village:id,name']);
+
         return [
             'canSubmitInternal' => $request->user()->hasAnyRole(['super_admin', 'finance_staff']),
             'submitter' => $request->user()->load('city:id,name')->only(['id', 'name', 'email', 'city']),
-            'cooperatives' => $request->user()->hasAnyRole(['super_admin', 'finance_staff'])
-                ? Cooperative::query()->where('is_active', true)->orderBy('name')->get(['id', 'name'])
-                : $request->user()->assignedCooperatives()->orderBy('name')->get(['cooperatives.id', 'name']),
+            'cooperatives' => $cooperatives,
             'categories' => SubmissionCategory::where('is_active', true)->orderBy('sort_order')->get(['id', 'code', 'name']),
             'requestCategories' => SubmissionRequestCategory::where('is_active', true)
                 ->where(fn (Builder $query) => $query->whereNull('code')->orWhere('code', '!=', 'reimbursement'))

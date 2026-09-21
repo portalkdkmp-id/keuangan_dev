@@ -281,7 +281,6 @@ class FinancialSubmission extends Model
             SubmissionStatus::FINANCE_VALIDATED->value,
             SubmissionStatus::APPROVAL_REVIEW->value,
             SubmissionStatus::APPROVAL_REVISION_REQUESTED->value,
-            SubmissionStatus::APPROVAL_REJECTED->value,
             SubmissionStatus::DIRECTOR_REVIEW->value,
         ]);
     }

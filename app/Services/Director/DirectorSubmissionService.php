@@ -174,7 +174,7 @@ class DirectorSubmissionService
             ])->save();
             $this->statuses->transition($locked, SubmissionStatus::DIRECTOR_REJECTED, $actor, SubmissionAction::REJECT_BY_DIRECTOR->value, $data['rejection_reason'], $this->meta($locked, $review));
 
-            DB::afterCommit(fn () => $this->notifyRelated($locked->fresh(), new DirectorDecisionNotification($locked->fresh(), $actor, 'Pengajuan ditolak oleh Finance Director.')));
+            DB::afterCommit(fn () => $this->notifyRelated($locked->fresh(), new DirectorDecisionNotification($locked->fresh(), $actor, 'Pengajuan ditolak oleh Finance Director.', $data['rejection_reason'])));
 
             return $locked->refresh();
         });

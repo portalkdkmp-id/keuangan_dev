@@ -25,7 +25,9 @@ class SubmissionRejectedByFinanceApproverNotification extends Notification
             'rejection_reason' => $this->reason,
             'approver' => $this->approver->name,
             'status' => $this->submission->status->value,
-            'url' => route('submissions.show', $this->submission, absolute: false),
+            'title' => 'Pengajuan Ditolak',
+            'message' => 'Pengajuan ditolak oleh Finance Approver.',
+            'url' => route('submission-history.show', $this->submission, absolute: false),
         ]);
     }
 }

@@ -20,4 +20,17 @@ enum SubmissionStatus: string
     case FUND_DISBURSED = 'fund_disbursed';
     case DIRECTOR_REJECTED = 'director_rejected';
     case CANCELLED = 'cancelled';
+
+    /**
+     * @return list<string>
+     */
+    public static function finalValues(): array
+    {
+        return [
+            self::CANCELLED->value,
+            self::APPROVAL_REJECTED->value,
+            self::DIRECTOR_REJECTED->value,
+            self::FUND_DISBURSED->value,
+        ];
+    }
 }

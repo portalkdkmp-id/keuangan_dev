@@ -32,6 +32,7 @@ use App\Http\Controllers\ReimbursementController;
 use App\Http\Controllers\SubmissionAttachmentController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\SubmissionExportController;
+use App\Http\Controllers\SubmissionHistoryController;
 use App\Http\Controllers\SubmissionRequestCategoryController;
 use App\Http\Controllers\SubmissionRequestTypeController;
 use App\Http\Controllers\SubmissionRevisionController;
@@ -89,6 +90,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/submissions/{financialSubmission}', [SubmissionController::class, 'destroy'])->name('submissions.destroy');
     Route::post('/submissions/{financialSubmission}/submit', [SubmissionController::class, 'submit'])->name('submissions.submit');
     Route::post('/submissions/{financialSubmission}/cancel', [SubmissionController::class, 'cancel'])->name('submissions.cancel');
+    Route::get('/submission-history', [SubmissionHistoryController::class, 'index'])->name('submission-history.index');
+    Route::get('/submission-history/{financialSubmission}', [SubmissionHistoryController::class, 'show'])->name('submission-history.show');
     Route::get('/submissions/{financialSubmission}/revision', [SubmissionRevisionController::class, 'edit'])->name('submissions.revision.edit');
     Route::put('/submissions/{financialSubmission}/revision', [SubmissionRevisionController::class, 'update'])->name('submissions.revision.update');
     Route::post('/submissions/{financialSubmission}/resubmit', [SubmissionRevisionController::class, 'resubmit'])->name('submissions.resubmit');

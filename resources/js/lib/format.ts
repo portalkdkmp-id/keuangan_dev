@@ -9,3 +9,12 @@ export function formatDate(value?: string | null): string {
         year: 'numeric',
     }).format(new Date(value));
 }
+
+export function formatDateTime(value?: string | null): string {
+    if (!value) return '-';
+
+    return `${formatDate(value)} ${new Intl.DateTimeFormat('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(new Date(value))}`;
+}

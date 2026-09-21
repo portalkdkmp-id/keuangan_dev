@@ -35,6 +35,7 @@ import { formatDate } from '@/lib/format';
 import { SubmissionAttachments } from '@/components/Submissions/SubmissionAttachments';
 import { MultipleFileInput } from '@/components/multiple-file-input';
 import { CooperativeCombobox } from '@/components/cooperative-combobox';
+import { CooperativeRegion } from '@/components/cooperative-region';
 
 function localDate(value?: string | null): Date | undefined {
     if (!value) return undefined;
@@ -289,23 +290,25 @@ export default function SubmissionsCreate({
                         </div>
                         {isInternalCategory ? (
                             <div className="rounded-md border bg-muted/40 p-3 text-sm">
-                                Kategori internal tidak memerlukan koperasi.
+                                Kategori internal tidak memerlukan koperasi. <br className='mb-4' />
+                                Wilayah assignment:{' '} <strong>{submitter?.city?.name ?? '-'}</strong>
                             </div>
                         ) : (
-                            <div>
-                                <Label>
-                                    Koperasi
-                                    {canSubmitInternal ? ' (opsional)' : ''}
-                                </Label>
-                                <CooperativeCombobox
-                                    cooperatives={cooperatives}
-                                    value={form.data.cooperative_id}
-                                    allowInternal={canSubmitInternal}
-                                    onValueChange={(value) =>
-                                        form.setData('cooperative_id', value)
-                                    }
-                                />
-                            </div>
+                            <>
+                                <div>
+                                    <Label>
+                                        Koperasi
+                                        {canSubmitInternal ? ' (opsional)' : ''}
+                                    </Label>
+                                    <CooperativeCombobox
+                                        cooperatives={cooperatives}
+                                        value={form.data.cooperative_id}
+                                        allowInternal={canSubmitInternal}
+                                        onValueChange={(value) => form.setData('cooperative_id', value)}
+                                    />
+                                </div>
+                                <CooperativeRegion cooperative={selectedCooperative} />
+                            </>
                         )}
                         <div className="space-y-1 rounded-md border p-3 text-sm md:col-span-2">
                             <div className="font-medium">Data Pengaju</div>

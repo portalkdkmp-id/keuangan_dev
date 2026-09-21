@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Enums\SubmissionStatus;
 use App\Models\FinancialSubmission;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -15,6 +16,7 @@ class DirectorDecisionNotification extends Notification
         private readonly FinancialSubmission $submission,
         private readonly User $actor,
         private readonly string $message,
+        private readonly ?string $reason = null,
     ) {}
 
     public function via(object $notifiable): array
@@ -33,6 +35,29 @@ class DirectorDecisionNotification extends Notification
             'status' => $this->submission->status->value,
             'actor_id' => $this->actor->id,
             'actor_name' => $this->actor->name,
+            'rejection_reason' => $this->reason,
+            'url' => $this->urlFor($notifiable),
         ];
+    }
+
+    private function urlFor(object $notifiable): string
+    {
+        if (in_array($this->submission->status->value, SubmissionStatus::finalValues(), true)) {
+            return route('submission-history.show', $this->submission, absolute: false);
+        }
+
+        if ($notifiable instanceof User && $this->submission->isOwnedBy($notifiable)) {
+            return route('submissions.show', $this->submission, absolute: false);
+        }
+
+        if ($notifiable instanceof User && $notifiable->can('director-submissions.view')) {
+            return route('director.submissions.show', $this->submission, absolute: false);
+        }
+
+        if ($notifiable instanceof User && $notifiable->can('approval-submissions.view')) {
+            return route('approval.submissions.show', $this->submission, absolute: false);
+        }
+
+        return route('finance.submissions.show', $this->submission, absolute: false);
     }
 }

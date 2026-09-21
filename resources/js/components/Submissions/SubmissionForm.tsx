@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CooperativeCombobox } from '@/components/cooperative-combobox';
+import { CooperativeRegion } from '@/components/cooperative-region';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,9 @@ export function SubmissionForm({
     );
     const selectedAccount = bankAccounts.find(
         (account: any) => account.id === form.data.recipient_bank_account_id,
+    );
+    const selectedCooperative = cooperatives.find(
+        (cooperative: any) => cooperative.id === form.data.cooperative_id,
     );
     const itemsComplete =
         form.data.items?.length > 0 &&
@@ -163,22 +167,24 @@ export function SubmissionForm({
                         {isInternalCategory ? (
                             <div className="rounded-md border bg-muted/40 p-3 text-sm">
                                 Kategori internal tidak memerlukan koperasi.
+                                Wilayah assignment:{' '}{submitter?.city?.name ?? '-'}
                             </div>
                         ) : (
-                            <div>
-                                <Label>
-                                    Koperasi
-                                    {canSubmitInternal ? ' (opsional)' : ''}
-                                </Label>
-                                <CooperativeCombobox
-                                    cooperatives={cooperatives}
-                                    value={form.data.cooperative_id}
-                                    allowInternal={canSubmitInternal}
-                                    onValueChange={(value) =>
-                                        form.setData('cooperative_id', value)
-                                    }
-                                />
-                            </div>
+                            <>
+                                <div>
+                                    <Label>
+                                        Koperasi
+                                        {canSubmitInternal ? ' (opsional)' : ''}
+                                    </Label>
+                                    <CooperativeCombobox
+                                        cooperatives={cooperatives}
+                                        value={form.data.cooperative_id}
+                                        allowInternal={canSubmitInternal}
+                                        onValueChange={(value) => form.setData('cooperative_id', value)}
+                                    />
+                                </div>
+                                <CooperativeRegion cooperative={selectedCooperative} />
+                            </>
                         )}
                         <div className="space-y-1 rounded-md border p-3 text-sm md:col-span-2">
                             <div className="font-medium">Data Pengaju</div>
