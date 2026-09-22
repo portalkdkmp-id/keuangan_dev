@@ -70,6 +70,8 @@ FROM php_runtime AS runtime
 
 WORKDIR /var/www/keuangan
 
+COPY --from=node_tools /usr/local/bin/node /usr/local/bin/node
+COPY --from=node_tools /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --chown=www-data:www-data . .
 COPY --from=composer_deps --chown=www-data:www-data /app/vendor ./vendor
 COPY --from=frontend_build --chown=www-data:www-data /app/public/build ./public/build
@@ -78,7 +80,9 @@ COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-production.ini
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/10-opcache.ini
 COPY docker/php/entrypoint.sh /usr/local/bin/keuangan-entrypoint
 
-RUN chmod 0755 /usr/local/bin/keuangan-entrypoint \
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+    && chmod 0755 /usr/local/bin/keuangan-entrypoint \
     && mkdir -p \
         bootstrap/cache \
         storage/app/private \

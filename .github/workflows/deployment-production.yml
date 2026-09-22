@@ -1,4 +1,4 @@
-name: deploy-production
+name: deployment-production
 
 on:
   workflow_run:
@@ -6,12 +6,18 @@ on:
     branches: ["main"]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      run_migrations:
+        description: Run pending database migrations
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: production-deployment
+  group: deployment-production
   cancel-in-progress: false
 
 jobs:
@@ -19,18 +25,19 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
+    name: Deploy Docker to production VM
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 30
     env:
       SSH_HOST: ${{ secrets.SSH_HOST }}
       SSH_PORT: ${{ secrets.SSH_PORT }}
-      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_USER: ${{ secrets.SSH_USER || 'apnwebserver' }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
       DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
       DEPLOY_BRANCH: ${{ vars.DEPLOY_BRANCH }}
-      DEPLOY_QUEUE: ${{ vars.DEPLOY_QUEUE }}
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      RUN_MIGRATIONS: ${{ github.event_name != 'workflow_dispatch' || inputs.run_migrations }}
 
     steps:
       - name: Validate deployment configuration
@@ -40,57 +47,61 @@ jobs:
           : "${SSH_HOST:?Missing SSH_HOST secret}"
           : "${SSH_USER:?Missing SSH_USER secret}"
           : "${SSH_PRIVATE_KEY:?Missing SSH_PRIVATE_KEY secret}"
-          : "${SSH_KNOWN_HOSTS:?Missing SSH_KNOWN_HOSTS secret}"
+          : "${DEPLOY_SHA:?Missing deployment SHA}"
 
           SSH_PORT="${SSH_PORT:-22}"
-          DEPLOY_PATH="${DEPLOY_PATH:-/var/www/keuangan}"
+          DEPLOY_PATH="${DEPLOY_PATH:-/var/www/html/keuangan_dev}"
           DEPLOY_BRANCH="${DEPLOY_BRANCH:-main}"
 
           [[ "$SSH_PORT" =~ ^[0-9]+$ ]]
           [[ "$DEPLOY_PATH" == /* ]]
           [[ "$DEPLOY_BRANCH" =~ ^[A-Za-z0-9._/-]+$ ]]
+          [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$RUN_MIGRATIONS" == "true" || "$RUN_MIGRATIONS" == "false" ]]
 
       - name: Configure SSH
         shell: bash
         run: |
           set -euo pipefail
           install -d -m 700 "$HOME/.ssh"
-          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/deploy_key"
-          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
-          chmod 600 "$HOME/.ssh/deploy_key" "$HOME/.ssh/known_hosts"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/deployment-production"
+          chmod 600 "$HOME/.ssh/deployment-production"
 
-      - name: Deploy application
+      - name: Deploy application through SSH
         shell: bash
         run: |
           set -euo pipefail
           SSH_PORT="${SSH_PORT:-22}"
-          DEPLOY_PATH="${DEPLOY_PATH:-/var/www/keuangan}"
+          DEPLOY_PATH="${DEPLOY_PATH:-/var/www/html/keuangan_dev}"
           DEPLOY_BRANCH="${DEPLOY_BRANCH:-main}"
-          DEPLOY_QUEUE="${DEPLOY_QUEUE:-false}"
 
           ssh \
-            -i "$HOME/.ssh/deploy_key" \
+            -i "$HOME/.ssh/deployment-production" \
             -p "$SSH_PORT" \
             -o BatchMode=yes \
+            -o ConnectTimeout=15 \
             -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=yes \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o LogLevel=ERROR \
             "$SSH_USER@$SSH_HOST" \
-            bash -s -- "$DEPLOY_PATH" "$DEPLOY_BRANCH" "$DEPLOY_QUEUE" <<'REMOTE'
+            bash -s -- "$DEPLOY_PATH" "$DEPLOY_BRANCH" "$DEPLOY_SHA" "$RUN_MIGRATIONS" <<'REMOTE'
           set -euo pipefail
 
           deploy_path="$1"
           deploy_branch="$2"
-          deploy_queue="$3"
+          deploy_sha="$3"
+          run_migrations="$4"
 
           cd "$deploy_path"
+          test -f .env
+          test -x scripts/deploy.sh
+          git diff --quiet
+          git diff --cached --quiet
           git fetch --prune origin "$deploy_branch"
-          git switch "$deploy_branch"
-          git merge --ff-only "origin/$deploy_branch"
-          APP_PATH="$deploy_path" ./scripts/deploy.sh
+          git merge-base --is-ancestor "$deploy_sha" "origin/$deploy_branch"
+          git checkout --detach "$deploy_sha"
 
-          if [ "$deploy_queue" = "true" ]; then
-              docker compose --profile queue up -d queue
-          fi
-
-          docker compose --profile queue ps
+          APP_PATH="$deploy_path" RUN_MIGRATIONS="$run_migrations" ./scripts/deploy.sh
+          docker compose ps
           REMOTE
