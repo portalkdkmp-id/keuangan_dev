@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-APP_PATH="${APP_PATH:-/var/www/keuangan_dev}"
+APP_PATH="${APP_PATH:-/var/www/html/keuangan_dev}"
 RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
 
 if [ "$(pwd -P)" != "$APP_PATH" ]; then
