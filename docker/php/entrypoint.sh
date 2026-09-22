@@ -10,10 +10,16 @@ mkdir -p \
     storage/framework/views \
     storage/logs
 
-# public/ is shared with host Nginx. Refresh immutable Vite assets from image.
-rm -rf public/build
-cp -a /opt/keuangan-public-build public/build
+# Only the FPM service publishes assets to the host Nginx shared directory.
+if [ "${1:-}" = "php-fpm" ]; then
+    rm -rf public/build
+    cp -a /opt/keuangan-public-build public/build
+fi
 
-chown -R www-data:www-data bootstrap/cache storage public/build
+chown -R www-data:www-data bootstrap/cache storage
+
+if [ -d public/build ]; then
+    chown -R www-data:www-data public/build
+fi
 
 exec "$@"

@@ -115,13 +115,13 @@ git pull --ff-only
 ./scripts/deploy.sh
 ```
 
-Aktifkan queue worker hanya bila aplikasi mulai mengirim queued jobs:
+Jalankan app, queue worker, dan scheduler dengan image yang sama:
 
 ```sh
-docker compose --profile queue up -d
+docker compose up -d
 ```
 
-Script tidak melakukan pull agar pemilihan branch/revision tetap eksplisit. Script melakukan build, recreate, clear/cache konfigurasi-route-view, me-restart worker bila aktif, dan menampilkan status. Script tidak melakukan migration, seed, atau key generation.
+Script tidak melakukan pull agar pemilihan branch/revision tetap eksplisit. Script melakukan build, menghentikan worker sebelum perubahan skema, menjalankan migration secara default, membuat ulang cache konfigurasi-route-view, menyalakan queue dan scheduler, lalu memverifikasi seluruh service. Gunakan `RUN_MIGRATIONS=false` hanya ketika deployment memang tidak membawa migration. Script tidak melakukan seed, reset database, atau key generation.
 
 ## Pemeriksaan
 
@@ -155,7 +155,7 @@ DB::select('select 1');
 ```sh
 # Log container
 docker compose logs -f app
-docker compose --profile queue logs -f queue
+docker compose logs -f queue scheduler
 
 # Log Laravel
 docker compose exec app tail -f storage/logs/laravel.log
