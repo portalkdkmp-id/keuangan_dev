@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { Check, MapPin, Search, X } from 'lucide-react';
+import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,44 +20,137 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
+type RegionOption = { id: string; name: string };
+
+type RegionDialogSelectProps = {
+    label: string;
+    placeholder: string;
+    options: RegionOption[];
+    value: string;
+    disabled?: boolean;
+    onChange: (value: string) => void;
+};
+
+function RegionDialogSelect({
+    label,
+    placeholder,
+    options,
+    value,
+    disabled = false,
+    onChange,
+}: RegionDialogSelectProps) {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const selected = options.find((option) => option.id === value);
+    const visibleOptions = useMemo(() => {
+        const needle = search.trim().toLocaleLowerCase('id-ID');
+
+        return needle
+            ? options.filter((option) =>
+                  option.name.toLocaleLowerCase('id-ID').includes(needle),
+              )
+            : options;
+    }, [options, search]);
+
+    const select = (nextValue: string) => {
+        onChange(nextValue);
+        setOpen(false);
+        setSearch('');
+    };
+
+    return (
+        <div className="min-w-0 space-y-1.5">
+            <Label>{label}</Label>
+            <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-between font-normal"
+                disabled={disabled}
+                onClick={() => setOpen(true)}
+            >
+                <span className="truncate">
+                    {selected?.name ?? placeholder}
+                </span>
+                <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+            </Button>
+            <Dialog
+                open={open}
+                onOpenChange={(nextOpen) => {
+                    setOpen(nextOpen);
+
+                    if (!nextOpen) {
+                        setSearch('');
+                    }
+                }}
+            >
+                <DialogContent className="bg-white sm:max-w-lg dark:bg-popover">
+                    <DialogHeader>
+                        <DialogTitle>Pilih {label}</DialogTitle>
+                        <DialogDescription>
+                            Cari dan pilih {label.toLocaleLowerCase('id-ID')}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="relative">
+                        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            autoFocus
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            className="pl-9"
+                            placeholder={`Cari ${label.toLocaleLowerCase('id-ID')}`}
+                        />
+                    </div>
+                    <div className="max-h-80 overflow-y-auto border">
+                        <button
+                            type="button"
+                            className="flex w-full items-center justify-between bg-white px-3 py-2 text-left text-sm hover:bg-muted dark:bg-popover"
+                            onClick={() => select('')}
+                        >
+                            <span>{placeholder}</span>
+                            {!value && <Check className="size-4" />}
+                        </button>
+                        {visibleOptions.map((option) => (
+                            <button
+                                key={option.id}
+                                type="button"
+                                className="flex w-full items-center justify-between border-t bg-white px-3 py-2 text-left text-sm hover:bg-muted dark:bg-popover"
+                                onClick={() => select(option.id)}
+                            >
+                                <span>{option.name}</span>
+                                {value === option.id && (
+                                    <Check className="size-4" />
+                                )}
+                            </button>
+                        ))}
+                        {!visibleOptions.length && (
+                            <p className="bg-white p-6 text-center text-sm text-muted-foreground dark:bg-popover">
+                                Data tidak ditemukan.
+                            </p>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}
+
 export function AssignmentFilters({ picId, filters, regions }: any) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [assignment, setAssignment] = useState(filters.assignment || 'all');
+    const [provinceId, setProvinceId] = useState(filters.province_id ?? '');
+    const [cityId, setCityId] = useState(filters.city_id ?? '');
     const [districtId, setDistrictId] = useState(filters.district_id ?? '');
     const [villageId, setVillageId] = useState(filters.village_id ?? '');
-    const [regionOpen, setRegionOpen] = useState(false);
-    const [regionSearch, setRegionSearch] = useState('');
-    const selectedDistrict = regions.find(
+    const selectedProvince = regions.find(
+        (province: any) => province.id === provinceId,
+    );
+    const cities = selectedProvince?.cities ?? [];
+    const selectedCity = cities.find((city: any) => city.id === cityId);
+    const districts = selectedCity?.districts ?? [];
+    const selectedDistrict = districts.find(
         (district: any) => district.id === districtId,
     );
-    const selectedVillage = selectedDistrict?.villages?.find(
-        (village: any) => village.id === villageId,
-    );
-    const regionLabel = selectedVillage
-        ? `${selectedVillage.name}, ${selectedDistrict.name}`
-        : (selectedDistrict?.name ?? 'Semua wilayah');
-    const visibleRegions = useMemo(() => {
-        const needle = regionSearch.trim().toLocaleLowerCase('id-ID');
-
-        if (!needle) {
-            return regions;
-        }
-
-        return regions
-            .map((district: any) => ({
-                ...district,
-                villages: (district.villages ?? []).filter((village: any) =>
-                    `${village.name} ${district.name}`
-                        .toLocaleLowerCase('id-ID')
-                        .includes(needle),
-                ),
-            }))
-            .filter(
-                (district: any) =>
-                    district.name.toLocaleLowerCase('id-ID').includes(needle) ||
-                    district.villages.length,
-            );
-    }, [regionSearch, regions]);
+    const villages = selectedDistrict?.villages ?? [];
 
     const apply = () =>
         router.get(
@@ -65,6 +158,8 @@ export function AssignmentFilters({ picId, filters, regions }: any) {
             {
                 search: search || undefined,
                 assignment: assignment === 'all' ? undefined : assignment,
+                province_id: provinceId || undefined,
+                city_id: cityId || undefined,
                 district_id: districtId || undefined,
                 village_id: villageId || undefined,
             },
@@ -82,53 +177,89 @@ export function AssignmentFilters({ picId, filters, regions }: any) {
                         event.preventDefault();
                         apply();
                     }}
-                    className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px_280px_auto] lg:items-end"
+                    className="space-y-4"
                 >
-                    <div className="space-y-1.5">
-                        <Label htmlFor="assignment-search">Pencarian</Label>
-                        <Input
-                            id="assignment-search"
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
-                            placeholder="Cari nama atau NIK koperasi"
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="assignment-search">Pencarian</Label>
+                            <Input
+                                id="assignment-search"
+                                value={search}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
+                                }
+                                placeholder="Cari nama atau NIK koperasi"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label>Status assignment</Label>
+                            <Select
+                                value={assignment}
+                                onValueChange={setAssignment}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        Semua assignment
+                                    </SelectItem>
+                                    <SelectItem value="assigned">
+                                        Sudah diassign
+                                    </SelectItem>
+                                    <SelectItem value="unassigned">
+                                        Belum diassign
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <RegionDialogSelect
+                            label="Provinsi"
+                            placeholder="Semua provinsi"
+                            options={regions}
+                            value={provinceId}
+                            onChange={(value) => {
+                                setProvinceId(value);
+                                setCityId('');
+                                setDistrictId('');
+                                setVillageId('');
+                            }}
+                        />
+                        <RegionDialogSelect
+                            label="Kabupaten/Kota"
+                            placeholder="Semua kabupaten/kota"
+                            options={cities}
+                            value={cityId}
+                            disabled={!provinceId}
+                            onChange={(value) => {
+                                setCityId(value);
+                                setDistrictId('');
+                                setVillageId('');
+                            }}
+                        />
+                        <RegionDialogSelect
+                            label="Kecamatan"
+                            placeholder="Semua kecamatan"
+                            options={districts}
+                            value={districtId}
+                            disabled={!cityId}
+                            onChange={(value) => {
+                                setDistrictId(value);
+                                setVillageId('');
+                            }}
+                        />
+                        <RegionDialogSelect
+                            label="Desa"
+                            placeholder="Semua desa"
+                            options={villages}
+                            value={villageId}
+                            disabled={!districtId}
+                            onChange={setVillageId}
                         />
                     </div>
-                    <div className="space-y-1.5">
-                        <Label>Status assignment</Label>
-                        <Select
-                            value={assignment}
-                            onValueChange={setAssignment}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">
-                                    Semua assignment
-                                </SelectItem>
-                                <SelectItem value="assigned">
-                                    Sudah diassign
-                                </SelectItem>
-                                <SelectItem value="unassigned">
-                                    Belum diassign
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                        <Label>Wilayah</Label>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full justify-between font-normal"
-                            onClick={() => setRegionOpen(true)}
-                        >
-                            <span className="truncate">{regionLabel}</span>
-                            <MapPin className="size-4 text-muted-foreground" />
-                        </Button>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button type="submit">Terapkan</Button>
+                    <div className="flex justify-end gap-2">
                         <Button
                             type="button"
                             size="icon"
@@ -140,88 +271,10 @@ export function AssignmentFilters({ picId, filters, regions }: any) {
                         >
                             <X className="size-4" />
                         </Button>
+                        <Button type="submit">Terapkan Filter</Button>
                     </div>
                 </form>
             </CardContent>
-            <Dialog open={regionOpen} onOpenChange={setRegionOpen}>
-                <DialogContent className="bg-white sm:max-w-xl dark:bg-popover">
-                    <DialogHeader>
-                        <DialogTitle>Pilih Wilayah</DialogTitle>
-                        <DialogDescription>
-                            Cari kecamatan atau desa pada wilayah PIC.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="relative">
-                        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            autoFocus
-                            value={regionSearch}
-                            onChange={(event) =>
-                                setRegionSearch(event.target.value)
-                            }
-                            className="pl-9"
-                            placeholder="Cari kecamatan atau desa"
-                        />
-                    </div>
-                    <div className="max-h-80 overflow-y-auto border">
-                        <button
-                            type="button"
-                            className="flex w-full items-center justify-between bg-white px-3 py-2 text-left text-sm hover:bg-muted dark:bg-popover"
-                            onClick={() => {
-                                setDistrictId('');
-                                setVillageId('');
-                                setRegionOpen(false);
-                            }}
-                        >
-                            <span>Semua wilayah</span>
-                            {!districtId && <Check className="size-4" />}
-                        </button>
-                        {visibleRegions.map((district: any) => (
-                            <div key={district.id} className="border-t">
-                                <button
-                                    type="button"
-                                    className="flex w-full items-center justify-between bg-white px-3 py-2 text-left text-sm font-medium hover:bg-muted dark:bg-popover"
-                                    onClick={() => {
-                                        setDistrictId(district.id);
-                                        setVillageId('');
-                                        setRegionOpen(false);
-                                    }}
-                                >
-                                    <span>Kecamatan {district.name}</span>
-                                    {districtId === district.id &&
-                                        !villageId && (
-                                            <Check className="size-4" />
-                                        )}
-                                </button>
-                                {(district.villages ?? []).map(
-                                    (village: any) => (
-                                        <button
-                                            key={village.id}
-                                            type="button"
-                                            className="flex w-full items-center justify-between bg-white py-2 pr-3 pl-7 text-left text-sm hover:bg-muted dark:bg-popover"
-                                            onClick={() => {
-                                                setDistrictId(district.id);
-                                                setVillageId(village.id);
-                                                setRegionOpen(false);
-                                            }}
-                                        >
-                                            <span>{village.name}</span>
-                                            {villageId === village.id && (
-                                                <Check className="size-4" />
-                                            )}
-                                        </button>
-                                    ),
-                                )}
-                            </div>
-                        ))}
-                        {!visibleRegions.length && (
-                            <p className="bg-white p-6 text-center text-sm text-muted-foreground dark:bg-popover">
-                                Wilayah tidak ditemukan.
-                            </p>
-                        )}
-                    </div>
-                </DialogContent>
-            </Dialog>
         </Card>
     );
 }

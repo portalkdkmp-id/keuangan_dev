@@ -8,7 +8,7 @@ use App\Http\Requests\Pic\StorePicRequest;
 use App\Http\Requests\Pic\UpdatePicRequest;
 use App\Models\City;
 use App\Models\Cooperative;
-use App\Models\District;
+use App\Models\Province;
 use App\Models\User;
 use App\Services\Pic\PicImportService;
 use App\Services\Pic\PicManagementService;
@@ -103,6 +103,7 @@ class PicUserController extends Controller
         Gate::authorize('pics.assign-cooperatives');
         abort_unless($pic->hasRole('pic_kdkmp'), 404);
         abort_if(! $pic->city_id, 422, 'PIC belum memiliki wilayah kota/kabupaten.');
+        $pic->loadMissing('city:id,province_id,name');
 
         $cooperatives = Cooperative::query()
             ->where('city_id', $pic->city_id)
@@ -113,6 +114,8 @@ class PicUserController extends Controller
                     ? $query->whereHas('pics', fn ($pics) => $pics->whereKey($pic->id))
                     : $query->whereDoesntHave('pics', fn ($pics) => $pics->whereKey($pic->id));
             })
+            ->when($request->filled('province_id'), fn ($query) => $query->where('province_id', $request->input('province_id')))
+            ->when($request->filled('city_id'), fn ($query) => $query->where('city_id', $request->input('city_id')))
             ->when($request->filled('district_id'), fn ($query) => $query->where('district_id', $request->input('district_id')))
             ->when($request->filled('village_id'), fn ($query) => $query
                 ->where('village_id', $request->input('village_id'))
@@ -120,14 +123,23 @@ class PicUserController extends Controller
             ->orderBy('name')->paginate(50)->withQueryString();
         $assignedIds = $pic->assignedCooperatives()->whereIn('cooperatives.id', collect($cooperatives->items())->pluck('id'))->pluck('cooperatives.id');
 
-        $regions = District::query()
-            ->where('city_id', $pic->city_id)
-            ->whereHas('villages', fn ($query) => $query->whereHas('cooperatives'))
-            ->with(['villages' => fn ($query) => $query->whereHas('cooperatives')->orderBy('name')->select(['id', 'district_id', 'name'])])
+        $regions = Province::query()
+            ->whereKey($pic->city->province_id)
+            ->with(['cities' => fn ($query) => $query
+                ->whereKey($pic->city_id)
+                ->with(['districts' => fn ($districts) => $districts
+                    ->whereHas('villages', fn ($villages) => $villages->whereHas('cooperatives'))
+                    ->with(['villages' => fn ($villages) => $villages
+                        ->whereHas('cooperatives')
+                        ->orderBy('name')
+                        ->select(['id', 'district_id', 'name'])])
+                    ->orderBy('name')
+                    ->select(['id', 'city_id', 'name'])])
+                ->select(['id', 'province_id', 'name'])])
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        return Inertia::render('Pics/Assignments', ['pic' => $pic->load('city:id,name'), 'cooperatives' => $cooperatives, 'assignedIds' => $assignedIds, 'regions' => $regions, 'filters' => $request->only(['search', 'assignment', 'district_id', 'village_id'])]);
+        return Inertia::render('Pics/Assignments', ['pic' => $pic, 'cooperatives' => $cooperatives, 'assignedIds' => $assignedIds, 'regions' => $regions, 'filters' => $request->only(['search', 'assignment', 'province_id', 'city_id', 'district_id', 'village_id'])]);
     }
 
     public function syncAssignments(BulkAssignCooperativesRequest $request, User $pic): RedirectResponse
