@@ -3,10 +3,12 @@
 use App\Models\City;
 use App\Models\Cooperative;
 use App\Models\FinancialSubmission;
+use App\Models\Province;
 use App\Models\SubmissionAttachment;
 use App\Models\User;
 use App\Services\Export\SubmissionExcelExportService;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -41,6 +43,30 @@ test('specialized pic creation always assigns pic role and requires city', funct
     expect($pic->hasRole('pic_kdkmp'))->toBeTrue()
         ->and($pic->hasRole('super_admin'))->toBeFalse()
         ->and($pic->city_id)->toBe($city->id);
+});
+
+test('pic users can be imported from the provided excel template', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('super_admin');
+    $province = Province::factory()->create(['name' => 'Sumatera Utara']);
+    $city = City::factory()->for($province)->create(['name' => 'Kabupaten Deli Serdang']);
+    $template = resource_path('templates/template-import-pic-kdkmp.xlsx');
+
+    $this->actingAs($admin)
+        ->get(route('pics.import.template'))
+        ->assertOk()
+        ->assertDownload('template-import-pic-kdkmp.xlsx');
+
+    $this->actingAs($admin)->post(route('pics.import.store'), [
+        'file' => UploadedFile::fake()->createWithContent('pic-kdkmp.xlsx', file_get_contents($template)),
+    ])->assertSessionHasNoErrors();
+
+    $pic = User::where('email', 'pic.contoh@example.com')->firstOrFail();
+    expect($pic->name)->toBe('Nama PIC Contoh')
+        ->and($pic->phone)->toBe('081234567890')
+        ->and($pic->city_id)->toBe($city->id)
+        ->and($pic->is_active)->toBeTrue()
+        ->and($pic->hasRole('pic_kdkmp'))->toBeTrue();
 });
 
 test('bulk assignment only accepts cooperatives in pic city', function () {

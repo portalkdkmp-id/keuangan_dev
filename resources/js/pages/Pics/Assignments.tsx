@@ -1,17 +1,10 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { Head, useForm } from '@inertiajs/react';
+import { useEffect, useMemo } from 'react';
 import { BackButton } from '@/components/back-button';
+import { AssignmentFilters } from '@/components/Pics/AssignmentFilters';
 import { SimplePagination } from '@/components/simple-pagination';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -26,6 +19,7 @@ export default function Assignments({
     cooperatives,
     assignedIds,
     filters,
+    regions,
 }: any) {
     const visibleIds = useMemo(
         () => cooperatives.data.map((item: any) => item.id),
@@ -35,7 +29,14 @@ export default function Assignments({
         cooperative_ids: assignedIds as string[],
         visible_cooperative_ids: visibleIds,
     });
-    const [assignment, setAssignment] = useState(filters.assignment || 'all');
+    useEffect(() => {
+        form.setData({
+            cooperative_ids: assignedIds,
+            visible_cooperative_ids: visibleIds,
+        });
+        // IDs berubah ketika filter atau halaman pagination berubah.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [assignedIds, visibleIds]);
     const allChecked =
         visibleIds.length > 0 &&
         visibleIds.every((id: string) =>
@@ -50,6 +51,7 @@ export default function Assignments({
                 ? [...form.data.cooperative_ids, id]
                 : form.data.cooperative_ids.filter((item) => item !== id),
         );
+
     return (
         <div className="space-y-5 p-4 sm:p-6">
             <Head title={`Assign Koperasi - ${pic.name}`} />
@@ -60,41 +62,11 @@ export default function Assignments({
                     {pic.name} · Wilayah {pic.city?.name}
                 </p>
             </header>
-            <form
-                className="flex flex-col gap-2 sm:flex-row"
-                onSubmit={(event) => {
-                    event.preventDefault();
-                    router.get(
-                        `/pics/${pic.id}/assignments`,
-                        {
-                            search: new FormData(event.currentTarget).get(
-                                'search',
-                            ),
-                            assignment: assignment === 'all' ? '' : assignment,
-                        },
-                        { preserveState: true },
-                    );
-                }}
-            >
-                <Input
-                    name="search"
-                    defaultValue={filters.search ?? ''}
-                    placeholder="Cari nama atau NIK koperasi"
-                />
-                <Select value={assignment} onValueChange={setAssignment}>
-                    <SelectTrigger className="sm:w-52">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Semua assignment</SelectItem>
-                        <SelectItem value="assigned">Sudah diassign</SelectItem>
-                        <SelectItem value="unassigned">
-                            Belum diassign
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-                <Button>Terapkan Filter</Button>
-            </form>
+            <AssignmentFilters
+                picId={pic.id}
+                filters={filters}
+                regions={regions}
+            />
             <form
                 onSubmit={(event) => {
                     event.preventDefault();

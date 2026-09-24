@@ -68,7 +68,9 @@ class CooperativeExcelReader
 
         foreach ($rels->Relationship as $relationship) {
             if ((string) $relationship['Id'] === $relationId) {
-                return 'xl/'.ltrim((string) $relationship['Target'], '/');
+                $target = ltrim((string) $relationship['Target'], '/');
+
+                return str_starts_with($target, 'xl/') ? $target : 'xl/'.$target;
             }
         }
 
@@ -91,10 +93,17 @@ class CooperativeExcelReader
             $row = [];
 
             foreach ($rowNode->xpath('.//x:c') ?: [] as $cell) {
+                $cell->registerXPathNamespace('x', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
                 $reference = (string) $cell['r'];
                 $columnIndex = $this->columnIndex(preg_replace('/\d+/', '', $reference));
                 $type = (string) $cell['t'];
-                $value = (string) ($cell->v ?? '');
+                $valueNodes = $cell->xpath('./x:v') ?: [];
+                $value = (string) ($valueNodes[0] ?? '');
+
+                if ($type === 'inlineStr') {
+                    $value = implode('', array_map(fn ($text) => (string) $text, $cell->xpath('.//x:t') ?: []));
+                }
+
                 $row[$columnIndex] = $type === 's' ? ($sharedStrings[(int) $value] ?? '') : $value;
             }
 

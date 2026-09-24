@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Building2, Pencil, Plus } from 'lucide-react';
+import { Building2, FileUp, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { SimplePagination } from '@/components/simple-pagination';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ export default function Index({ pics, cities, filters }: any) {
             ? 'all'
             : String(filters.is_active),
     );
+
     return (
         <div className="space-y-5 p-4 sm:p-6">
             <Head title="PIC KDKMP" />
@@ -38,11 +39,18 @@ export default function Index({ pics, cities, filters }: any) {
                         wilayah.
                     </p>
                 </div>
-                <Button asChild>
-                    <Link href="/pics/create">
-                        <Plus className="size-4" /> Tambah PIC
-                    </Link>
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" asChild>
+                        <Link href="/pics/import">
+                            <FileUp className="size-4" /> Import PIC
+                        </Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/pics/create">
+                            <Plus className="size-4" /> Tambah PIC
+                        </Link>
+                    </Button>
+                </div>
             </header>
             <form
                 className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"

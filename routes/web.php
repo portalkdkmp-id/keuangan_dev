@@ -40,13 +40,17 @@ use App\Http\Controllers\UserBankAccountController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+// Route::inertia('/', 'welcome')->name('home');
+Route::redirect('/', '/login', 302)->name('home');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::resource('users', UserController::class)->except(['show']);
     Route::get('pics', [PicUserController::class, 'index'])->name('pics.index');
     Route::get('pics/create', [PicUserController::class, 'create'])->name('pics.create');
+    Route::get('pics/import', [PicUserController::class, 'importForm'])->name('pics.import');
+    Route::post('pics/import', [PicUserController::class, 'import'])->name('pics.import.store');
+    Route::get('pics/import/template', [PicUserController::class, 'importTemplate'])->name('pics.import.template');
     Route::post('pics', [PicUserController::class, 'store'])->name('pics.store');
     Route::get('pics/{pic}/edit', [PicUserController::class, 'edit'])->name('pics.edit');
     Route::put('pics/{pic}', [PicUserController::class, 'update'])->name('pics.update');

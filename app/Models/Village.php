@@ -16,4 +16,9 @@ class Village extends Model
     {
         return $this->belongsTo(District::class);
     }
+
+    public function cooperatives()
+    {
+        return $this->hasMany(Cooperative::class);
+    }
 }
